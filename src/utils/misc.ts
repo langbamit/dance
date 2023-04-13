@@ -8,9 +8,11 @@ export const noUndoStops: Parameters<vscode.TextEditor["edit"]>[1] =
   Object.freeze({ undoStopBefore: false, undoStopAfter: false });
 
 const dummyPosition = new vscode.Position(0, 0),
-      dummyRange = new vscode.Range(dummyPosition, dummyPosition),
-      dummyUndoStops: Parameters<vscode.TextEditor["edit"]>[1] =
-        Object.freeze({ undoStopBefore: false, undoStopAfter: true });
+  dummyRange = new vscode.Range(dummyPosition, dummyPosition),
+  dummyUndoStops: Parameters<vscode.TextEditor["edit"]>[1] = Object.freeze({
+    undoStopBefore: false,
+    undoStopAfter: true,
+  });
 
 /**
  * Performs a dummy edit on a text document, inserting an undo stop.
@@ -18,7 +20,10 @@ const dummyPosition = new vscode.Position(0, 0),
 export async function performDummyEdit(editor: vscode.TextEditor) {
   // VS Code ignores edits where no interaction is performed with the editor, so
   // we delete an empty range at the start of the document.
-  await editor.edit((editBuilder) => editBuilder.delete(dummyRange), dummyUndoStops);
+  await editor.edit(
+    (editBuilder) => editBuilder.delete(dummyRange),
+    dummyUndoStops,
+  );
 }
 
 /**

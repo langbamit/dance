@@ -8,6 +8,7 @@ async function go() {
     const extensionTestsPath = path.resolve(__dirname, "./suite");
 
     await runTests({
+      vscodeExecutablePath: "/etc/profiles/per-user/utherpally/bin/code",
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: ["--disable-extensions"],

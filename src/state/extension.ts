@@ -55,7 +55,7 @@ export class Extension implements vscode.Disposable {
   /**
    * `Recorder` for this instance of the extension.
    */
-  public readonly recorder: Recorder;  // Needs to be initialized later.
+  public readonly recorder: Recorder; // Needs to be initialized later.
 
   /**
    * `Editors` for this instance of the extension.
@@ -118,12 +118,12 @@ export class Extension implements vscode.Disposable {
 
         for (const menuName in value) {
           const menu = value[menuName],
-                validationErrors = validateMenu(menu);
+            validationErrors = validateMenu(menu);
 
           if (validationErrors.length === 0) {
             if (!vscode.workspace.isTrusted) {
               const globalConfig = inspect.globalValue?.[menuName],
-                    defaultConfig = inspect.defaultValue?.[menuName];
+                defaultConfig = inspect.defaultValue?.[menuName];
 
               if (globalConfig !== undefined || defaultConfig !== undefined) {
                 // Menu is a global menu; make sure that the local workspace does
@@ -131,7 +131,10 @@ export class Extension implements vscode.Disposable {
                 for (const key in menu.items) {
                   if (globalConfig !== undefined && key in globalConfig.items) {
                     menu.items[key] = globalConfig.items[key];
-                  } else if (defaultConfig !== undefined && key in defaultConfig.items) {
+                  } else if (
+                    defaultConfig !== undefined &&
+                    key in defaultConfig.items
+                  ) {
                     menu.items[key] = defaultConfig.items[key];
                   }
                 }
@@ -153,10 +156,26 @@ export class Extension implements vscode.Disposable {
       true,
     );
 
+    // this.observePreference<boolean>("workbench.list.automaticKeyboardNavigation", (value) => {
+    //   if (value) {
+    //     // Show confirmation dialog to disable automatic keyboard navigation.
+    //     vscode.window.showInformationMessage("Automatic keyboard navigation is enabled."
+    //     + "This may cause unexpected behavior in Ballet." + "Do you want to disable it?", "Yes", "No")
+    //       .then((choice) => {
+    //         if (choice === "Yes") {
+    //           vscode.workspace.getConfiguration("workbench.list").update("automaticKeyboardNavigation", false, true);
+    //         }
+    //       });
+    //   }
+    // });
+
     this._subscriptions.push(
       // Update configuration automatically.
       vscode.workspace.onDidChangeConfiguration((e) => {
-        for (const [section, handler] of this._configurationChangeHandlers.entries()) {
+        for (const [
+          section,
+          handler,
+        ] of this._configurationChangeHandlers.entries()) {
           if (e.affectsConfiguration(section)) {
             handler();
           }
@@ -198,11 +217,14 @@ export class Extension implements vscode.Disposable {
    */
   public observePreference<T>(
     section: string,
-    handler: (value: T, validator: SettingsValidator, inspect: InspectType<T>) => void,
+    handler: (
+      value: T,
+      validator: SettingsValidator,
+      inspect: InspectType<T>,
+    ) => void,
     triggerNow = false,
   ) {
-    let configuration: vscode.WorkspaceConfiguration,
-        fullName: string;
+    let configuration: vscode.WorkspaceConfiguration, fullName: string;
 
     if (section[0] === ".") {
       fullName = extensionName + section;
@@ -217,8 +239,8 @@ export class Extension implements vscode.Disposable {
 
     this._configurationChangeHandlers.set(fullName, () => {
       const validator = new SettingsValidator(fullName),
-            topSection = fullName === section ? undefined : extensionName,
-            configuration = vscode.workspace.getConfiguration(topSection);
+        topSection = fullName === section ? undefined : extensionName,
+        configuration = vscode.workspace.getConfiguration(topSection);
 
       handler(
         configuration.get<T>(section, defaultValue),
@@ -247,8 +269,10 @@ export class Extension implements vscode.Disposable {
   // =============================================================================================
 
   private _cancellationTokenSource = new vscode.CancellationTokenSource();
-  private readonly _cancellationReasons =
-    new WeakMap<vscode.CancellationToken, CancellationError.Reason>();
+  private readonly _cancellationReasons = new WeakMap<
+    vscode.CancellationToken,
+    CancellationError.Reason
+  >();
 
   /**
    * The token for the next command.
@@ -399,10 +423,13 @@ export class Extension implements vscode.Disposable {
   }
 }
 
-type InspectUnknown = Exclude<ReturnType<vscode.WorkspaceConfiguration["inspect"]>, undefined>;
+type InspectUnknown = Exclude<
+  ReturnType<vscode.WorkspaceConfiguration["inspect"]>,
+  undefined
+>;
 type InspectType<T> = {
   // Replace all properties that are `unknown` by `T | undefined`.
-  readonly [K in keyof InspectUnknown]: (InspectUnknown[K] & null) extends never
+  readonly [K in keyof InspectUnknown]: InspectUnknown[K] & null extends never
     ? InspectUnknown[K]
     : T | undefined;
-}
+};

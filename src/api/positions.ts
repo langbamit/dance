@@ -7,12 +7,15 @@ import { Direction } from "./types";
  * Returns the position right after the given position, or `undefined` if
  * `position` is the last position of the document.
  */
-export function next(position: vscode.Position, document?: vscode.TextDocument) {
+export function next(
+  position: vscode.Position,
+  document?: vscode.TextDocument,
+) {
   document ??= Context.current.document;
 
   const line = position.line,
-        character = position.character,
-        textLineLen = document.lineAt(line).text.length;
+    character = position.character,
+    textLineLen = document.lineAt(line).text.length;
 
   if (character < textLineLen) {
     return new vscode.Position(line, character + 1);
@@ -29,9 +32,12 @@ export function next(position: vscode.Position, document?: vscode.TextDocument) 
  * Returns the position right before the given position, or `undefined` if
  * `position` is the first position of the document.
  */
-export function previous(position: vscode.Position, document?: vscode.TextDocument) {
+export function previous(
+  position: vscode.Position,
+  document?: vscode.TextDocument,
+) {
   const line = position.line,
-        character = position.character;
+    character = position.character;
 
   if (character > 0) {
     return new vscode.Position(line, character - 1);
@@ -127,8 +133,14 @@ export function lineStart(line: number) {
  * Returns the position at the first non-blank character of the given line, or
  * the end of the line if the line is fully blank.
  */
-export function nonBlankLineStart(line: number, document = Context.current.document) {
-  return new vscode.Position(line, document.lineAt(line).firstNonWhitespaceCharacterIndex);
+export function nonBlankLineStart(
+  line: number,
+  document = Context.current.document,
+) {
+  return new vscode.Position(
+    line,
+    document.lineAt(line).firstNonWhitespaceCharacterIndex,
+  );
 }
 
 /**
@@ -143,7 +155,9 @@ export function lineEnd(line: number, document = Context.current.document) {
  * position of the next line.
  */
 export function lineBreak(line: number, document = Context.current.document) {
-  return line + 1 === document.lineCount ? lineEnd(line, document) : lineStart(line + 1);
+  return line + 1 === document.lineCount
+    ? lineEnd(line, document)
+    : lineStart(line + 1);
 }
 
 /**
@@ -158,7 +172,7 @@ export function edge(direction: Direction, document?: vscode.TextDocument) {
 /**
  * Returns a string representation of the position.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Positions.toString(Selections.nth(0)!.active), "to be", "1:1");

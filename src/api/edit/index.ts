@@ -16,40 +16,46 @@ function mapResults(
   selections: readonly vscode.Selection[],
   replacements: readonly replace.Result[],
 ) {
-  let flags = TrackedSelection.Flags.Inclusive | TrackedSelection.Flags.EmptyExtendsForward,
-      where = undefined as "start" | "end" | "active" | "anchor" | undefined;
+  let flags =
+      TrackedSelection.Flags.Inclusive |
+      TrackedSelection.Flags.EmptyExtendsForward,
+    where = undefined as "start" | "end" | "active" | "anchor" | undefined;
 
   switch (insertFlags & Constants.PositionMask) {
-  case insert.Flags.Active:
-    where = "active";
-    break;
+    case insert.Flags.Active:
+      where = "active";
+      break;
 
-  case insert.Flags.Anchor:
-    where = "anchor";
-    break;
+    case insert.Flags.Anchor:
+      where = "anchor";
+      break;
 
-  case insert.Flags.Start:
-    where = "start";
-    break;
+    case insert.Flags.Start:
+      where = "start";
+      break;
 
-  case insert.Flags.End:
-    where = "end";
-    break;
+    case insert.Flags.End:
+      where = "end";
+      break;
   }
 
-  if (where !== undefined && (insertFlags & Constants.BehaviorMask) === insert.Flags.Keep) {
-    flags = (insertFlags & Constants.PositionMask) === insert.Flags.Start
-      ? TrackedSelection.Flags.StrictStart
-      : TrackedSelection.Flags.StrictEnd;
+  if (
+    where !== undefined &&
+    (insertFlags & Constants.BehaviorMask) === insert.Flags.Keep
+  ) {
+    flags =
+      (insertFlags & Constants.PositionMask) === insert.Flags.Start
+        ? TrackedSelection.Flags.StrictStart
+        : TrackedSelection.Flags.StrictEnd;
   }
 
   const savedSelections = TrackedSelection.fromArray(selections, document),
-        discardedSelections = new Uint8Array(selections.length);
+    discardedSelections = new Uint8Array(selections.length);
 
   const promise = edit((editBuilder) => {
     for (let i = 0, len = replacements.length; i < len; i++) {
       const result = replacements[i],
-            selection = selections[i];
+        selection = selections[i];
 
       if (result === undefined) {
         editBuilder.delete(selection);
@@ -58,33 +64,50 @@ function mapResults(
         editBuilder.replace(selection, result);
 
         if (TrackedSelection.length(savedSelections, i) !== result.length) {
-          const documentChangedEvent: vscode.TextDocumentContentChangeEvent[] = [{
-            range: selection,
-            rangeOffset: TrackedSelection.startOffset(savedSelections, i),
-            rangeLength: TrackedSelection.length(savedSelections, i),
-            text: result,
-          }];
+          const documentChangedEvent: vscode.TextDocumentContentChangeEvent[] =
+            [
+              {
+                range: selection,
+                rangeOffset: TrackedSelection.startOffset(savedSelections, i),
+                rangeLength: TrackedSelection.length(savedSelections, i),
+                text: result,
+              },
+            ];
 
-          TrackedSelection.updateAfterDocumentChanged(savedSelections, documentChangedEvent, flags);
+          TrackedSelection.updateAfterDocumentChanged(
+            savedSelections,
+            documentChangedEvent,
+            flags,
+          );
         }
       } else {
         const position = selection[where];
 
         editBuilder.replace(position, result);
 
-        const selectionOffset = TrackedSelection.startOffset(savedSelections, i),
-              selectionLength = TrackedSelection.length(savedSelections, i);
+        const selectionOffset = TrackedSelection.startOffset(
+            savedSelections,
+            i,
+          ),
+          selectionLength = TrackedSelection.length(savedSelections, i);
 
-        const documentChangedEvent: vscode.TextDocumentContentChangeEvent[] = [{
-          range: new vscode.Range(position, position),
-          rangeOffset: position === selection.start
-            ? selectionOffset
-            : selectionOffset + selectionLength,
-          rangeLength: 0,
-          text: result,
-        }];
+        const documentChangedEvent: vscode.TextDocumentContentChangeEvent[] = [
+          {
+            range: new vscode.Range(position, position),
+            rangeOffset:
+              position === selection.start
+                ? selectionOffset
+                : selectionOffset + selectionLength,
+            rangeLength: 0,
+            text: result,
+          },
+        ];
 
-        TrackedSelection.updateAfterDocumentChanged(savedSelections, documentChangedEvent, flags);
+        TrackedSelection.updateAfterDocumentChanged(
+          savedSelections,
+          documentChangedEvent,
+          flags,
+        );
       }
     }
   }).then(() => {
@@ -95,14 +118,21 @@ function mapResults(
         continue;
       }
 
-      let restoredSelection = TrackedSelection.restore(savedSelections, i, document);
+      let restoredSelection = TrackedSelection.restore(
+        savedSelections,
+        i,
+        document,
+      );
 
-      if (where !== undefined && (insertFlags & Constants.BehaviorMask) === insert.Flags.Select) {
+      if (
+        where !== undefined &&
+        (insertFlags & Constants.BehaviorMask) === insert.Flags.Select
+      ) {
         // Selections were extended; we now unselect the previously selected
         // text.
         const totalLength = TrackedSelection.length(savedSelections, i),
-              insertedLength = replacements[i]!.length,
-              previousLength = totalLength - insertedLength;
+          insertedLength = replacements[i]!.length,
+          previousLength = totalLength - insertedLength;
 
         if (restoredSelection[where] === restoredSelection.start) {
           restoredSelection = Selections.fromStartEnd(
@@ -112,7 +142,11 @@ function mapResults(
           );
         } else {
           restoredSelection = Selections.fromStartEnd(
-            Positions.offset(restoredSelection.start, previousLength, document)!,
+            Positions.offset(
+              restoredSelection.start,
+              previousLength,
+              document,
+            )!,
             restoredSelection.end,
             restoredSelection.isReversed,
           );
@@ -140,7 +174,7 @@ function mapResults(
  *   used. Otherwise, must be a `vscode.Selection` array which will be mapped
  *   in the active editor.
  *
- * ### Example
+ * @example
  * ```js
  * Selections.set(await insert(insert.Replace, (x) => `${+x * 2}`));
  * ```
@@ -168,7 +202,8 @@ export function insert(
 ): Thenable<vscode.Selection[]> {
   return insertByIndex(
     flags,
-    (i, selection, document) => f(document.getText(selection), selection, i, document) as any,
+    (i, selection, document) =>
+      f(document.getText(selection), selection, i, document) as any,
     selections,
   );
 }
@@ -235,17 +270,22 @@ export declare namespace insert {
    * A callback passed to {@link insert}.
    */
   export interface Callback<T> {
-    (text: string, selection: vscode.Selection, index: number, document: vscode.TextDocument): T;
+    (
+      text: string,
+      selection: vscode.Selection,
+      index: number,
+      document: vscode.TextDocument,
+    ): T;
   }
 
   export const Replace: Flags.Replace,
-               Start: Flags.Start,
-               End: Flags.End,
-               Active: Flags.Active,
-               Anchor: Flags.Anchor,
-               Keep: Flags.Keep,
-               Select: Flags.Select,
-               Extend: Flags.Extend;
+    Start: Flags.Start,
+    End: Flags.End,
+    Active: Flags.Active,
+    Anchor: Flags.Anchor,
+    Keep: Flags.Keep,
+    Select: Flags.Select,
+    Extend: Flags.Extend;
 }
 
 for (const [k, v] of Object.entries({
@@ -261,19 +301,21 @@ for (const [k, v] of Object.entries({
   Object.defineProperty(insert, k, { value: v });
 }
 
-export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") {
+export function insertFlagsAtEdge(
+  edge?: "active" | "anchor" | "start" | "end",
+) {
   switch (edge) {
-  case undefined:
-    return insert.Flags.Replace;
+    case undefined:
+      return insert.Flags.Replace;
 
-  case "active":
-    return insert.Flags.Active;
-  case "anchor":
-    return insert.Flags.Anchor;
-  case "start":
-    return insert.Flags.Start;
-  case "end":
-    return insert.Flags.End;
+    case "active":
+      return insert.Flags.Active;
+    case "anchor":
+      return insert.Flags.Anchor;
+    case "start":
+      return insert.Flags.Start;
+    case "end":
+      return insert.Flags.End;
   }
 }
 
@@ -289,7 +331,7 @@ export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") 
  *   be used. Otherwise, must be a `vscode.Selection` array which will be
  *   mapped in the active editor.
  *
- * ### Example
+ * @example
  * ```js
  * Selections.set(await insertByIndex(insert.Start, (i) => `${i + 1}`));
  * ```
@@ -310,7 +352,7 @@ export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") 
  *        ^ 2
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * Selections.set(await insertByIndex(insert.Start | insert.Select, (i) => `${i + 1}`));
  * ```
@@ -331,7 +373,7 @@ export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") 
  *       ^ 2
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * Selections.set(await insertByIndex(insert.Start | insert.Extend, (i) => `${i + 1}`));
  * ```
@@ -352,7 +394,7 @@ export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") 
  *       ^^ 2
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * Selections.set(await insertByIndex(insert.End, (i) => `${i + 1}`));
  * ```
@@ -373,7 +415,7 @@ export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") 
  *       ^ 2
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * Selections.set(await insertByIndex(insert.End | insert.Select, (i) => `${i + 1}`));
  * ```
@@ -394,7 +436,7 @@ export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") 
  *        ^ 2
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * Selections.set(await insertByIndex(insert.End | insert.Extend, (i) => `${i + 1}`));
  * ```
@@ -417,7 +459,9 @@ export function insertFlagsAtEdge(edge?: "active" | "anchor" | "start" | "end") 
  */
 export function insertByIndex(
   flags: insert.Flags,
-  f: insertByIndex.Callback<insert.Result> | insertByIndex.Callback<insert.AsyncResult>,
+  f:
+    | insertByIndex.Callback<insert.Result>
+    | insertByIndex.Callback<insert.AsyncResult>,
   selections: readonly vscode.Selection[] = Context.current.selections,
 ): Thenable<vscode.Selection[]> {
   if (selections.length === 0) {
@@ -425,7 +469,7 @@ export function insertByIndex(
   }
 
   const document = Context.current.document,
-        firstResult = f(0, selections[0], document);
+    firstResult = f(0, selections[0], document);
 
   if (typeof firstResult === "object") {
     // `f` returns promises.
@@ -436,9 +480,9 @@ export function insertByIndex(
     }
 
     return Context.wrap(
-      Promise
-        .all(promises)
-        .then((results) => mapResults(flags, document, selections, results)),
+      Promise.all(promises).then((results) =>
+        mapResults(flags, document, selections, results),
+      ),
     );
   }
 
@@ -457,7 +501,11 @@ export declare namespace insertByIndex {
    * A callback passed to {@link insertByIndex}.
    */
   export interface Callback<T> {
-    (index: number, selection: vscode.Selection, document: vscode.TextDocument): T;
+    (
+      index: number,
+      selection: vscode.Selection,
+      document: vscode.TextDocument,
+    ): T;
   }
 }
 
@@ -467,18 +515,22 @@ export declare namespace insertByIndex {
  */
 export async function insertByIndexWithFullLines(
   flags: insert.Flags,
-  f: insertByIndex.Callback<insert.Result> | insertByIndex.Callback<insert.AsyncResult>,
+  f:
+    | insertByIndex.Callback<insert.Result>
+    | insertByIndex.Callback<insert.AsyncResult>,
   selections: readonly vscode.Selection[] = Context.current.selections,
 ) {
   const document = Context.current.document,
-        allResults = await Promise.all(selections.map((sel, i) => f(i, sel, document)));
+    allResults = await Promise.all(
+      selections.map((sel, i) => f(i, sel, document)),
+    );
 
   // Separate full-line results from all results.
   const results: insert.Result[] = [],
-        resultsSelections: vscode.Selection[] = [],
-        fullLineResults: insert.Result[] = [],
-        fullLineResultsSelections: vscode.Selection[] = [],
-        isFullLines: boolean[] = [];
+    resultsSelections: vscode.Selection[] = [],
+    fullLineResults: insert.Result[] = [],
+    fullLineResultsSelections: vscode.Selection[] = [],
+    isFullLines: boolean[] = [];
 
   for (let i = 0; i < allResults.length; i++) {
     const result = allResults[i];
@@ -508,7 +560,12 @@ export async function insertByIndexWithFullLines(
   );
 
   // Insert non-full lines.
-  const normalSelections = await mapResults(flags, document, resultsSelections, results);
+  const normalSelections = await mapResults(
+    flags,
+    document,
+    resultsSelections,
+    results,
+  );
 
   // Insert full lines.
   const fullLineSelections = savedSelections.restore();
@@ -516,7 +573,7 @@ export async function insertByIndexWithFullLines(
   savedSelections.dispose();
 
   const nextFullLineSelections: vscode.Selection[] = [],
-        insertionPositions: vscode.Position[] = [];
+    insertionPositions: vscode.Position[] = [];
 
   if ((flags & Constants.PositionMask) === insert.Flags.Start) {
     for (const selection of fullLineSelections) {
@@ -527,7 +584,11 @@ export async function insertByIndexWithFullLines(
       if ((flags & Constants.BehaviorMask) === insert.Flags.Extend) {
         nextFullLineSelections.push(
           Selections.fromStartEnd(
-            insertionPosition, selection.end, selection.isReversed, document),
+            insertionPosition,
+            selection.end,
+            selection.isReversed,
+            document,
+          ),
         );
       } else if ((flags & Constants.BehaviorMask) === insert.Flags.Select) {
         nextFullLineSelections.push(Selections.empty(insertionPosition));
@@ -538,14 +599,20 @@ export async function insertByIndexWithFullLines(
     }
   } else {
     for (const selection of fullLineSelections) {
-      const insertionPosition = Positions.lineStart(Selections.endLine(selection) + 1);
+      const insertionPosition = Positions.lineStart(
+        Selections.endLine(selection) + 1,
+      );
 
       insertionPositions.push(insertionPosition);
 
       if ((flags & Constants.BehaviorMask) === insert.Flags.Extend) {
         nextFullLineSelections.push(
           Selections.fromStartEnd(
-            selection.start, insertionPosition, selection.isReversed, document),
+            selection.start,
+            insertionPosition,
+            selection.isReversed,
+            document,
+          ),
         );
       } else if ((flags & Constants.BehaviorMask) === insert.Flags.Select) {
         nextFullLineSelections.push(Selections.empty(insertionPosition));
@@ -600,7 +667,7 @@ export async function insertByIndexWithFullLines(
  *   used. Otherwise, must be a `vscode.Selection` array which will be mapped
  *   in the active editor.
  *
- * ### Example
+ * @example
  * ```js
  * await replace((x) => `${+x * 2}`);
  * ```
@@ -645,7 +712,12 @@ export declare namespace replace {
    * A callback passed to {@link replace}.
    */
   export interface Callback<T> {
-    (text: string, selection: vscode.Selection, index: number, document: vscode.TextDocument): T;
+    (
+      text: string,
+      selection: vscode.Selection,
+      index: number,
+      document: vscode.TextDocument,
+    ): T;
   }
 }
 
@@ -661,7 +733,7 @@ export declare namespace replace {
  *   be used. Otherwise, must be a `vscode.Selection` array which will be
  *   mapped in the active editor.
  *
- * ### Example
+ * @example
  * ```js
  * await replaceByIndex((i) => `${i + 1}`);
  * ```
@@ -683,7 +755,9 @@ export declare namespace replace {
  * ```
  */
 export function replaceByIndex(
-  f: replaceByIndex.Callback<replace.Result> | replaceByIndex.Callback<replace.AsyncResult>,
+  f:
+    | replaceByIndex.Callback<replace.Result>
+    | replaceByIndex.Callback<replace.AsyncResult>,
   selections?: readonly vscode.Selection[],
 ): Thenable<vscode.Selection[]> {
   return insertByIndex(insert.Flags.Replace, f, selections);
@@ -694,7 +768,11 @@ export declare namespace replaceByIndex {
    * A callback passed to {@link replaceByIndex}.
    */
   export interface Callback<T> {
-    (index: number, selection: vscode.Selection, document: vscode.TextDocument): T;
+    (
+      index: number,
+      selection: vscode.Selection,
+      document: vscode.TextDocument,
+    ): T;
   }
 }
 
@@ -705,7 +783,7 @@ export declare namespace replaceByIndex {
  *   used. Otherwise, must be a `vscode.Selection` array which will be mapped
  *   in the active editor.
  *
- * ### Example
+ * @example
  * ```js
  * await rotate(1);
  * ```
@@ -727,7 +805,9 @@ export declare namespace replaceByIndex {
  * ```
  */
 export function rotate(by: number, selections?: readonly vscode.Selection[]) {
-  return rotateContents(by, selections).then((selections) => rotateSelections(by, selections));
+  return rotateContents(by, selections).then((selections) =>
+    rotateSelections(by, selections),
+  );
 }
 
 /**
@@ -735,7 +815,7 @@ export function rotate(by: number, selections?: readonly vscode.Selection[]) {
  *
  * @see {@link rotate}
  *
- * ### Example
+ * @example
  * ```js
  * await rotateContents(1);
  * ```
@@ -780,7 +860,7 @@ export function rotateContents(
  *
  * @see {@link rotate}
  *
- * ### Example
+ * @example
  * ```js
  * rotateSelections(1);
  * ```
@@ -801,6 +881,9 @@ export function rotateContents(
  *     ^ 0
  * ```
  */
-export function rotateSelections(by: number, selections?: readonly vscode.Selection[]) {
+export function rotateSelections(
+  by: number,
+  selections?: readonly vscode.Selection[],
+) {
   Selections.set(Selections.rotate(by, selections));
 }

@@ -8,9 +8,9 @@ import type { PerEditorState } from "../state/editors";
 export function assert(condition: boolean): asserts condition {
   if (!condition) {
     const error = new Error(
-      "internal assertion failed; please report this error on https://github.com/71/dance/issues. "
-      + "its stacktrace is available in the developer console (Command Palette > Open Developer "
-      + "Tools).",
+      "internal assertion failed; please report this error on https://github.com/71/dance/issues. " +
+        "its stacktrace is available in the developer console (Command Palette > Open Developer " +
+        "Tools).",
     );
 
     // Log error to ensure its stacktrace can be found.
@@ -45,7 +45,9 @@ export class EmptySelectionsError extends Error {
     registerName: string,
   ): asserts selections is readonly T[] {
     if (selections === undefined || selections.length === 0) {
-      throw new EmptySelectionsError(`no selections are saved in register "${registerName}"`);
+      throw new EmptySelectionsError(
+        `no selections are saved in register "${registerName}"`,
+      );
     }
   }
 }
@@ -103,7 +105,9 @@ export class NotASelectionError extends ArgumentError {
   /**
    * Throws if the given value is not a `vscode.Selection`.
    */
-  public static throwIfNotASelection(value: unknown): asserts value is vscode.Selection {
+  public static throwIfNotASelection(
+    value: unknown,
+  ): asserts value is vscode.Selection {
     if (!(value instanceof vscode.Selection)) {
       throw new NotASelectionError(value);
     }
@@ -113,7 +117,9 @@ export class NotASelectionError extends ArgumentError {
    * Throws if the given list contains a value that is not a `vscode.Selection`,
    * or if the list is empty.
    */
-  public static throwIfNotASelectionArray(value: unknown): asserts value is vscode.Selection[] {
+  public static throwIfNotASelectionArray(
+    value: unknown,
+  ): asserts value is vscode.Selection[] {
     if (!Array.isArray(value) || value.length === 0) {
       throw new EmptySelectionsError();
     }
@@ -133,9 +139,9 @@ export class EditorRequiredError extends Error {
     super("active editor required");
   }
 
-  public static throwUnlessAvailable<T extends PerEditorState | vscode.TextEditor>(
-    editorState: T | undefined,
-  ): asserts editorState is T {
+  public static throwUnlessAvailable<
+    T extends PerEditorState | vscode.TextEditor,
+  >(editorState: T | undefined): asserts editorState is T {
     if (editorState === undefined) {
       throw new EditorRequiredError();
     }
@@ -146,9 +152,7 @@ export class EditorRequiredError extends Error {
  * Error thrown when a cancellation is requested.
  */
 export class CancellationError extends Error {
-  public constructor(
-    public readonly reason: CancellationError.Reason,
-  ) {
+  public constructor(public readonly reason: CancellationError.Reason) {
     super(reason);
   }
 
@@ -193,7 +197,9 @@ export class EditNotAppliedError extends Error {
   /**
    * Throws if the given value is `false`.
    */
-  public static throwIfNotApplied(editWasApplied: boolean): asserts editWasApplied {
+  public static throwIfNotApplied(
+    editWasApplied: boolean,
+  ): asserts editWasApplied {
     if (!editWasApplied) {
       throw new EditNotAppliedError();
     }

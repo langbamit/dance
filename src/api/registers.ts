@@ -19,7 +19,9 @@ export function get(registerOrName: string | Register) {
  * Returns the string values stored in the specified register, or `undefined` if
  * no values are available.
  */
-export function values(registerOrName: string | Register.WithFlags<Register.Flags.CanRead>) {
+export function values(
+  registerOrName: string | Register.WithFlags<[Register.Flags.CanRead]>,
+) {
   const register: Register = get(registerOrName);
 
   try {
@@ -36,7 +38,7 @@ export function values(registerOrName: string | Register.WithFlags<Register.Flag
  * or `undefined` if such a value is unavailable.
  */
 export async function value(
-  registerOrName: string | Register.WithFlags<Register.Flags.CanRead>,
+  registerOrName: string | Register.WithFlags<[Register.Flags.CanRead]>,
   index: number,
 ) {
   return (await values(registerOrName))?.[index];
@@ -46,7 +48,7 @@ export async function value(
  * Stores and returns the string values in the specified register.
  */
 export function storeValues(
-  registerOrName: string | Register.WithFlags<Register.Flags.CanWrite>,
+  registerOrName: string | Register.WithFlags<[Register.Flags.CanWrite]>,
   text?: readonly string[],
 ) {
   const register: Register = get(registerOrName);
@@ -62,8 +64,12 @@ export function storeValues(
  * the given function.
  */
 export async function updateValues(
-  registerOrName: string | Register.WithFlags<Register.Flags.CanRead | Register.Flags.CanWrite>,
-  update: (values: readonly string[] | undefined) => Thenable<readonly string[] | undefined>,
+  registerOrName:
+    | string
+    | Register.WithFlags<[Register.Flags.CanRead | Register.Flags.CanWrite]>,
+  update: (
+    values: readonly string[] | undefined,
+  ) => Thenable<readonly string[] | undefined>,
 ) {
   const register: Register = get(registerOrName);
 
@@ -80,7 +86,9 @@ export async function updateValues(
 /**
  * Clears the string values stored in the specified register.
  */
-export function clearValues(registerOrName: string | Register.WithFlags<Register.Flags.CanWrite>) {
+export function clearValues(
+  registerOrName: string | Register.WithFlags<[Register.Flags.CanWrite]>,
+) {
   const register: Register = get(registerOrName);
 
   register.ensureCanWrite();
@@ -93,7 +101,9 @@ export function clearValues(registerOrName: string | Register.WithFlags<Register
  * selections are available.
  */
 export function selections(
-  registerOrName: string | Register.WithFlags<Register.Flags.CanReadSelections>,
+  registerOrName:
+    | string
+    | Register.WithFlags<[Register.Flags.CanReadSelections]>,
 ) {
   const register: Register = get(registerOrName);
 
@@ -111,7 +121,9 @@ export function selections(
  * `undefined` if such a selection is unavailable.
  */
 export async function selection(
-  registerOrName: string | Register.WithFlags<Register.Flags.CanReadSelections>,
+  registerOrName:
+    | string
+    | Register.WithFlags<[Register.Flags.CanReadSelections]>,
   index: number,
 ) {
   return (await selections(registerOrName))?.[index];
@@ -121,7 +133,9 @@ export async function selection(
  * Stores and returns the selections in the specified register.
  */
 export function storeSelections(
-  registerOrName: string | Register.WithFlags<Register.Flags.CanWriteSelections>,
+  registerOrName:
+    | string
+    | Register.WithFlags<[Register.Flags.CanWriteSelections]>,
   selections?: readonly vscode.Selection[],
 ) {
   const register: Register = get(registerOrName);
@@ -137,10 +151,14 @@ export function storeSelections(
  * given function.
  */
 export async function updateSelections(
-  registerOrName: string | Register.WithFlags<
-      Register.Flags.CanReadSelections | Register.Flags.CanWriteSelections>,
-  update: (values: readonly vscode.Selection[] | undefined) =>
-      Thenable<readonly vscode.Selection[] | undefined>,
+  registerOrName:
+    | string
+    | Register.WithFlags<
+        [Register.Flags.CanReadSelections, Register.Flags.CanWriteSelections]
+      >,
+  update: (
+    values: readonly vscode.Selection[] | undefined,
+  ) => Thenable<readonly vscode.Selection[] | undefined>,
 ) {
   const register: Register = get(registerOrName);
 
@@ -162,7 +180,9 @@ export async function updateSelections(
  * Clears the selections stored in the specified register.
  */
 export function clearSelections(
-  registerOrName: string | Register.WithFlags<Register.Flags.CanWriteSelections>,
+  registerOrName:
+    | string
+    | Register.WithFlags<[Register.Flags.CanWriteSelections]>,
 ) {
   const register: Register = get(registerOrName);
 

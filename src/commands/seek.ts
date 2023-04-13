@@ -1,7 +1,27 @@
 import * as vscode from "vscode";
 
-import type { Argument, InputOr } from ".";
-import { closestSurroundedBy, command, Context, Direction, keypress, Lines, moveToExcluded, moveWhileBackward, moveWhileForward, Objects, Pair, pair, Positions, prompt, search, SelectionBehavior, Selections, Shift, surroundedBy, wordBoundary } from "../api";
+import type { CommandArguments } from ".";
+import {
+  closestSurroundedBy,
+  Context,
+  Direction,
+  keypress,
+  Lines,
+  moveToExcluded,
+  moveWhileBackward,
+  moveWhileForward,
+  Objects,
+  Pair,
+  pair,
+  Positions,
+  prompt,
+  search,
+  SelectionBehavior,
+  Selections,
+  Shift,
+  surroundedBy,
+  wordBoundary,
+} from "../api";
 import { CharSet } from "../utils/charset";
 import { ArgumentError, assert } from "../utils/errors";
 import { escapeForRegExp, execRange } from "../utils/regexp";
@@ -15,33 +35,41 @@ declare module "./seek";
 /**
  * Select to character (excluded).
  *
- * @keys `t` (kakoune: normal)
+ * @keys `t` (helix: normal)
+ * @commands
  *
- * #### Variants
  *
- * | Title                                    | Identifier                 | Keybinding                | Command                                                             |
- * | ---------------------------------------- | -------------------------- | ------------------------- | ------------------------------------------------------------------- |
- * | Extend to character (excluded)           | `extend`                   | `s-t` (kakoune: normal)   | `[".seek", {                shift: "extend"               , ... }]` |
- * | Select to character (excluded, backward) | `backward`                 | `a-t` (kakoune: normal)   | `[".seek", {                                 direction: -1, ... }]` |
- * | Extend to character (excluded, backward) | `extend.backward`          | `s-a-t` (kakoune: normal) | `[".seek", {                shift: "extend", direction: -1, ... }]` |
- * | Select to character (included)           | `included`                 | `f` (kakoune: normal)     | `[".seek", { include: true                                , ... }]` |
- * | Extend to character (included)           | `included.extend`          | `s-f` (kakoune: normal)   | `[".seek", { include: true, shift: "extend"               , ... }]` |
- * | Select to character (included, backward) | `included.backward`        | `a-f` (kakoune: normal)   | `[".seek", { include: true,                  direction: -1, ... }]` |
- * | Extend to character (included, backward) | `included.extend.backward` | `s-a-f` (kakoune: normal) | `[".seek", { include: true, shift: "extend", direction: -1, ... }]` |
+ * | Title                                    | Identifier                 | Keybinding            | Command                                                             |
+ * | ---------------------------------------- | -------------------------- | --------------------- | ------------------------------------------------------------------- |
+ * | Extend to character (excluded)           | `extend`                   | `t` (helix: select)   | `[".seek", {                shift: "extend"               , ... }]` |
+ * | Select to character (excluded, backward) | `backward`                 | `s-t` (helix: normal) | `[".seek", {                                 direction: -1, ... }]` |
+ * | Extend to character (excluded, backward) | `extend.backward`          | `s-t` (helix: select) | `[".seek", {                shift: "extend", direction: -1, ... }]` |
+ * | Select to character (included)           | `included`                 | `f` (helix: normal)   | `[".seek", { include: true                                , ... }]` |
+ * | Extend to character (included)           | `included.extend`          | `f` (helix: select)   | `[".seek", { include: true, shift: "extend"               , ... }]` |
+ * | Select to character (included, backward) | `included.backward`        | `s-f` (helix: normal) | `[".seek", { include: true,                  direction: -1, ... }]` |
+ * | Extend to character (included, backward) | `included.extend.backward` | `s-f` (helix: select) | `[".seek", { include: true, shift: "extend", direction: -1, ... }]` |
+ 
  */
-export async function seek(
-  _: Context,
-  inputOr: InputOr<"input", string>,
-
-  repetitions: number,
+export async function seek({
+  _,
+  getInputOr,
+  repetitions,
   direction = Direction.Forward,
   shift = Shift.Select,
-  include: Argument<boolean> = false,
-) {
+  include = false,
+}: CommandArguments<{
+  direction?: Direction;
+  shift?: Shift;
+  include?: boolean;
+}>) {
+  const inputOr = getInputOr("input");
   const input = await inputOr(() => keypress(_));
 
   Selections.updateByIndex((_, selection, document) => {
-    let position: vscode.Position | undefined = Selections.seekFrom(selection, -direction);
+    let position: vscode.Position | undefined = Selections.seekFrom(
+      selection,
+      -direction,
+    );
 
     for (let i = 0; i < repetitions; i++) {
       position = Positions.offset(position, direction, document);
@@ -57,7 +85,14 @@ export async function seek(
       }
     }
 
-    if (include && !(shift === Shift.Extend && direction === Direction.Backward && position.isAfter(selection.anchor))) {
+    if (
+      include &&
+      !(
+        shift === Shift.Extend &&
+        direction === Direction.Backward &&
+        position.isAfter(selection.anchor)
+      )
+    ) {
       position = Positions.offset(position, input.length * direction);
 
       if (position === undefined) {
@@ -70,50 +105,72 @@ export async function seek(
 }
 
 const defaultEnclosingPatterns = [
-  "\\[", "\\]",
-  "\\(", "\\)",
-  "\\{", "\\}",
-  "/\\*", "\\*/",
-  "\\bbegin\\b", "\\bend\\b",
+  "\\[",
+  "\\]",
+  "\\(",
+  "\\)",
+  "\\{",
+  "\\}",
+  "/\\*",
+  "\\*/",
+  "\\bbegin\\b",
+  "\\bend\\b",
 ];
 
 /**
  * Select to next enclosing character.
  *
- * @keys `m` (kakoune: normal)
+ * @commands
  *
- * #### Variants
  *
  * | Title                                  | Identifier                  | Keybinding                | Command                                                        |
  * | -------------------------------------- | --------------------------- | ------------------------- | -------------------------------------------------------------- |
- * | Extend to next enclosing character     | `enclosing.extend`          | `s-m` (kakoune: normal)   | `[".seek.enclosing", { shift: "extend"               , ... }]` |
- * | Select to previous enclosing character | `enclosing.backward`        | `a-m` (kakoune: normal)   | `[".seek.enclosing", {                  direction: -1, ... }]` |
- * | Extend to previous enclosing character | `enclosing.extend.backward` | `s-a-m` (kakoune: normal) | `[".seek.enclosing", { shift: "extend", direction: -1, ... }]` |
+ * | Extend to next enclosing character     | `enclosing.extend`          |                           | `[".seek.enclosing", { shift: "extend"               , ... }]` |
+ * | Select to previous enclosing character | `enclosing.backward`        |                           | `[".seek.enclosing", {                  direction: -1, ... }]` |
+ * | Extend to previous enclosing character | `enclosing.extend.backward` |                           | `[".seek.enclosing", { shift: "extend", direction: -1, ... }]` |
+ 
  */
-export function enclosing(
-  _: Context,
-
+export function enclosing({
+  _,
   direction = Direction.Forward,
   shift = Shift.Select,
-  open: Argument<boolean> = true,
-  pairs?: Argument<readonly string[]>,
-) {
+  open = true,
+  pairs,
+}: CommandArguments<{
+  direction?: Direction;
+  shift?: Shift;
+  open?: boolean;
+  pairs?: readonly string[];
+}>) {
   if (pairs === undefined) {
     // Find bracket pairs for current language, if any.
-    const languageConfig = vscode.workspace.getConfiguration("editor.language", _.document),
-          bracketsConfig = languageConfig.get<readonly [string, string][]>("brackets");
+    const languageConfig = vscode.workspace.getConfiguration(
+        "editor.language",
+        _.document,
+      ),
+      bracketsConfig =
+        languageConfig.get<readonly [string, string][]>("brackets");
 
     if (Array.isArray(bracketsConfig)) {
       const flattenedPairs: string[] = [];
 
       for (const bracketPair of bracketsConfig) {
-        if (!Array.isArray(bracketPair) || bracketPair.length !== 2
-            || typeof bracketPair[0] !== "string" || typeof bracketPair[1] !== "string") {
-          throw new Error("setting `editor.language.brackets` contains an invalid entry: "
-                          + JSON.stringify(bracketPair));
+        if (
+          !Array.isArray(bracketPair) ||
+          bracketPair.length !== 2 ||
+          typeof bracketPair[0] !== "string" ||
+          typeof bracketPair[1] !== "string"
+        ) {
+          throw new Error(
+            "setting `editor.language.brackets` contains an invalid entry: " +
+              JSON.stringify(bracketPair),
+          );
         }
 
-        flattenedPairs.push(escapeForRegExp(bracketPair[0]), escapeForRegExp(bracketPair[1]));
+        flattenedPairs.push(
+          escapeForRegExp(bracketPair[0]),
+          escapeForRegExp(bracketPair[1]),
+        );
       }
 
       pairs = flattenedPairs;
@@ -128,11 +185,12 @@ export function enclosing(
     "an even number of pairs must be given",
   );
 
-  const selectionBehavior = _.selectionBehavior,
-        compiledPairs = [] as Pair[];
+  const compiledPairs = [] as Pair[];
 
   for (let i = 0; i < pairs.length; i += 2) {
-    compiledPairs.push(pair(new RegExp(pairs[i], "mu"), new RegExp(pairs[i + 1], "mu")));
+    compiledPairs.push(
+      pair(new RegExp(pairs[i], "mu"), new RegExp(pairs[i + 1], "mu")),
+    );
   }
 
   // This command intentionally ignores repetitions to be consistent with
@@ -144,19 +202,35 @@ export function enclosing(
     // First, find an enclosing char (which may be the current character).
     let currentCharacter = selection.active;
 
-    if (direction === Direction.Backward && selection.isReversed && !selection.isEmpty) {
+    if (
+      direction === Direction.Backward &&
+      selection.isReversed &&
+      !selection.isEmpty
+    ) {
       // When moving backwards, the first character to consider is the
       // character to the left, not the right. However, we hackily special
       // case `|[foo]>` (> is anchor, | is active) to jump to the end in the
       // current group.
-      currentCharacter = Positions.previous(currentCharacter, document) ?? currentCharacter;
-    } else if (direction === Direction.Forward && !selection.isReversed && !selection.isEmpty) {
+      currentCharacter =
+        Positions.previous(currentCharacter, document) ?? currentCharacter;
+    } else if (
+      direction === Direction.Forward &&
+      !selection.isReversed &&
+      !selection.isEmpty
+    ) {
       // Similarly, we special case `<[foo]|` to jump back in the current
       // group.
-      currentCharacter = Positions.previous(currentCharacter, document) ?? currentCharacter;
+      currentCharacter =
+        Positions.previous(currentCharacter, document) ?? currentCharacter;
     }
 
-    const enclosedRange = closestSurroundedBy(compiledPairs, direction, currentCharacter, open, document);
+    const enclosedRange = closestSurroundedBy(
+      compiledPairs,
+      direction,
+      currentCharacter,
+      open,
+      document,
+    );
 
     if (enclosedRange === undefined) {
       return undefined;
@@ -175,37 +249,48 @@ export function enclosing(
  *
  * Select the word and following whitespaces on the right of the end of each selection.
  *
- * @keys `w` (kakoune: normal)
+ * @keys `w` (helix: normal)
+ * @commands
  *
  * #### Variants
  *
- * | Title                                        | Identifier                | Keybinding                | Command                                                                               |
- * | -------------------------------------------- | ------------------------- | ------------------------- | ------------------------------------------------------------------------------------- |
- * | Extend to next word start                    | `word.extend`             | `s-w` (kakoune: normal)   | `[".seek.word", {                             shift: "extend"               , ... }]` |
- * | Select to previous word start                | `word.backward`           | `b` (kakoune: normal)     | `[".seek.word", {                                              direction: -1, ... }]` |
- * | Extend to previous word start                | `word.extend.backward`    | `s-b` (kakoune: normal)   | `[".seek.word", {                             shift: "extend", direction: -1, ... }]` |
- * | Select to next non-whitespace word start     | `word.ws`                 | `a-w` (kakoune: normal)   | `[".seek.word", {                   ws: true                                , ... }]` |
- * | Extend to next non-whitespace word start     | `word.ws.extend`          | `s-a-w` (kakoune: normal) | `[".seek.word", {                   ws: true, shift: "extend"               , ... }]` |
- * | Select to previous non-whitespace word start | `word.ws.backward`        | `a-b` (kakoune: normal)   | `[".seek.word", {                   ws: true,                  direction: -1, ... }]` |
- * | Extend to previous non-whitespace word start | `word.ws.extend.backward` | `s-a-b` (kakoune: normal) | `[".seek.word", {                   ws: true, shift: "extend", direction: -1, ... }]` |
- * | Select to next word end                      | `wordEnd`                 | `e` (kakoune: normal)     | `[".seek.word", { stopAtEnd: true                                           , ... }]` |
- * | Extend to next word end                      | `wordEnd.extend`          | `s-e` (kakoune: normal)   | `[".seek.word", { stopAtEnd: true ,           shift: "extend"               , ... }]` |
- * | Select to next non-whitespace word end       | `wordEnd.ws`              | `a-e` (kakoune: normal)   | `[".seek.word", { stopAtEnd: true , ws: true                                , ... }]` |
- * | Extend to next non-whitespace word end       | `wordEnd.ws.extend`       | `s-a-e` (kakoune: normal) | `[".seek.word", { stopAtEnd: true , ws: true, shift: "extend"               , ... }]` |
+ * | Title                                        | Identifier                | Keybinding            | Command                                                                               |
+ * | -------------------------------------------- | ------------------------- | --------------------- | ------------------------------------------------------------------------------------- |
+ * | Extend to next word start                    | `word.extend`             | `w` (helix: select)   | `[".seek.word", {                             shift: "extend"               , ... }]` |
+ * | Select to previous word start                | `word.backward`           | `b` (helix: normal)   | `[".seek.word", {                                              direction: -1, ... }]` |
+ * | Extend to previous word start                | `word.extend.backward`    | `b` (helix: select)   | `[".seek.word", {                             shift: "extend", direction: -1, ... }]` |
+ * | Select to next non-whitespace word start     | `word.ws`                 | `s-w` (helix: normal) | `[".seek.word", {                   ws: true                                , ... }]` |
+ * | Extend to next non-whitespace word start     | `word.ws.extend`          | `s-w` (helix: select) | `[".seek.word", {                   ws: true, shift: "extend"               , ... }]` |
+ * | Select to previous non-whitespace word start | `word.ws.backward`        | `s-b` (helix: normal) | `[".seek.word", {                   ws: true,                  direction: -1, ... }]` |
+ * | Extend to previous non-whitespace word start | `word.ws.extend.backward` | `s-b` (helix: select) | `[".seek.word", {                   ws: true, shift: "extend", direction: -1, ... }]` |
+ * | Select to next word end                      | `wordEnd`                 | `e` (helix: normal)   | `[".seek.word", { stopAtEnd: true                                           , ... }]` |
+ * | Extend to next word end                      | `wordEnd.extend`          | `e` (helix: select)   | `[".seek.word", { stopAtEnd: true ,           shift: "extend"               , ... }]` |
+ * | Select to next non-whitespace word end       | `wordEnd.ws`              | `s-e` (helix: normal) | `[".seek.word", { stopAtEnd: true , ws: true                                , ... }]` |
+ * | Extend to next non-whitespace word end       | `wordEnd.ws.extend`       | `s-e` (helix: select) | `[".seek.word", { stopAtEnd: true , ws: true, shift: "extend"               , ... }]` |
+ 
  */
-export function word(
-  _: Context,
-
-  repetitions: number,
-  stopAtEnd: Argument<boolean> = false,
-  ws: Argument<boolean> = false,
+export function word({
+  _,
+  repetitions,
+  stopAtEnd = false,
+  ws = false,
   direction = Direction.Forward,
   shift = Shift.Select,
-) {
+}: CommandArguments<{
+  stopAtEnd?: boolean;
+  ws?: boolean;
+  direction?: Direction;
+  shift?: Shift;
+}>) {
   const charset = ws ? CharSet.NonBlank : CharSet.Word;
 
   Selections.updateWithFallbackByIndex((_i, selection) => {
-    const anchor = Selections.seekFrom(selection, direction, selection.anchor, _);
+    const anchor = Selections.seekFrom(
+      selection,
+      direction,
+      selection.anchor,
+      _,
+    );
     let active = Selections.seekFrom(selection, direction, selection.active, _);
 
     for (let i = 0; i < repetitions; i++) {
@@ -217,9 +302,12 @@ export function word(
           // here.
           // Instead of overflowing, put anchor at document start and
           // active always on the first character on the second line.
-          const end = _.selectionBehavior === SelectionBehavior.Caret
-            ? Positions.lineStart(1)
-            : (Lines.isEmpty(1) ? Positions.lineStart(2) : Positions.at(1, 1));
+          const end =
+            _.selectionBehavior === SelectionBehavior.Caret
+              ? Positions.lineStart(1)
+              : Lines.isEmpty(1)
+              ? Positions.lineStart(2)
+              : Positions.at(1, 1);
 
           return new vscode.Selection(Positions.lineStart(0), end);
         }
@@ -263,51 +351,76 @@ let lastObjectInput: string | undefined;
  * - Matches that may only span a single line: `(?#singleline)<regexp>`.
  * - Predefined: `(?#predefined=<argument | paragraph | sentence>)`.
  *
- * #### Variants
+ * @commands
+ *
  *
  * | Title                        | Identifier                     | Keybinding                                       | Command                                                                                       |
  * | ---------------------------- | ------------------------------ | ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
- * | Select whole object          | `askObject`                    | `a-a` (kakoune: normal), `a-a` (kakoune: insert) | `[".openMenu", { menu: "object",                          title: "Select whole object..." }]` |
- * | Select inner object          | `askObject.inner`              | `a-i` (kakoune: normal), `a-i` (kakoune: insert) | `[".openMenu", { menu: "object", pass: [{ inner: true }], title: "Select inner object..." }]` |
- * | Select to whole object start | `askObject.start`              | `[` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "start"                  }] }]` |
- * | Extend to whole object start | `askObject.start.extend`       | `{` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "start", shift: "extend" }] }]` |
- * | Select to inner object start | `askObject.inner.start`        | `a-[` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "start"                  }] }]` |
- * | Extend to inner object start | `askObject.inner.start.extend` | `a-{` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "start", shift: "extend" }] }]` |
- * | Select to whole object end   | `askObject.end`                | `]` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "end"                    }] }]` |
- * | Extend to whole object end   | `askObject.end.extend`         | `}` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "end"  , shift: "extend" }] }]` |
- * | Select to inner object end   | `askObject.inner.end`          | `a-]` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "end"                    }] }]` |
- * | Extend to inner object end   | `askObject.inner.end.extend`   | `a-}` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "end"  , shift: "extend" }] }]` |
+ * | Select whole object          | `askObject`                    |                                                  | `[".openMenu", { menu: "object",                          title: "Select whole object..." }]` |
+ * | Select inner object          | `askObject.inner`              |                                                  | `[".openMenu", { menu: "object", pass: [{ inner: true }], title: "Select inner object..." }]` |
+ * | Select to whole object start | `askObject.start`              |                                                  | `[".openMenu", { menu: "object", pass: [{              where: "start"                  }] }]` |
+ * | Extend to whole object start | `askObject.start.extend`       |                                                  | `[".openMenu", { menu: "object", pass: [{              where: "start", shift: "extend" }] }]` |
+ * | Select to inner object start | `askObject.inner.start`        |                                                  | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "start"                  }] }]` |
+ * | Extend to inner object start | `askObject.inner.start.extend` |                                                  | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "start", shift: "extend" }] }]` |
+ * | Select to whole object end   | `askObject.end`                |                                                  | `[".openMenu", { menu: "object", pass: [{              where: "end"                    }] }]` |
+ * | Extend to whole object end   | `askObject.end.extend`         |                                                  | `[".openMenu", { menu: "object", pass: [{              where: "end"  , shift: "extend" }] }]` |
+ * | Select to inner object end   | `askObject.inner.end`          |                                                  | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "end"                    }] }]` |
+ * | Extend to inner object end   | `askObject.inner.end.extend`   |                                                  | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "end"  , shift: "extend" }] }]` |
+ *
+ * @ignore
+ * `a-a` (kakoune: normal), `a-a` (kakoune: insert)
+ * `a-i` (kakoune: normal), `a-i` (kakoune: insert)
+ * `[` (kakoune: normal)
+ * `{` (kakoune: normal)
+ * `a-[` (kakoune: normal)
+ * `a-{` (kakoune: normal)
+ * `]` (kakoune: normal)
+ * `}` (kakoune: normal)
+ * `a-]` (kakoune: normal)
+ * `a-}` (kakoune: normal)
  */
-export async function object(
-  _: Context,
-
-  inputOr: InputOr<"input", string>,
-  inner: Argument<boolean> = false,
-  where?: Argument<"start" | "end">,
+export async function object({
+  _,
+  getInputOr,
+  inner = false,
+  where,
   shift = Shift.Select,
-) {
-  const input = await inputOr(() => prompt({
-    prompt: "Object description",
-    value: lastObjectInput,
-  }));
+}: CommandArguments<{
+  inner?: boolean;
+  where?: "start" | "end";
+  shift?: Shift;
+}>) {
+  const inputOr = getInputOr("input");
+  const input = await inputOr(() =>
+    prompt({
+      prompt: "Object description",
+      value: lastObjectInput,
+    }),
+  );
 
   let match: RegExpExecArray | null;
 
-  if (match = /^(.+)\(\?#inner\)(.+)$/s.exec(input)) {
+  if ((match = /^(.+)\(\?#inner\)(.+)$/s.exec(input))) {
     const openRe = new RegExp(preprocessRegExp(match[1]), "u"),
-          closeRe = new RegExp(preprocessRegExp(match[2]), "u"),
-          p = pair(openRe, closeRe);
+      closeRe = new RegExp(preprocessRegExp(match[2]), "u"),
+      p = pair(openRe, closeRe);
 
     if (where === "start") {
       return Selections.updateByIndex((_i, selection) => {
-        const startResult = p.searchOpening(Selections.activeStart(selection, _));
+        const startResult = p.searchOpening(
+          Selections.activeStart(selection, _),
+        );
 
         if (startResult === undefined) {
           return;
         }
 
         const start = inner
-          ? Positions.offset(startResult[0], startResult[1][0].length, _.document) ?? startResult[0]
+          ? Positions.offset(
+              startResult[0],
+              startResult[1][0].length,
+              _.document,
+            ) ?? startResult[0]
           : startResult[0];
 
         return Selections.shift(selection, start, shift, _);
@@ -324,7 +437,11 @@ export async function object(
 
         const end = inner
           ? endResult[0]
-          : Positions.offset(endResult[0], endResult[1][0].length, _.document) ?? endResult[0];
+          : Positions.offset(
+              endResult[0],
+              endResult[1][0].length,
+              _.document,
+            ) ?? endResult[0];
 
         return Selections.shift(selection, end, shift, _);
       });
@@ -337,12 +454,16 @@ export async function object(
         // If the selection behavior is character and the current character
         // corresponds to the start of a pair, we select from here.
         const searchStart = Selections.activeStart(selection, _),
-              searchStartResult = search(Direction.Forward, startRe, searchStart);
+          searchStartResult = search(Direction.Forward, startRe, searchStart);
 
         if (searchStartResult?.[1][0].length === 1) {
           const start = searchStartResult[0],
-                innerStart = Positions.offset(start, searchStartResult[1][0].length, _.document)!,
-                endResult = p.searchClosing(innerStart);
+            innerStart = Positions.offset(
+              start,
+              searchStartResult[1][0].length,
+              _.document,
+            )!,
+            endResult = p.searchClosing(innerStart);
 
           if (endResult === undefined) {
             return undefined;
@@ -359,26 +480,50 @@ export async function object(
         }
 
         // Otherwise, we select from the end of the current selection.
-        return surroundedBy([p], Selections.activeStart(selection, _), !inner, _.document);
+        return surroundedBy(
+          [p],
+          Selections.activeStart(selection, _),
+          !inner,
+          _.document,
+        );
       });
     }
 
-    return Selections.updateByIndex(
-      (_i, selection) => surroundedBy([p], Selections.activeStart(selection, _), !inner, _.document),
+    return Selections.updateByIndex((_i, selection) =>
+      surroundedBy(
+        [p],
+        Selections.activeStart(selection, _),
+        !inner,
+        _.document,
+      ),
     );
   }
 
-  if (match =
-        /^(?:\(\?<before>(\[.+?\])\+\))?(\[.+\])\+(?:\(\?<after>(\[.+?\])\+\))?$/.exec(input)) {
+  if (
+    (match =
+      /^(?:\(\?<before>(\[.+?\])\+\))?(\[.+\])\+(?:\(\?<after>(\[.+?\])\+\))?$/.exec(
+        input,
+      ))
+  ) {
     const re = new RegExp(match[2], "u"),
-          beforeRe = inner || match[1] === undefined ? undefined : new RegExp(match[1], "u"),
-          afterRe = inner || match[3] === undefined ? undefined : new RegExp(match[3], "u");
+      beforeRe =
+        inner || match[1] === undefined ? undefined : new RegExp(match[1], "u"),
+      afterRe =
+        inner || match[3] === undefined ? undefined : new RegExp(match[3], "u");
 
     return shiftWhere(
       _,
       (selection, _) => {
-        let start = moveWhileBackward((c) => re.test(c), selection.active, _.document),
-            end = moveWhileForward((c) => re.test(c), selection.active, _.document);
+        let start = moveWhileBackward(
+            (c) => re.test(c),
+            selection.active,
+            _.document,
+          ),
+          end = moveWhileForward(
+            (c) => re.test(c),
+            selection.active,
+            _.document,
+          );
 
         if (beforeRe !== undefined) {
           start = moveWhileBackward((c) => beforeRe.test(c), start, _.document);
@@ -395,15 +540,15 @@ export async function object(
     );
   }
 
-  if (match = /^\(\?#singleline\)(.+)$/.exec(input)) {
+  if ((match = /^\(\?#singleline\)(.+)$/.exec(input))) {
     const re = new RegExp(preprocessRegExp(match[1]), "u");
 
     return shiftWhere(
       _,
       (selection, _) => {
         const line = Selections.activeLine(selection),
-              lineText = _.document.lineAt(line).text,
-              matches = execRange(lineText, re);
+          lineText = _.document.lineAt(line).text,
+          matches = execRange(lineText, re);
 
         // Find match at text position.
         const character = Selections.activeCharacter(selection, _.document);
@@ -437,19 +582,23 @@ export async function object(
     );
   }
 
-  if (match = /^\(\?#predefined=(argument|indent|paragraph|sentence)\)$/.exec(input)) {
+  if (
+    (match = /^\(\?#predefined=(argument|indent|paragraph|sentence)\)$/.exec(
+      input,
+    ))
+  ) {
     let f: Objects.Seek;
 
     switch (match[1]) {
-    case "argument":
-    case "indent":
-    case "paragraph":
-    case "sentence":
-      f = Objects[match[1]];
-      break;
+      case "argument":
+      case "indent":
+      case "paragraph":
+      case "sentence":
+        f = Objects[match[1]];
+        break;
 
-    default:
-      assert(false);
+      default:
+        assert(false);
     }
 
     let newSelections: vscode.Selection[];
@@ -460,7 +609,10 @@ export async function object(
         let shiftTo = f.start(activePosition, inner, document);
 
         if (shiftTo.isEqual(activePosition)) {
-          const activePositionBefore = Positions.previous(activePosition, document);
+          const activePositionBefore = Positions.previous(
+            activePosition,
+            document,
+          );
 
           if (activePositionBefore !== undefined) {
             shiftTo = f.start(activePositionBefore, inner, document);
@@ -499,102 +651,134 @@ export async function object(
  *
  * Inspired by [`leap.nvim`](https://github.com/ggandor/leap.nvim).
  *
- * #### Variants
+ * @commands
  *
  * | Title         | Identifier      | Command                                  |
  * | ------------- | --------------- | ---------------------------------------- |
  * | Leap backward | `leap.backward` | `[".seek.leap", { direction: -1, ... }]` |
  */
-export async function leap(
-  _: Context,
-
-  direction: Direction = Direction.Forward,
-  labels: Argument<string> = "sft",
-) {
-  ArgumentError.validate("labels", !labels.includes(" "), "must not contain a space ' '");
+export async function leap({
+  _,
+  direction = Direction.Forward,
+  labels = "sft",
+}: CommandArguments<{
+  direction?: Direction;
+  labels?: string;
+}>) {
+  ArgumentError.validate(
+    "labels",
+    !labels.includes(" "),
+    "must not contain a space ' '",
+  );
 
   labels = labels.toLowerCase();
 
   ArgumentError.validate(
-    "labels", new Set(labels).size === [...labels].length, "must not reuse characters");
+    "labels",
+    new Set(labels).size === [...labels].length,
+    "must not reuse characters",
+  );
 
   const editor = _.editor,
-        doc = _.document,
-        highlightColor = new vscode.ThemeColor("inputValidation.errorBackground"),
-        dimHighlightColor = new vscode.ThemeColor("inputValidation.warningBackground"),
-        foregroundColor = new vscode.ThemeColor("input.foreground"),
-        dimForegroundColor = new vscode.ThemeColor("input.foreground"),
-        renderOptions: vscode.DecorationRenderOptions = {
-          borderColor: highlightColor,
-          borderStyle: "solid",
-          borderWidth: "1px",
-        },
-        activeLabeledSets: TrackedSelection.StyledSet[] = [],
-        inactiveLabeledSets: TrackedSelection.StyledSet[] = [],
-        activeLabelRenderOptions: vscode.ThemableDecorationAttachmentRenderOptions = {
-          ...renderOptions,
-          backgroundColor: highlightColor,
-          color: foregroundColor,
-        },
-        inactiveLabelRenderOptions: vscode.ThemableDecorationAttachmentRenderOptions = {
-          ...renderOptions,
-          borderColor: dimHighlightColor,
-          backgroundColor: dimHighlightColor,
-          color: dimForegroundColor,
-        },
-        addSelection = (
-          labeledSets: TrackedSelection.StyledSet[],
-          labeledRenderOptions: vscode.ThemableDecorationAttachmentRenderOptions,
-          selection: vscode.Selection,
-          i: number) => {
-          if (i < labeledSets.length) {
-            labeledSets[i].addSelection(selection);
-          } else {
-            labeledSets[i] = new TrackedSelection.StyledSet(
-              TrackedSelection.fromArray([selection], doc),
-              _.getState(),
-              {
-                ...renderOptions,
-                after: {
-                  ...labeledRenderOptions,
-                  contentText: labels[i],
-                },
-              },
-            );
-          }
+    doc = _.document,
+    highlightColor = new vscode.ThemeColor("inputValidation.errorBackground"),
+    dimHighlightColor = new vscode.ThemeColor(
+      "inputValidation.warningBackground",
+    ),
+    foregroundColor = new vscode.ThemeColor("input.foreground"),
+    dimForegroundColor = new vscode.ThemeColor("input.foreground"),
+    renderOptions: vscode.DecorationRenderOptions = {
+      borderColor: highlightColor,
+      borderStyle: "solid",
+      borderWidth: "1px",
+    },
+    activeLabeledSets: TrackedSelection.StyledSet[] = [],
+    inactiveLabeledSets: TrackedSelection.StyledSet[] = [],
+    activeLabelRenderOptions: vscode.ThemableDecorationAttachmentRenderOptions =
+      {
+        ...renderOptions,
+        backgroundColor: highlightColor,
+        color: foregroundColor,
+      },
+    inactiveLabelRenderOptions: vscode.ThemableDecorationAttachmentRenderOptions =
+      {
+        ...renderOptions,
+        borderColor: dimHighlightColor,
+        backgroundColor: dimHighlightColor,
+        color: dimForegroundColor,
+      },
+    addSelection = (
+      labeledSets: TrackedSelection.StyledSet[],
+      labeledRenderOptions: vscode.ThemableDecorationAttachmentRenderOptions,
+      selection: vscode.Selection,
+      i: number,
+    ) => {
+      if (i < labeledSets.length) {
+        labeledSets[i].addSelection(selection);
+      } else {
+        labeledSets[i] = new TrackedSelection.StyledSet(
+          TrackedSelection.fromArray([selection], doc),
+          _.getState(),
+          {
+            ...renderOptions,
+            after: {
+              ...labeledRenderOptions,
+              contentText: labels[i],
+            },
+          },
+        );
+      }
 
-          return labeledSets[i];
-        };
+      return labeledSets[i];
+    };
 
   // Highlight character pairs starting with the first specified characters.
   const cutoffPosition = _.mainSelection.active,
-        endPosition = direction === Direction.Forward ? Positions.last(doc) : Positions.zero,
-        allowedRange = new vscode.Range(cutoffPosition, endPosition),
-        firstChar = await keypress(_),
-        pairSelections = Selections.selectWithin(
-          new RegExp(escapeForRegExp(firstChar) + ".?", "is"),
-          editor.visibleRanges.flatMap((range) => {
-            const intersection = range.intersection(allowedRange);
+    endPosition =
+      direction === Direction.Forward ? Positions.last(doc) : Positions.zero,
+    allowedRange = new vscode.Range(cutoffPosition, endPosition),
+    firstChar = await keypress(_),
+    pairSelections = Selections.selectWithin(
+      new RegExp(escapeForRegExp(firstChar) + ".?", "is"),
+      editor.visibleRanges.flatMap((range) => {
+        const intersection = range.intersection(allowedRange);
 
-            return intersection === undefined ? [] : [Selections.fromRange(intersection)];
-          })),
-        secondCharToUnlabeledSelection: Record<string, vscode.Selection> = {},
-        secondCharToLabeledSelections: Record<string, [vscode.Selection, TrackedSelection.StyledSet][]> = {};
+        return intersection === undefined
+          ? []
+          : [Selections.fromRange(intersection)];
+      }),
+    ),
+    secondCharToUnlabeledSelection: Record<string, vscode.Selection> = {},
+    secondCharToLabeledSelections: Record<
+      string,
+      [vscode.Selection, TrackedSelection.StyledSet][]
+    > = {};
 
   Selections.sort(direction, pairSelections);
 
   for (const pairSelection of pairSelections) {
     const text = Selections.text(pairSelection, doc),
-          secondChar = text.length === 1 ? "\n" : text[1];
+      secondChar = text.length === 1 ? "\n" : text[1];
 
     if (secondChar in secondCharToUnlabeledSelection) {
-      const labeledSelectionsForSecondChar = (secondCharToLabeledSelections[secondChar] ??= []),
-            length = labeledSelectionsForSecondChar.length,
-            labeledSet = length < labels.length
-              ? addSelection(activeLabeledSets, activeLabelRenderOptions, pairSelection, length)
-              : addSelection(
-                inactiveLabeledSets, inactiveLabelRenderOptions, pairSelection,
-                length % labels.length);
+      const labeledSelectionsForSecondChar = (secondCharToLabeledSelections[
+          secondChar
+        ] ??= []),
+        length = labeledSelectionsForSecondChar.length,
+        labeledSet =
+          length < labels.length
+            ? addSelection(
+                activeLabeledSets,
+                activeLabelRenderOptions,
+                pairSelection,
+                length,
+              )
+            : addSelection(
+                inactiveLabeledSets,
+                inactiveLabelRenderOptions,
+                pairSelection,
+                length % labels.length,
+              );
 
       labeledSelectionsForSecondChar.push([pairSelection, labeledSet]);
     } else {
@@ -603,13 +787,16 @@ export async function leap(
   }
 
   const unlabeledSelections = Object.values(secondCharToUnlabeledSelection),
-        unlabeledSelectionsSet = new TrackedSelection.StyledSet(
-          TrackedSelection.fromArray(unlabeledSelections, doc), _.getState(), renderOptions);
+    unlabeledSelectionsSet = new TrackedSelection.StyledSet(
+      TrackedSelection.fromArray(unlabeledSelections, doc),
+      _.getState(),
+      renderOptions,
+    );
 
   try {
     // Get second character and jump to it.
     const secondChar = await keypress(_),
-          unlabeledSelection = secondCharToUnlabeledSelection[secondChar];
+      unlabeledSelection = secondCharToUnlabeledSelection[secondChar];
 
     if (unlabeledSelection === undefined) {
       return;
@@ -618,7 +805,9 @@ export async function leap(
     Selections.set([Selections.empty(unlabeledSelection.start)], _);
 
     // Save relevant labeled selections to ensure we don't hide them below.
-    const labeledSelections = secondCharToLabeledSelections[secondChar]?.map((x) => x[0]);
+    const labeledSelections = secondCharToLabeledSelections[secondChar]?.map(
+      (x) => x[0],
+    );
 
     if (labeledSelections === undefined || labeledSelections.length === 0) {
       // There are no labels yet, we can just stop.
@@ -628,13 +817,18 @@ export async function leap(
     delete secondCharToLabeledSelections[secondChar];
 
     // Hide irrelevant selections.
-    const selectionsToDeletePerSet = new Map<TrackedSelection.StyledSet, vscode.Selection[]>();
+    const selectionsToDeletePerSet = new Map<
+      TrackedSelection.StyledSet,
+      vscode.Selection[]
+    >();
 
-    for (const [selection, styledSet] of Object.values(secondCharToLabeledSelections).flat(1)) {
+    for (const [selection, styledSet] of Object.values(
+      secondCharToLabeledSelections,
+    ).flat(1)) {
       let arr = selectionsToDeletePerSet.get(styledSet);
 
       if (arr === undefined) {
-        selectionsToDeletePerSet.set(styledSet, arr = []);
+        selectionsToDeletePerSet.set(styledSet, (arr = []));
       }
 
       arr.push(selection);
@@ -666,7 +860,12 @@ export async function leap(
             const labeledSelection = labeledSelections[offset + i];
 
             // Use `addSelection` in case the inactive set does not exist yet.
-            addSelection(inactiveLabeledSets, inactiveLabelRenderOptions, labeledSelection, i);
+            addSelection(
+              inactiveLabeledSets,
+              inactiveLabelRenderOptions,
+              labeledSelection,
+              i,
+            );
             activeLabeledSets[i].deleteSelections([labeledSelection]);
           } else {
             inactiveLabeledSets[i].clearSelections();
@@ -731,7 +930,10 @@ function preprocessRegExp(re: string) {
 
 function shiftWhere(
   context: Context,
-  f: (selection: vscode.Selection, context: Context) => vscode.Selection | undefined,
+  f: (
+    selection: vscode.Selection,
+    context: Context,
+  ) => vscode.Selection | undefined,
   shift: Shift,
   where: "start" | "end" | undefined,
 ) {

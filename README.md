@@ -95,17 +95,19 @@ manipulate selections.
 Finally, the [Dance API][API] is exported by Dance. Other VS Code extensions
 can specify that they depend on Dance (with the [`extensionDependencies`
 property](https://code.visualstudio.com/api/references/extension-manifest#fields)),
-and then access the API by calling [`activate`](
-https://code.visualstudio.com/api/references/vscode-api#Extension.activate):
+and then access the API by calling [`activate`](https://code.visualstudio.com/api/references/vscode-api#Extension.activate):
 
 ```js
-const { api } = await vscode.extensions.getExtension("gregoire.dance").activate();
+const { api } = await vscode.extensions
+  .getExtension("gregoire.dance")
+  .activate();
 ```
 
 ### Pipes
 
 Pipes no longer accept shell commands, but instead accept "expressions", those
 being:
+
 - `#<shell command>`: Pipes each selection into a shell command (the shell
   respects the `terminal.integrated.automationProfile.<os>` profile).
 - `/<pattern>[/<replacement>[/<flags>]`: A RegExp literal, as
@@ -114,12 +116,14 @@ being:
   text.
 - `<JS expression>`: A JavaScript expression in which the following variables
   are available:
+
   - `$`: Text of the current selection.
   - `$$`: Array of the text of all the selections.
   - `i`: Index of the current selection.
   - `n`: Number of selections in `$$`.
 
   Depending on the result of the expression, it will be inserted differently:
+
   - `string`: Inserted directly.
   - `number`: Inserted in its string representation.
   - `boolean`: Inserted as `true` or `false`.
@@ -148,8 +152,7 @@ contextually:
 
 ### Dance view
 
-Dance also provides a [custom view](
-https://code.visualstudio.com/docs/getstarted/userinterface#_views) which lists
+Dance also provides a [custom view](https://code.visualstudio.com/docs/getstarted/userinterface#_views) which lists
 all registers and their contents.
 
 ### Miscellaneous changes
@@ -181,8 +184,7 @@ make the extension integrate better with VS Code.
   as [VSCodeVim]; these extensions must therefore be disabled.
 - If you're on Linux and your keybindings don't work as expected (for instance,
   `swapescape` is not respected), take a look at the [VS Code guide for
-  troubleshooting Linux keybindings](
-  https://github.com/Microsoft/vscode/wiki/Keybinding-Issues#troubleshoot-linux-keybindings).
+  troubleshooting Linux keybindings](https://github.com/Microsoft/vscode/wiki/Keybinding-Issues#troubleshoot-linux-keybindings).
   TL;DR: adding `"keyboard.dispatch": "keyCode"` to your VS Code settings will
   likely fix it.
 

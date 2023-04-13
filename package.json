@@ -1,15 +1,15 @@
 {
-  "name": "dance",
-  "description": "Kakoune-inspired key bindings, modes, menus and scripting.",
-  "version": "0.5.12",
+  "name": "ballet",
+  "description": "Helix-inspired key bindings - Modified version of Dance Extension",
+  "version": "0.0.1",
   "license": "ISC",
   "author": {
-    "name": "Grégoire Geis",
-    "email": "opensource@gregoirege.is"
+    "name": "Uther Pally",
+    "email": "langbamit@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/71/dance.git"
+    "url": "https://github.com/utherpally/dance.git"
   },
   "main": "./out/src/extension.js",
   "browser": "./out/web/extension.js",
@@ -17,8 +17,9 @@
     "vscode": "^1.63.0"
   },
   "scripts": {
-    "check": "eslint . && depcruise -v .dependency-cruiser.js src",
-    "format": "eslint . --fix",
+    "check": "eslint . && depcruise -v .dependency-cruiser.js src && prettier . --check",
+    "lint": "eslint . --fix",
+    "fmt": "prettier --write .",
     "generate": "ts-node ./meta.ts",
     "generate:watch": "ts-node ./meta.ts --watch",
     "vscode:prepublish": "yarn run generate && yarn run compile && yarn run compile-web",
@@ -29,39 +30,44 @@
     "test": "yarn run compile && node ./out/test/run.js",
     "package": "vsce package --allow-star-activation",
     "publish": "vsce publish --allow-star-activation",
-    "publish:pre": "vsce publish --allow-star-activation --pre-release --no-git-tag-version --no-update-package-json 0.5.12002"
+    "publish:pre": "vsce publish --allow-star-activation --pre-release --no-git-tag-version --no-update-package-json 0.0.1008"
   },
   "devDependencies": {
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.33",
     "@types/vscode": "^1.63.0",
-    "@typescript-eslint/eslint-plugin": "^5.23.0",
-    "@typescript-eslint/parser": "^5.23.0",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "eslint-config-prettier": "^8.8.0",
+    "prettier": "^2.8.7",
     "@vscode/test-electron": "^2.1.3",
     "chokidar": "^3.5.3",
     "dependency-cruiser": "^11.7.0",
-    "eslint": "^8.15.0",
+    "eslint": "^8.37.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
     "source-map-support": "^0.5.21",
-    "ts-loader": "^9.3.1",
-    "ts-node": "^10.8.1",
-    "typescript": "^4.8.4",
-    "unexpected": "^13.0.0",
-    "vsce": "^2.7.0",
-    "webpack": "^5.72.1",
-    "webpack-cli": "^4.9.2",
-    "yaml": "^2.1.1"
+    "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.1",
+    "ts-morph": "^18.0.0",
+    "typescript": "^5.0.3",
+    "unexpected": "^13.1.0",
+    "@vscode/vsce": "^2.18.0",
+    "webpack": "^5.78.0",
+    "webpack-cli": "^5.0.1",
+    "deep-diff": "^1.0.2",
+    "yaml": "^2.2.1",
+    "magic-string": "^0.30.0"
   },
-  "displayName": "Dance",
-  "publisher": "gregoire",
+  "displayName": "Ballet",
+  "publisher": "langbamit",
   "categories": [
     "Keymaps",
     "Other"
   ],
   "readme": "README.md",
-  "icon": "assets/dance.png",
+  "icon": "assets/ballet.jpg",
   "activationEvents": [
     "*"
   ],
@@ -81,7 +87,7 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "Dance",
+      "title": "Ballet",
       "properties": {
         "dance.defaultMode": {
           "type": "string",
@@ -387,11 +393,8 @@
             },
             "normal": {
               "lineNumbers": "relative",
-              "decorations": {
-                "applyTo": "main",
-                "backgroundColor": "$editor.hoverHighlightBackground",
-                "isWholeLine": true
-              },
+              "cursorStyle": "block",
+              "selectionBehavior": "character",
               "onEnterMode": [
                 [
                   ".selections.restore",
@@ -417,6 +420,57 @@
                         "mode-did-change",
                         {
                           "include": "normal"
+                        }
+                      ],
+                      [
+                        "mode-did-change",
+                        {
+                          "include": "select"
+                        }
+                      ],
+                      [
+                        "selections-did-change"
+                      ]
+                    ]
+                  }
+                ]
+              ]
+            },
+            "select": {
+              "lineNumbers": "relative",
+              "cursorStyle": "underline",
+              "selectionBehavior": "character",
+              "onEnterMode": [
+                [
+                  ".selections.restore",
+                  {
+                    "register": " ^",
+                    "try": true
+                  }
+                ]
+              ],
+              "onLeaveMode": [
+                [
+                  ".selections.save",
+                  {
+                    "register": " ^",
+                    "style": {
+                      "borderColor": "$editor.selectionBackground",
+                      "borderStyle": "solid",
+                      "borderWidth": "2px",
+                      "borderRadius": "1px"
+                    },
+                    "until": [
+                      [
+                        "mode-did-change",
+                        {
+                          "include": "normal"
+                        }
+                      ],
+                      [
+                        "mode-did-change",
+                        {
+                          "include": "select"
                         }
                       ],
                       [
@@ -467,6 +521,43 @@
             "additionalProperties": false
           },
           "default": {
+            "left-bracket": {
+              "title": "Left Bracket Menu",
+              "items": {
+                "d": {
+                  "text": "Goto previous diagnostic",
+                  "command": "editor.action.marker.prev"
+                },
+                "g": {
+                  "text": "Goto previous change",
+                  "command": "workbench.action.editor.previousChange"
+                },
+                "s": {
+                  "text": "Goto previous symbol",
+                  "command": "dance.run",
+                  "args": [
+                    {
+                      "commands": [
+                        "breadcrumbs.focusAndSelect"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "right-bracket": {
+              "title": "Right Bracket Menu",
+              "items": {
+                "d": {
+                  "text": "Goto next diagnostic",
+                  "command": "editor.action.marker.next"
+                },
+                "g": {
+                  "text": "Goto next change",
+                  "command": "workbench.action.editor.nextChange"
+                }
+              }
+            },
             "object": {
               "title": "Select object...",
               "items": {
@@ -611,28 +702,68 @@
                 }
               }
             },
+            "file-explorer": {
+              "title": "File explorer",
+              "items": {
+                "y": {
+                  "text": "Yank file",
+                  "command": "filesExplorer.copy"
+                },
+                "p": {
+                  "text": "Paste file",
+                  "command": "filesExplorer.paste"
+                },
+                "c": {
+                  "text": "Rename file",
+                  "command": "renameFile"
+                },
+                "d": {
+                  "text": "Delete file",
+                  "command": "moveFileToTrash"
+                },
+                "x": {
+                  "text": "Cut file",
+                  "command": "filesExplorer.cut"
+                },
+                "r": {
+                  "text": "Reveal in file explorer",
+                  "command": "revealFileInOS"
+                },
+                "o": {
+                  "text": "Open with...",
+                  "command": "explorer.openWith"
+                },
+                "O": {
+                  "text": "Open",
+                  "command": "explorer.openAndPassFocus"
+                },
+                "v": {
+                  "text": "View",
+                  "command": "filesExplorer.openFilePreserveFocus"
+                },
+                "f": {
+                  "text": "Copy file path",
+                  "command": "copyFilePath"
+                },
+                "F": {
+                  "text": "Copy relative file path",
+                  "command": "copyRelativeFilePath"
+                },
+                "n": {
+                  "text": "New folder",
+                  "command": "explorer.newFile"
+                },
+                "N": {
+                  "text": "New file",
+                  "command": "explorer.newFolder"
+                }
+              }
+            },
             "goto": {
               "title": "Go...",
               "items": {
-                "h": {
-                  "text": "to line start",
-                  "command": "dance.select.lineStart"
-                },
-                "l": {
-                  "text": "to line end",
-                  "command": "dance.select.lineEnd"
-                },
-                "i": {
-                  "text": "to non-blank line start",
-                  "command": "dance.select.lineStart",
-                  "args": [
-                    {
-                      "skipBlank": true
-                    }
-                  ]
-                },
-                "gk": {
-                  "text": "to first line",
+                "g": {
+                  "text": "Goto first line",
                   "command": "dance.select.lineStart",
                   "args": [
                     {
@@ -640,12 +771,12 @@
                     }
                   ]
                 },
-                "j": {
-                  "text": "to last line",
+                "e": {
+                  "text": "Goto last line",
                   "command": "dance.select.lastLine"
                 },
-                "e": {
-                  "text": "to last char of last line",
+                "E": {
+                  "text": "Goto last char of last line",
                   "command": "dance.select.lineEnd",
                   "args": [
                     {
@@ -653,40 +784,73 @@
                     }
                   ]
                 },
+                "h": {
+                  "text": "Goto line start",
+                  "command": "dance.select.lineStart"
+                },
+                "l": {
+                  "text": "Goto line end",
+                  "command": "dance.select.lineEnd"
+                },
+                "s": {
+                  "text": "Goto first non-blank in line",
+                  "command": "dance.select.lineStart",
+                  "args": [
+                    {
+                      "skipBlank": true
+                    }
+                  ]
+                },
+                "d": {
+                  "text": "Goto definition",
+                  "command": "editor.action.revealDefinition"
+                },
+                "y": {
+                  "text": "Goto type definition",
+                  "command": "editor.action.goToTypeDefinition"
+                },
+                "r": {
+                  "text": "Goto reference",
+                  "command": "editor.action.goToReferences"
+                },
+                "i": {
+                  "text": "Goto implementation",
+                  "command": "editor.action.goToImplementation"
+                },
                 "t": {
-                  "text": "to first displayed line",
+                  "text": "Goto first displayed line",
                   "command": "dance.select.firstVisibleLine"
                 },
                 "c": {
-                  "text": "to middle displayed line",
+                  "text": "Goto middle displayed line",
                   "command": "dance.select.middleVisibleLine"
                 },
                 "b": {
-                  "text": "to last displayed line",
+                  "text": "Goto last displayed line",
                   "command": "dance.select.lastVisibleLine"
                 },
                 "a": {
-                  "text": "to last buffer",
+                  "text": "Goto last accessed file",
                   "command": "workbench.action.openPreviousRecentlyUsedEditorInGroup"
                 },
                 "A": {
-                  "text": "to last buffer...",
+                  "text": "Goto last accessed files",
                   "command": "workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup"
                 },
                 "p": {
-                  "text": "to previous buffer",
+                  "text": "Goto previous buffer",
                   "command": "workbench.action.previousEditor"
                 },
                 "n": {
-                  "text": "to next buffer",
+                  "text": "Goto next buffer",
                   "command": "workbench.action.nextEditor"
                 },
                 "f": {
-                  "text": "to file whose name is selected",
+                  "text": "Goto file whose name is selected",
                   "command": "dance.selections.open"
                 },
                 ".": {
-                  "text": "to last buffer modification position",
+                  "text": "Goto last buffer modification position",
                   "command": "dance.selections.restore",
                   "args": [
                     {
@@ -696,11 +860,115 @@
                 }
               }
             },
+            "match": {
+              "title": "Select match...",
+              "items": {
+                "m": {
+                  "text": "Goto matching bracket",
+                  "command": "editor.action.jumpToBracket"
+                },
+                "p": {
+                  "text": "Goto next matching bracket",
+                  "command": "dance.seek.enclosing",
+                  "args": [
+                    {
+                      "direction": -1
+                    }
+                  ]
+                },
+                "n": {
+                  "text": "Goto previous matching bracket",
+                  "command": "dance.seek.enclosing"
+                },
+                "d": {
+                  "text": "Surround delete",
+                  "command": "editor.action.removeBrackets"
+                },
+                "a": {
+                  "text": "Select around object",
+                  "command": "dance.seek.askObject"
+                },
+                "i": {
+                  "text": "Select inside object",
+                  "command": "dance.seek.askObject.inner"
+                }
+              }
+            },
+            "space": {
+              "title": "Space",
+              "items": {
+                "f": {
+                  "text": "Open file picker",
+                  "command": "workbench.action.quickOpen"
+                },
+                "b": {
+                  "text": "Open buffer picker",
+                  "command": "workbench.action.showAllEditors"
+                },
+                "d": {
+                  "text": "Toggle diagnostics(problems) ",
+                  "command": "workbench.actions.view.problems"
+                },
+                "a": {
+                  "text": "Perform code action",
+                  "command": "editor.action.quickFix"
+                },
+                "g": {
+                  "text": "Start debug",
+                  "command": "workbench.action.debug.start"
+                },
+                "w": {
+                  "text": "Window",
+                  "command": "dance.window.open"
+                },
+                "y": {
+                  "text": "Join and yank selections to clipboard",
+                  "command": "dance.selections.saveText",
+                  "args": [
+                    {
+                      "register": ""
+                    }
+                  ]
+                },
+                "p": {
+                  "text": "Paste clipboard after selections",
+                  "command": "dance.edit.insert",
+                  "args": [
+                    {
+                      "handleNewLine": true,
+                      "where": "end"
+                    }
+                  ]
+                },
+                "P​": {
+                  "text": "Paste clipboard before selections",
+                  "command": "dance.edit.insert",
+                  "args": [
+                    {
+                      "handleNewLine": true,
+                      "where": "start"
+                    }
+                  ]
+                },
+                "/": {
+                  "text": "Global Search in workspace folder",
+                  "command": "workbench.action.findInFiles"
+                },
+                "k": {
+                  "text": "Show docs for item under cursor (hover)",
+                  "command": "editor.action.showHover"
+                },
+                "r": {
+                  "text": "Rename symbol",
+                  "command": "editor.action.rename"
+                }
+              }
+            },
             "view": {
               "title": "View",
               "items": {
-                "vc": {
-                  "text": "center cursor vertically",
+                "zc": {
+                  "text": "Align view center",
                   "command": "dance.view.line",
                   "args": [
                     {
@@ -709,7 +977,7 @@
                   ]
                 },
                 "t": {
-                  "text": "cursor on top",
+                  "text": "Align view top",
                   "command": "dance.view.line",
                   "args": [
                     {
@@ -718,7 +986,7 @@
                   ]
                 },
                 "b": {
-                  "text": "cursor on bottom",
+                  "text": "Align view bottom",
                   "command": "dance.view.line",
                   "args": [
                     {
@@ -727,7 +995,7 @@
                   ]
                 },
                 "j": {
-                  "text": "scroll down",
+                  "text": "Scroll view down",
                   "command": "editorScroll",
                   "args": [
                     {
@@ -738,7 +1006,7 @@
                   ]
                 },
                 "k": {
-                  "text": "scroll up",
+                  "text": "Scroll view up",
                   "command": "editorScroll",
                   "args": [
                     {
@@ -747,6 +1015,67 @@
                       "revealCursor": true
                     }
                   ]
+                }
+              }
+            },
+            "window": {
+              "title": "Window",
+              "items": {
+                "w": {
+                  "text": "Goto next window",
+                  "command": "workbench.action.nextEditor"
+                },
+                "s": {
+                  "text": "Horizontal bottom split",
+                  "command": "workbench.action.splitEditorDown"
+                },
+                "v": {
+                  "text": "Vertical right split",
+                  "command": "workbench.action.splitEditor"
+                },
+                "t": {
+                  "text": "Transpose splits",
+                  "command": "workbench.action.toggleEditorGroupLayout"
+                },
+                "q": {
+                  "text": "Close window",
+                  "command": "workbench.action.closeActiveEditor"
+                },
+                "o": {
+                  "text": "Close all other windows (Current window only)",
+                  "command": "workbench.action.closeOtherEditors"
+                },
+                "h": {
+                  "text": "Jump to the split on the left",
+                  "command": "workbench.action.focusLeftGroup"
+                },
+                "j": {
+                  "text": "Jump to the split below",
+                  "command": "workbench.action.focusBelowGroup"
+                },
+                "k": {
+                  "text": "Jump to the split above",
+                  "command": "workbench.action.focusAboveGroup"
+                },
+                "l": {
+                  "text": "Jump to the split to the right",
+                  "command": "workbench.action.focusRightGroup"
+                },
+                "H": {
+                  "text": "Swap with the split to the left",
+                  "command": "workbench.action.moveActiveEditorGroupLeft"
+                },
+                "J": {
+                  "text": "Swap with the split below",
+                  "command": "workbench.action.moveActiveEditorGroupDown"
+                },
+                "K": {
+                  "text": "Swap with the split above",
+                  "command": "workbench.action.moveActiveEditorGroupUp"
+                },
+                "L": {
+                  "text": "Swap with the split to the right",
+                  "command": "workbench.action.moveActiveEditorGroupRight"
                 }
               }
             }
@@ -900,6 +1229,11 @@
     },
     "commands": [
       {
+        "command": "dance.bracket.openLeftBracket",
+        "title": "Open window menu",
+        "category": "Dance"
+      },
+      {
         "command": "dance.dev.copyLastErrorMessage",
         "title": "Copies the last encountered error message",
         "category": "Dance"
@@ -912,6 +1246,11 @@
       {
         "command": "dance.edit.align",
         "title": "Align selections",
+        "category": "Dance"
+      },
+      {
+        "command": "dance.edit.alignByOffet",
+        "title": "Align selections by offset from start character (negative offset)",
         "category": "Dance"
       },
       {
@@ -1205,6 +1544,11 @@
         "category": "Dance"
       },
       {
+        "command": "dance.modes.set.select",
+        "title": "Set mode to Select",
+        "category": "Dance"
+      },
+      {
         "command": "dance.modes.set.temporarily",
         "title": "Set Dance mode temporarily",
         "category": "Dance"
@@ -1245,18 +1589,8 @@
         "category": "Dance"
       },
       {
-        "command": "dance.search.next.add",
-        "title": "Add next match",
-        "category": "Dance"
-      },
-      {
         "command": "dance.search.previous",
         "title": "Select previous match",
-        "category": "Dance"
-      },
-      {
-        "command": "dance.search.previous.add",
-        "title": "Add previous match",
         "category": "Dance"
       },
       {
@@ -1875,13 +2209,27 @@
         "category": "Dance"
       },
       {
+        "command": "dance.space.open",
+        "title": "Open space menu",
+        "category": "Dance"
+      },
+      {
         "command": "dance.view.line",
         "title": "Reveals a position based on the main cursor",
+        "category": "Dance"
+      },
+      {
+        "command": "dance.window.open",
+        "title": "Open window menu",
         "category": "Dance"
       }
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "dance.bracket.openLeftBracket",
+          "when": "dance.mode == 'normal'"
+        },
         {
           "command": "dance.dev.copyLastErrorMessage",
           "when": "dance.mode == 'normal'"
@@ -1892,6 +2240,10 @@
         },
         {
           "command": "dance.edit.align",
+          "when": "dance.mode == 'normal'"
+        },
+        {
+          "command": "dance.edit.alignByOffet",
           "when": "dance.mode == 'normal'"
         },
         {
@@ -2127,6 +2479,10 @@
           "when": "dance.mode == 'normal'"
         },
         {
+          "command": "dance.modes.set.select",
+          "when": "dance.mode == 'normal'"
+        },
+        {
           "command": "dance.modes.set.temporarily",
           "when": "dance.mode == 'normal'"
         },
@@ -2159,15 +2515,7 @@
           "when": "dance.mode == 'normal'"
         },
         {
-          "command": "dance.search.next.add",
-          "when": "dance.mode == 'normal'"
-        },
-        {
           "command": "dance.search.previous",
-          "when": "dance.mode == 'normal'"
-        },
-        {
-          "command": "dance.search.previous.add",
           "when": "dance.mode == 'normal'"
         },
         {
@@ -2663,12 +3011,60 @@
           "when": "dance.mode == 'normal'"
         },
         {
+          "command": "dance.space.open",
+          "when": "dance.mode == 'normal'"
+        },
+        {
           "command": "dance.view.line",
+          "when": "dance.mode == 'normal'"
+        },
+        {
+          "command": "dance.window.open",
           "when": "dance.mode == 'normal'"
         }
       ]
     },
     "keybindings": [
+      {
+        "key": "[",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Show left bracket menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "left-bracket",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "[",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show left bracket menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "left-bracket",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "]",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Show right bracket  menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "right-bracket",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "]",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show right bracket  menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "right-bracket",
+          "$exclude": []
+        }
+      },
       {
         "key": "Shift+7",
         "when": "editorTextFocus && dance.mode == 'normal'",
@@ -2676,8 +3072,32 @@
         "command": "dance.edit.align"
       },
       {
-        "key": "Alt+`",
+        "key": "Shift+7",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Align selections",
+        "command": "dance.edit.align"
+      },
+      {
+        "key": "Ctrl+Shift+7",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Align selections by offset from start character (negative offset)",
+        "command": "dance.edit.alignByOffet"
+      },
+      {
+        "key": "Ctrl+Shift+7",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Align selections by offset from start character (negative offset)",
+        "command": "dance.edit.alignByOffet"
+      },
+      {
+        "key": "Shift+`",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Swap case",
+        "command": "dance.edit.case.swap"
+      },
+      {
+        "key": "Shift+`",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Swap case",
         "command": "dance.edit.case.swap"
       },
@@ -2688,8 +3108,20 @@
         "command": "dance.edit.case.toLower"
       },
       {
-        "key": "Shift+`",
+        "key": "`",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Transform to lower case",
+        "command": "dance.edit.case.toLower"
+      },
+      {
+        "key": "Alt+`",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Transform to upper case",
+        "command": "dance.edit.case.toUpper"
+      },
+      {
+        "key": "Alt+`",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Transform to upper case",
         "command": "dance.edit.case.toUpper"
       },
@@ -2700,10 +3132,28 @@
         "command": "dance.edit.copyIndentation"
       },
       {
+        "key": "Shift+Alt+7",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Copy indentation",
+        "command": "dance.edit.copyIndentation"
+      },
+      {
         "key": "Shift+Alt+,",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Deindent selected lines",
         "command": "dance.edit.deindent"
+      },
+      {
+        "key": "Shift+Alt+,",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Deindent selected lines",
+        "command": "dance.edit.deindent"
+      },
+      {
+        "key": "Shift+,",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Deindent selected lines (including incomplete indent)",
+        "command": "dance.edit.deindent.withIncomplete"
       },
       {
         "key": "Shift+,",
@@ -2718,8 +3168,20 @@
         "command": "dance.edit.delete"
       },
       {
+        "key": "Alt+D",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Delete",
+        "command": "dance.edit.delete"
+      },
+      {
         "key": "Alt+C",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Delete and switch to Insert",
+        "command": "dance.edit.delete-insert"
+      },
+      {
+        "key": "Alt+C",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Delete and switch to Insert",
         "command": "dance.edit.delete-insert"
       },
@@ -2730,20 +3192,44 @@
         "command": "dance.edit.indent"
       },
       {
+        "key": "Shift+.",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Indent selected lines",
+        "command": "dance.edit.indent"
+      },
+      {
         "key": "Shift+Alt+.",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Indent selected lines (including empty lines)",
         "command": "dance.edit.indent.withEmpty"
       },
       {
-        "key": "Shift+Alt+R",
+        "key": "Shift+Alt+.",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Indent selected lines (including empty lines)",
+        "command": "dance.edit.indent.withEmpty"
+      },
+      {
+        "key": "Shift+R",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Insert contents of register",
         "command": "dance.edit.insert"
       },
       {
-        "key": "Alt+J",
+        "key": "Shift+R",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Insert contents of register",
+        "command": "dance.edit.insert"
+      },
+      {
+        "key": "Shift+J",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Join lines",
+        "command": "dance.edit.join"
+      },
+      {
+        "key": "Shift+J",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Join lines",
         "command": "dance.edit.join"
       },
@@ -2754,10 +3240,28 @@
         "command": "dance.edit.join.select"
       },
       {
+        "key": "Shift+Alt+J",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Join lines and select inserted separators",
+        "command": "dance.edit.join.select"
+      },
+      {
         "key": "Shift+Alt+O",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Insert new line above each selection",
         "command": "dance.edit.newLine.above"
+      },
+      {
+        "key": "Shift+Alt+O",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Insert new line above each selection",
+        "command": "dance.edit.newLine.above"
+      },
+      {
+        "key": "Shift+O",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Insert new line above and switch to insert",
+        "command": "dance.edit.newLine.above.insert"
       },
       {
         "key": "Shift+O",
@@ -2772,10 +3276,28 @@
         "command": "dance.edit.newLine.below"
       },
       {
+        "key": "Alt+O",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Insert new line below each selection",
+        "command": "dance.edit.newLine.below"
+      },
+      {
         "key": "O",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Insert new line below and switch to insert",
         "command": "dance.edit.newLine.below.insert"
+      },
+      {
+        "key": "O",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Insert new line below and switch to insert",
+        "command": "dance.edit.newLine.below.insert"
+      },
+      {
+        "key": "P",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Paste after",
+        "command": "dance.edit.paste.after"
       },
       {
         "key": "P",
@@ -2785,21 +3307,15 @@
       },
       {
         "key": "Shift+P",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Paste before",
+        "command": "dance.edit.paste.before"
+      },
+      {
+        "key": "Shift+P",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Paste before and select",
         "command": "dance.edit.paste.before.select"
-      },
-      {
-        "key": "Alt+P",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Paste all after and select",
-        "command": "dance.edit.pasteAll.after.select"
-      },
-      {
-        "key": "Shift+Alt+P",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Paste all before and select",
-        "command": "dance.edit.pasteAll.before.select"
       },
       {
         "key": "R",
@@ -2808,10 +3324,10 @@
         "command": "dance.edit.replaceCharacters"
       },
       {
-        "key": "Ctrl+R",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Pick register and replace",
-        "command": "dance.edit.selectRegister-insert"
+        "key": "R",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Replace characters",
+        "command": "dance.edit.replaceCharacters"
       },
       {
         "key": "Ctrl+R",
@@ -2826,16 +3342,22 @@
         "command": "dance.edit.yank-delete"
       },
       {
+        "key": "D",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Copy and delete",
+        "command": "dance.edit.yank-delete"
+      },
+      {
         "key": "C",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Copy, delete and switch to Insert",
         "command": "dance.edit.yank-delete-insert"
       },
       {
-        "key": "Shift+R",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Copy and replace",
-        "command": "dance.edit.yank-replace"
+        "key": "C",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Copy, delete and switch to Insert",
+        "command": "dance.edit.yank-delete-insert"
       },
       {
         "key": "Q",
@@ -2844,8 +3366,20 @@
         "command": "dance.history.recording.play"
       },
       {
+        "key": "Q",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Replay recording",
+        "command": "dance.history.recording.play"
+      },
+      {
         "key": "Shift+Q",
         "when": "editorTextFocus && dance.mode == 'normal' && !dance.isRecording",
+        "title": "Start recording",
+        "command": "dance.history.recording.start"
+      },
+      {
+        "key": "Shift+Q",
+        "when": "editorTextFocus && dance.mode == 'select' && !dance.isRecording",
         "title": "Start recording",
         "command": "dance.history.recording.start"
       },
@@ -2862,8 +3396,26 @@
         "command": "dance.history.recording.stop"
       },
       {
+        "key": "Escape",
+        "when": "editorTextFocus && dance.mode == 'select' && dance.isRecording",
+        "title": "Stop recording",
+        "command": "dance.history.recording.stop"
+      },
+      {
+        "key": "Shift+Q",
+        "when": "editorTextFocus && dance.mode == 'select' && dance.isRecording",
+        "title": "Stop recording",
+        "command": "dance.history.recording.stop"
+      },
+      {
         "key": "Shift+U",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Redo",
+        "command": "dance.history.redo"
+      },
+      {
+        "key": "Shift+U",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Redo",
         "command": "dance.history.redo"
       },
@@ -2874,14 +3426,20 @@
         "command": "dance.history.redo.selections"
       },
       {
+        "key": "Shift+Alt+U",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Redo a change of selections",
+        "command": "dance.history.redo.selections"
+      },
+      {
         "key": ".",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Repeat last edit without a command",
         "command": "dance.history.repeat.edit"
       },
       {
-        "key": "NumPad_Decimal",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": ".",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Repeat last edit without a command",
         "command": "dance.history.repeat.edit"
       },
@@ -2898,10 +3456,78 @@
         "command": "dance.history.undo"
       },
       {
+        "key": "U",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Undo",
+        "command": "dance.history.undo"
+      },
+      {
         "key": "Alt+U",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Undo a change of selections",
         "command": "dance.history.undo.selections"
+      },
+      {
+        "key": "Alt+U",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Undo a change of selections",
+        "command": "dance.history.undo.selections"
+      },
+      {
+        "key": "M",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Show match menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "match",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "M",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show match menu (extend)",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "match",
+          "pass": [
+            {
+              "shift": "extend"
+            }
+          ],
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Shift+M",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Show match menu (backward )",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "match",
+          "pass": [
+            {
+              "direction": -1
+            }
+          ],
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Shift+M",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show match menu (backward, extend)",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "match",
+          "pass": [
+            {
+              "direction": -1,
+              "shift": "extend"
+            }
+          ],
+          "$exclude": []
+        }
       },
       {
         "key": "Escape",
@@ -2911,25 +3537,9 @@
       },
       {
         "key": "Escape",
-        "when": "editorTextFocus && dance.mode == 'input'",
+        "when": "editorTextFocus && dance.mode == 'input' && !suggestWidgetVisible",
         "title": "Cancel Dance operation",
         "command": "dance.cancel"
-      },
-      {
-        "key": "Up",
-        "when": "inputFocus && !textInputFocus",
-        "command": "dance.changeInput",
-        "args": {
-          "action": "previous"
-        }
-      },
-      {
-        "key": "Down",
-        "when": "inputFocus && !textInputFocus",
-        "command": "dance.changeInput",
-        "args": {
-          "action": "next"
-        }
       },
       {
         "key": "Shift+'",
@@ -2956,6 +3566,24 @@
         }
       },
       {
+        "key": "0",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 0 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 0
+        }
+      },
+      {
+        "key": "NumPad0",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 0 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 0
+        }
+      },
+      {
         "key": "1",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Add the digit 1 to the counter",
@@ -2967,6 +3595,24 @@
       {
         "key": "NumPad1",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Add the digit 1 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 1
+        }
+      },
+      {
+        "key": "1",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 1 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 1
+        }
+      },
+      {
+        "key": "NumPad1",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Add the digit 1 to the counter",
         "command": "dance.updateCount",
         "args": {
@@ -2992,6 +3638,24 @@
         }
       },
       {
+        "key": "2",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 2 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 2
+        }
+      },
+      {
+        "key": "NumPad2",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 2 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 2
+        }
+      },
+      {
         "key": "3",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Add the digit 3 to the counter",
@@ -3003,6 +3667,24 @@
       {
         "key": "NumPad3",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Add the digit 3 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 3
+        }
+      },
+      {
+        "key": "3",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 3 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 3
+        }
+      },
+      {
+        "key": "NumPad3",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Add the digit 3 to the counter",
         "command": "dance.updateCount",
         "args": {
@@ -3028,6 +3710,24 @@
         }
       },
       {
+        "key": "4",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 4 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 4
+        }
+      },
+      {
+        "key": "NumPad4",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 4 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 4
+        }
+      },
+      {
         "key": "5",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Add the digit 5 to the counter",
@@ -3039,6 +3739,24 @@
       {
         "key": "NumPad5",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Add the digit 5 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 5
+        }
+      },
+      {
+        "key": "5",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 5 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 5
+        }
+      },
+      {
+        "key": "NumPad5",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Add the digit 5 to the counter",
         "command": "dance.updateCount",
         "args": {
@@ -3064,6 +3782,24 @@
         }
       },
       {
+        "key": "6",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 6 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 6
+        }
+      },
+      {
+        "key": "NumPad6",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 6 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 6
+        }
+      },
+      {
         "key": "7",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Add the digit 7 to the counter",
@@ -3075,6 +3811,24 @@
       {
         "key": "NumPad7",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Add the digit 7 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 7
+        }
+      },
+      {
+        "key": "7",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 7 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 7
+        }
+      },
+      {
+        "key": "NumPad7",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Add the digit 7 to the counter",
         "command": "dance.updateCount",
         "args": {
@@ -3100,6 +3854,24 @@
         }
       },
       {
+        "key": "8",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 8 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 8
+        }
+      },
+      {
+        "key": "NumPad8",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 8 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 8
+        }
+      },
+      {
         "key": "9",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Add the digit 9 to the counter",
@@ -3118,8 +3890,50 @@
         }
       },
       {
+        "key": "9",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 9 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 9
+        }
+      },
+      {
+        "key": "NumPad9",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Add the digit 9 to the counter",
+        "command": "dance.updateCount",
+        "args": {
+          "addDigits": 9
+        }
+      },
+      {
+        "key": "Ctrl+C",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "command": "editor.action.commentLine",
+        "args": {
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Ctrl+C",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "command": "editor.action.commentLine",
+        "args": {
+          "$exclude": []
+        }
+      },
+      {
         "key": "Shift+;",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "command": "workbench.action.showCommands",
+        "args": {
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Shift+;",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "command": "workbench.action.showCommands",
         "args": {
           "$exclude": []
@@ -3151,9 +3965,27 @@
       },
       {
         "key": "Escape",
-        "when": "editorTextFocus && dance.mode == 'insert'",
+        "when": "editorTextFocus && dance.mode == 'insert' && !suggestWidgetVisible",
         "title": "Set mode to Normal",
         "command": "dance.modes.set.normal"
+      },
+      {
+        "key": "Escape",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Set mode to Normal",
+        "command": "dance.modes.set.normal"
+      },
+      {
+        "key": "V",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Set mode to Normal",
+        "command": "dance.modes.set.normal"
+      },
+      {
+        "key": "V",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Set mode to Select",
+        "command": "dance.modes.set.select"
       },
       {
         "key": "Ctrl+V",
@@ -3180,8 +4012,26 @@
         "command": "dance.search"
       },
       {
+        "key": "/",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Search",
+        "command": "dance.search"
+      },
+      {
+        "key": "NumPad_Divide",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Search",
+        "command": "dance.search"
+      },
+      {
         "key": "Alt+/",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Search backward",
+        "command": "dance.search.backward"
+      },
+      {
+        "key": "Alt+/",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Search backward",
         "command": "dance.search.backward"
       },
@@ -3198,28 +4048,34 @@
         "command": "dance.search.extend"
       },
       {
+        "key": "Shift+/",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Search (extend)",
+        "command": "dance.search.extend"
+      },
+      {
         "key": "N",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select next match",
         "command": "dance.search.next"
       },
       {
-        "key": "Shift+N",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Add next match",
-        "command": "dance.search.next.add"
+        "key": "N",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Select next match",
+        "command": "dance.search.next"
       },
       {
-        "key": "Alt+N",
+        "key": "Shift+N",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select previous match",
         "command": "dance.search.previous"
       },
       {
-        "key": "Shift+Alt+N",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Add previous match",
-        "command": "dance.search.previous.add"
+        "key": "Shift+N",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Select previous match",
+        "command": "dance.search.previous"
       },
       {
         "key": "Shift+Alt+8",
@@ -3230,6 +4086,18 @@
       {
         "key": "Alt+NumPad_Multiply",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Search current selection",
+        "command": "dance.search.selection"
+      },
+      {
+        "key": "Shift+Alt+8",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Search current selection",
+        "command": "dance.search.selection"
+      },
+      {
+        "key": "Alt+NumPad_Multiply",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Search current selection",
         "command": "dance.search.selection"
       },
@@ -3246,122 +4114,38 @@
         "command": "dance.search.selection.smart"
       },
       {
+        "key": "Shift+8",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Search current selection (smart)",
+        "command": "dance.search.selection.smart"
+      },
+      {
+        "key": "NumPad_Multiply",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Search current selection (smart)",
+        "command": "dance.search.selection.smart"
+      },
+      {
         "key": "T",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select to character (excluded)",
         "command": "dance.seek"
       },
       {
-        "key": "Alt+A",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select whole object",
-        "command": "dance.seek.askObject"
-      },
-      {
-        "key": "Alt+A",
-        "when": "editorTextFocus && dance.mode == 'insert'",
-        "title": "Select whole object",
-        "command": "dance.seek.askObject"
-      },
-      {
-        "key": "]",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to whole object end",
-        "command": "dance.seek.askObject.end"
-      },
-      {
-        "key": "Shift+]",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Extend to whole object end",
-        "command": "dance.seek.askObject.end.extend"
-      },
-      {
-        "key": "Alt+I",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select inner object",
-        "command": "dance.seek.askObject.inner"
-      },
-      {
-        "key": "Alt+I",
-        "when": "editorTextFocus && dance.mode == 'insert'",
-        "title": "Select inner object",
-        "command": "dance.seek.askObject.inner"
-      },
-      {
-        "key": "Alt+]",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to inner object end",
-        "command": "dance.seek.askObject.inner.end"
-      },
-      {
-        "key": "Shift+Alt+]",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Extend to inner object end",
-        "command": "dance.seek.askObject.inner.end.extend"
-      },
-      {
-        "key": "Alt+[",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to inner object start",
-        "command": "dance.seek.askObject.inner.start"
-      },
-      {
-        "key": "Shift+Alt+[",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Extend to inner object start",
-        "command": "dance.seek.askObject.inner.start.extend"
-      },
-      {
-        "key": "[",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to whole object start",
-        "command": "dance.seek.askObject.start"
-      },
-      {
-        "key": "Shift+[",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Extend to whole object start",
-        "command": "dance.seek.askObject.start.extend"
-      },
-      {
-        "key": "Alt+T",
+        "key": "Shift+T",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select to character (excluded, backward)",
         "command": "dance.seek.backward"
       },
       {
-        "key": "M",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to next enclosing character",
-        "command": "dance.seek.enclosing"
-      },
-      {
-        "key": "Alt+M",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to previous enclosing character",
-        "command": "dance.seek.enclosing.backward"
-      },
-      {
-        "key": "Shift+M",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Extend to next enclosing character",
-        "command": "dance.seek.enclosing.extend"
-      },
-      {
-        "key": "Shift+Alt+M",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Extend to previous enclosing character",
-        "command": "dance.seek.enclosing.extend.backward"
-      },
-      {
-        "key": "Shift+T",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "T",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to character (excluded)",
         "command": "dance.seek.extend"
       },
       {
-        "key": "Shift+Alt+T",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Shift+T",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to character (excluded, backward)",
         "command": "dance.seek.extend.backward"
       },
@@ -3372,20 +4156,20 @@
         "command": "dance.seek.included"
       },
       {
-        "key": "Alt+F",
+        "key": "Shift+F",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select to character (included, backward)",
         "command": "dance.seek.included.backward"
       },
       {
-        "key": "Shift+F",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "F",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to character (included)",
         "command": "dance.seek.included.extend"
       },
       {
-        "key": "Shift+Alt+F",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Shift+F",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to character (included, backward)",
         "command": "dance.seek.included.extend.backward"
       },
@@ -3402,38 +4186,38 @@
         "command": "dance.seek.word.backward"
       },
       {
-        "key": "Shift+W",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "W",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to next word start",
         "command": "dance.seek.word.extend"
       },
       {
-        "key": "Shift+B",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "B",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to previous word start",
         "command": "dance.seek.word.extend.backward"
       },
       {
-        "key": "Alt+W",
+        "key": "Shift+W",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select to next non-whitespace word start",
         "command": "dance.seek.word.ws"
       },
       {
-        "key": "Alt+B",
+        "key": "Shift+B",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select to previous non-whitespace word start",
         "command": "dance.seek.word.ws.backward"
       },
       {
-        "key": "Shift+Alt+W",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Shift+W",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to next non-whitespace word start",
         "command": "dance.seek.word.ws.extend"
       },
       {
-        "key": "Shift+Alt+B",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Shift+B",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to previous non-whitespace word start",
         "command": "dance.seek.word.ws.extend.backward"
       },
@@ -3444,20 +4228,20 @@
         "command": "dance.seek.wordEnd"
       },
       {
-        "key": "Shift+E",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "E",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to next word end",
         "command": "dance.seek.wordEnd.extend"
       },
       {
-        "key": "Alt+E",
+        "key": "Shift+E",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Select to next non-whitespace word end",
         "command": "dance.seek.wordEnd.ws"
       },
       {
-        "key": "Shift+Alt+E",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Shift+E",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to next non-whitespace word end",
         "command": "dance.seek.wordEnd.ws.extend"
       },
@@ -3468,14 +4252,20 @@
         "command": "dance.select.buffer"
       },
       {
-        "key": "Shift+J",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Shift+5",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Select whole buffer",
+        "command": "dance.select.buffer"
+      },
+      {
+        "key": "J",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend down",
         "command": "dance.select.down.extend"
       },
       {
-        "key": "Shift+Down",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Down",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend down",
         "command": "dance.select.down.extend"
       },
@@ -3492,14 +4282,14 @@
         "command": "dance.select.down.jump"
       },
       {
-        "key": "Shift+H",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "H",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend left",
         "command": "dance.select.left.extend"
       },
       {
-        "key": "Shift+Left",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Left",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend left",
         "command": "dance.select.left.extend"
       },
@@ -3540,18 +4330,6 @@
         "command": "dance.select.lineEnd.extend"
       },
       {
-        "key": "Alt+H",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to line start",
-        "command": "dance.select.lineStart"
-      },
-      {
-        "key": "Home",
-        "when": "editorTextFocus && dance.mode == 'normal'",
-        "title": "Select to line start",
-        "command": "dance.select.lineStart"
-      },
-      {
         "key": "Shift+Alt+H",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Extend to line start",
@@ -3564,14 +4342,26 @@
         "command": "dance.select.lineStart.extend"
       },
       {
-        "key": "Shift+L",
+        "key": "Alt+H",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Jump to line start",
+        "command": "dance.select.lineStart.jump"
+      },
+      {
+        "key": "Shift+G",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Jump to line start",
+        "command": "dance.select.lineStart.jump"
+      },
+      {
+        "key": "L",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend right",
         "command": "dance.select.right.extend"
       },
       {
-        "key": "Shift+Right",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Right",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend right",
         "command": "dance.select.right.extend"
       },
@@ -3588,8 +4378,8 @@
         "command": "dance.select.right.jump"
       },
       {
-        "key": "Shift+G",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "G",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend to",
         "command": "dance.select.to.extend"
       },
@@ -3600,14 +4390,14 @@
         "command": "dance.select.to.jump"
       },
       {
-        "key": "Shift+K",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "K",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend up",
         "command": "dance.select.up.extend"
       },
       {
-        "key": "Shift+Up",
-        "when": "editorTextFocus && dance.mode == 'normal'",
+        "key": "Up",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Extend up",
         "command": "dance.select.up.extend"
       },
@@ -3710,8 +4500,20 @@
         "command": "dance.selections.changeDirection"
       },
       {
+        "key": "Alt+;",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Change direction of selections",
+        "command": "dance.selections.changeDirection"
+      },
+      {
         "key": "Alt+,",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Clear main selections",
+        "command": "dance.selections.clear.main"
+      },
+      {
+        "key": "Alt+,",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Clear main selections",
         "command": "dance.selections.clear.main"
       },
@@ -3722,8 +4524,20 @@
         "command": "dance.selections.clear.secondary"
       },
       {
+        "key": ",",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Clear secondary selections",
+        "command": "dance.selections.clear.secondary"
+      },
+      {
         "key": "Shift+C",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Copy selections below",
+        "command": "dance.selections.copy"
+      },
+      {
+        "key": "Shift+C",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Copy selections below",
         "command": "dance.selections.copy"
       },
@@ -3734,8 +4548,20 @@
         "command": "dance.selections.copy.above"
       },
       {
+        "key": "Shift+Alt+C",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Copy selections above",
+        "command": "dance.selections.copy.above"
+      },
+      {
         "key": "X",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Expand to lines",
+        "command": "dance.selections.expandToLines"
+      },
+      {
+        "key": "X",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Expand to lines",
         "command": "dance.selections.expandToLines"
       },
@@ -3746,14 +4572,26 @@
         "command": "dance.selections.faceForward"
       },
       {
+        "key": "Shift+Alt+;",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Forward selections",
+        "command": "dance.selections.faceForward"
+      },
+      {
         "key": "Shift+4",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Filter selections",
         "command": "dance.selections.filter"
       },
       {
-        "key": "Alt+K",
+        "key": "Shift+K",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Keep matching selections",
+        "command": "dance.selections.filter.regexp"
+      },
+      {
+        "key": "Shift+K",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Keep matching selections",
         "command": "dance.selections.filter.regexp"
       },
@@ -3764,8 +4602,20 @@
         "command": "dance.selections.filter.regexp.inverse"
       },
       {
+        "key": "Shift+Alt+K",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Clear matching selections",
+        "command": "dance.selections.filter.regexp.inverse"
+      },
+      {
         "key": "Shift+Alt+-",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Merge contiguous selections",
+        "command": "dance.selections.merge"
+      },
+      {
+        "key": "Shift+Alt+-",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Merge contiguous selections",
         "command": "dance.selections.merge"
       },
@@ -3800,8 +4650,20 @@
         "command": "dance.selections.reduce"
       },
       {
+        "key": ";",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Reduce selections to their cursor",
+        "command": "dance.selections.reduce"
+      },
+      {
         "key": "Shift+Alt+S",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Reduce selections to their ends",
+        "command": "dance.selections.reduce.edges"
+      },
+      {
+        "key": "Shift+Alt+S",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Reduce selections to their ends",
         "command": "dance.selections.reduce.edges"
       },
@@ -3839,8 +4701,20 @@
         "command": "dance.selections.saveText"
       },
       {
+        "key": "Y",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Copy selections text",
+        "command": "dance.selections.saveText"
+      },
+      {
         "key": "S",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Leap or select",
+        "command": "dance.selections.select.orLeap"
+      },
+      {
+        "key": "S",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Leap or select",
         "command": "dance.selections.select.orLeap"
       },
@@ -3851,8 +4725,20 @@
         "command": "dance.selections.split"
       },
       {
+        "key": "Shift+S",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Split selections",
+        "command": "dance.selections.split"
+      },
+      {
         "key": "Alt+S",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Leap or select backward",
+        "command": "dance.selections.splitLines.orLeap.backward"
+      },
+      {
+        "key": "Alt+S",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Leap or select backward",
         "command": "dance.selections.splitLines.orLeap.backward"
       },
@@ -3863,8 +4749,20 @@
         "command": "dance.selections.toggleIndices"
       },
       {
+        "key": "Enter",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Toggle selection indices",
+        "command": "dance.selections.toggleIndices"
+      },
+      {
         "key": "Alt+X",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Trim lines",
+        "command": "dance.selections.trimLines"
+      },
+      {
+        "key": "Alt+X",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Trim lines",
         "command": "dance.selections.trimLines"
       },
@@ -3875,8 +4773,20 @@
         "command": "dance.selections.trimWhitespace"
       },
       {
+        "key": "Shift+-",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Trim whitespace",
+        "command": "dance.selections.trimWhitespace"
+      },
+      {
         "key": "Shift+Alt+9",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Rotate selections clockwise",
+        "command": "dance.selections.rotate.both"
+      },
+      {
+        "key": "Shift+Alt+9",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Rotate selections clockwise",
         "command": "dance.selections.rotate.both"
       },
@@ -3887,8 +4797,20 @@
         "command": "dance.selections.rotate.both.reverse"
       },
       {
+        "key": "Shift+Alt+0",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Rotate selections counter-clockwise",
+        "command": "dance.selections.rotate.both.reverse"
+      },
+      {
         "key": "Shift+9",
         "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Rotate selections clockwise (selections only)",
+        "command": "dance.selections.rotate.selections"
+      },
+      {
+        "key": "Shift+9",
+        "when": "editorTextFocus && dance.mode == 'select'",
         "title": "Rotate selections clockwise (selections only)",
         "command": "dance.selections.rotate.selections"
       },
@@ -3899,7 +4821,33 @@
         "command": "dance.selections.rotate.selections.reverse"
       },
       {
-        "key": "V",
+        "key": "Shift+0",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Rotate selections counter-clockwise (selections only)",
+        "command": "dance.selections.rotate.selections.reverse"
+      },
+      {
+        "key": "Space",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Show space menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "space",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Space",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show space menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "space",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Z",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Show view menu",
         "command": "dance.openMenu",
@@ -3909,7 +4857,17 @@
         }
       },
       {
-        "key": "Shift+V",
+        "key": "Z",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show view menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "view",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Shift+Z",
         "when": "editorTextFocus && dance.mode == 'normal'",
         "title": "Show view menu (locked)",
         "command": "dance.openMenu",
@@ -3920,9 +4878,75 @@
         }
       },
       {
+        "key": "Shift+Z",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show view menu (locked)",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "view",
+          "locked": true,
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Ctrl+W",
+        "when": "editorTextFocus && dance.mode == 'normal'",
+        "title": "Show window menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "window",
+          "$exclude": []
+        }
+      },
+      {
+        "key": "Ctrl+W",
+        "when": "editorTextFocus && dance.mode == 'select'",
+        "title": "Show window menu",
+        "command": "dance.openMenu",
+        "args": {
+          "menu": "window",
+          "$exclude": []
+        }
+      },
+      {
         "command": "dance.ignore",
         "key": "Shift+D",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+D",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+H",
+        "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+H",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+L",
+        "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+L",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+V",
+        "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+V",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -3931,8 +4955,18 @@
       },
       {
         "command": "dance.ignore",
+        "key": "Shift+X",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "Shift+Y",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+Y",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -3941,8 +4975,18 @@
       },
       {
         "command": "dance.ignore",
+        "key": "Shift+2",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "Shift+3",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+3",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -3951,8 +4995,18 @@
       },
       {
         "command": "dance.ignore",
+        "key": "Shift+6",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "'",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "'",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -3961,8 +5015,18 @@
       },
       {
         "command": "dance.ignore",
+        "key": "-",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "=",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "=",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -3971,8 +5035,8 @@
       },
       {
         "command": "dance.ignore",
-        "key": "Space",
-        "when": "editorTextFocus && dance.mode == 'normal'"
+        "key": "Tab",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -3981,8 +5045,18 @@
       },
       {
         "command": "dance.ignore",
+        "key": "NumPad_Add",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "NumPad_Subtract",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "NumPad_Subtract",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -3991,8 +5065,18 @@
       },
       {
         "command": "dance.ignore",
+        "key": "Shift+=",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "Shift+Tab",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+Tab",
+        "when": "editorTextFocus && dance.mode == 'select'"
       },
       {
         "command": "dance.ignore",
@@ -4001,13 +5085,146 @@
       },
       {
         "command": "dance.ignore",
+        "key": "Shift+Space",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "Shift+NumPad_Add",
         "when": "editorTextFocus && dance.mode == 'normal'"
       },
       {
         "command": "dance.ignore",
+        "key": "Shift+NumPad_Add",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "command": "dance.ignore",
         "key": "Shift+NumPad_Subtract",
         "when": "editorTextFocus && dance.mode == 'normal'"
+      },
+      {
+        "command": "dance.ignore",
+        "key": "Shift+NumPad_Subtract",
+        "when": "editorTextFocus && dance.mode == 'select'"
+      },
+      {
+        "key": "k",
+        "when": "dance.mode == 'normal' && codeActionMenuVisible",
+        "command": "selectPrevCodeAction"
+      },
+      {
+        "key": "j",
+        "when": "dance.mode == 'normal' && codeActionMenuVisible",
+        "command": "selectNextCodeAction"
+      },
+      {
+        "key": "k",
+        "when": "editorHoverFocused",
+        "command": "editor.action.scrollUpHover"
+      },
+      {
+        "key": "j",
+        "when": "editorHoverFocused",
+        "command": "editor.action.scrollDownHover"
+      },
+      {
+        "key": "h",
+        "when": "editorHoverFocused",
+        "command": "editor.action.scrollLeftHover"
+      },
+      {
+        "key": "l",
+        "when": "editorHoverFocused",
+        "command": "editor.action.scrollRightHover"
+      },
+      {
+        "key": "ctrl+b",
+        "when": "editorHoverFocused",
+        "command": "editor.action.pageUpHover"
+      },
+      {
+        "key": "ctrl+f",
+        "when": "editorHoverFocused",
+        "command": "editor.action.pageDownHover"
+      },
+      {
+        "key": "ctrl+k",
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus",
+        "command": "selectPrevSuggestion"
+      },
+      {
+        "key": "ctrl+j",
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus",
+        "command": "selectNextSuggestion"
+      },
+      {
+        "key": "h",
+        "command": "list.collapse",
+        "when": "listFocus && !inputFocus"
+      },
+      {
+        "key": "j",
+        "command": "list.focusDown",
+        "when": "listFocus && !inputFocus"
+      },
+      {
+        "key": "k",
+        "command": "list.focusUp",
+        "when": "listFocus && !inputFocus"
+      },
+      {
+        "key": "l",
+        "command": "list.select",
+        "when": "listFocus && !inputFocus"
+      },
+      {
+        "key": "o",
+        "command": "list.toggleExpand",
+        "when": "listFocus && !inputFocus"
+      },
+      {
+        "key": "y",
+        "command": "filesExplorer.copy",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !inputFocus"
+      },
+      {
+        "key": "x",
+        "command": "filesExplorer.cut",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !inputFocus"
+      },
+      {
+        "key": "p",
+        "command": "filesExplorer.paste",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !inputFocus"
+      },
+      {
+        "key": "d",
+        "command": "moveFileToTrash",
+        "when": "explorerResourceMoveableToTrash && explorerViewletVisible && filesExplorerFocus && !explorerResourceReadonly && !inputFocus"
+      },
+      {
+        "key": "c",
+        "command": "renameFile",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
+      },
+      {
+        "key": "shift+o",
+        "command": "explorer.openAndPassFocus",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !inputFocus"
+      },
+      {
+        "key": "v",
+        "command": "filesExplorer.openFilePreserveFocus",
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !inputFocus"
+      },
+      {
+        "key": ",",
+        "command": "dance.openMenu",
+        "args": {
+          "input": "file-explorer"
+        },
+        "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus"
       }
     ]
   }

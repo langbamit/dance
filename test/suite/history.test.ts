@@ -10,7 +10,7 @@ function delay(ms = 10) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-async function type(text: string) {
+async function _type(text: string) {
   await executeCommand("workbench.action.focusActiveEditorGroup");
 
   // We can't simply use
@@ -43,23 +43,11 @@ async function type(text: string) {
   }
 }
 
-async function deleteBefore(count = 1) {
-  for (let i = 0; i < count; i++) {
-    await executeCommand("deleteLeft");
-  }
-}
-
-async function deleteAfter(count = 1) {
-  for (let i = 0; i < count; i++) {
-    await executeCommand("deleteRight");
-  }
-}
-
 suite("History tests", function () {
   // Set up document.
   let document: vscode.TextDocument,
-      editor: vscode.TextEditor,
-      extension: Extension;
+    editor: vscode.TextEditor,
+    extension: Extension;
 
   this.beforeAll(async () => {
     document = await vscode.workspace.openTextDocument();
@@ -67,12 +55,16 @@ suite("History tests", function () {
     editor.options.insertSpaces = true;
     editor.options.tabSize = 2;
 
-    extension = (await vscode.extensions.getExtension("gregoire.dance")!.activate()).extension;
+    extension = (
+      await vscode.extensions.getExtension("gregoire.dance")!.activate()
+    ).extension;
 
     await new Promise<void>((resolve) => {
       const disposable = extension.editors.onModeDidChange(async () => {
         disposable.dispose();
-        await extension.editors.getState(editor).setMode(extension.modes.get("insert")!);
+        await extension.editors
+          .getState(editor)
+          .setMode(extension.modes.get("insert")!);
         resolve();
       });
     });
@@ -84,35 +76,49 @@ suite("History tests", function () {
 
   async function record(f: () => Promise<void>) {
     const recorder = extension.recorder,
-          recording = recorder.startRecording();
+      recording = recorder.startRecording();
 
-    await extension.editors.getState(editor).setMode(extension.modes.get("insert")!);
+    await extension.editors
+      .getState(editor)
+      .setMode(extension.modes.get("insert")!);
     await f();
-    await extension.editors.getState(editor).setMode(extension.modes.get("normal")!);
-    await delay(10);  // For VS Code to update the editor in the extension host.
+    await extension.editors
+      .getState(editor)
+      .setMode(extension.modes.get("normal")!);
+    await delay(10); // For VS Code to update the editor in the extension host.
 
     return recording.complete();
   }
 
-  function testRepeat(name: string, document: string, run: () => Promise<void>) {
+  function testRepeat(
+    name: string,
+    document: string,
+    run: () => Promise<void>,
+  ) {
     test(name, async function () {
       const startDocument = ExpectedDocument.parseIndented(4, document);
 
       await startDocument.apply(editor);
-      await delay(10);  // For VS Code to update the editor in the backend.
+      await delay(10); // For VS Code to update the editor in the backend.
 
       const recording = await record(run),
-            expectedDocument = ExpectedDocument.snapshot(editor);
+        expectedDocument = ExpectedDocument.snapshot(editor);
 
       await startDocument.apply(editor);
-      await delay(10);  // For VS Code to update the editor in the backend.
+      await delay(10); // For VS Code to update the editor in the backend.
 
       await recording.replay(
-        new Context(extension.editors.getState(editor), extension.cancellationToken));
+        new Context(
+          extension.editors.getState(editor),
+          extension.cancellationToken,
+        ),
+      );
 
       expectedDocument.assertEquals(editor);
     });
   }
+
+  const _ = testRepeat;
 
   // TODO: test is flaky
   // testRepeat("insert a", `

@@ -23,23 +23,26 @@ following example.
 
 ```js
 const anchor = new vscode.Position(0, 0),
-      active = new vscode.Position(0, 3),
-      selection = new vscode.Selection(anchor, active);
+  active = new vscode.Position(0, 3),
+  selection = new vscode.Selection(anchor, active);
 
 await updateSelections([selection]);
 ```
 
 Before:
+
 ```
 foo bar
     ^^^ 0
 ```
 
 After:
+
 ```
 foo bar
 ^^^ 0
 ```
+
 </details>
 
 <details>
@@ -48,18 +51,16 @@ foo bar
 ### Example
 
 ```js
-expect(
-  text(Selections.current[0]),
-  "to be",
-  "bar",
-);
+expect(text(Selections.current[0]), "to be", "bar");
 ```
 
 With:
+
 ```
 foo bar
     ^^^ 0
 ```
+
 </details>
 
 <details>
@@ -69,17 +70,17 @@ foo bar
 
 ```js
 expect(
-  map(
-    new vscode.Range(Positions.at(0, 0), Positions.at(0, 5)),
-    (p) => p.translate(1),
+  map(new vscode.Range(Positions.at(0, 0), Positions.at(0, 5)), (p) =>
+    p.translate(1),
   ),
   "to satisfy",
   {
     start: expect.it("to be at coords", 0, 0),
     end: expect.it("to be at coords", 0, 5),
   },
-)
+);
 ```
+
 </details>
 
 ### Debugging
@@ -118,6 +119,7 @@ foo bar
 ```
 
 ## 1 search-b
+
 [up](#1)
 
 - .search { re: "b" }
@@ -147,16 +149,17 @@ regular expression.
 
 To make it easier to navigate and understand tests, tests must have be named
 this way:
+
 - Initial sections should be top-level headers (have a single `#` character),
   and be a single non-whitespace word (e.g. `1`, `empty-document`).
 - Non-initial sections have names split in several parts separated by spaces.
   If a test essentially moves to the left, it should be named `<up> left`, with
   `<up>` the name of the section from which it transitions. It should also have
   as many `#` characters as parts (with a upper bound of 6).
-  * Names cannot contain whitespace. Names should be in snake-case. If a count
+  - Names cannot contain whitespace. Names should be in snake-case. If a count
     is associated with the test, it should be the last part of the test. If a
     test repeats exactly what its previous test does, it should be named `x`.
-  * If a test performs multiple logically different actions, they should be
+  - If a test performs multiple logically different actions, they should be
     separated by `-then-` in the title of the test.
 
 Finally, sections should always be nested under the section from which they
@@ -184,8 +187,7 @@ active position).
 <details>
   <summary><b>Examples</b></summary>
 
-> The following examples are also tested in [`utils.test.ts`](
-  ./suite/utils.test.ts).
+> The following examples are also tested in [`utils.test.ts`](./suite/utils.test.ts).
 
 1. Equivalent to [0:0 → 0:3]:
    ```
@@ -252,12 +254,14 @@ active position).
     ^^^^ 0
     ```
 11. Equivalent to [0:0 → 1:4]:
+
     ```
 
     ^ 0
     abcd
        ^ 0
     ```
+
 12. Equivalent to [0:3 → 0:3]:
     ```
     foo

@@ -123,9 +123,11 @@ suite("./test/suite/commands/selections-trim.md", function () {
       hello
       ^^^^^^ 0
       world
+      ^^^^^^ 0
       my dear
       |^^^^^^^ 1
       friends
+      ^^^^^^^ 1
     `);
   });
 
@@ -148,7 +150,7 @@ suite("./test/suite/commands/selections-trim.md", function () {
     await executeCommand("dance.selections.expandToLines");
 
     // Ensure document is as expected.
-    ExpectedDocument.assertEquals(editor, "./test/suite/commands/selections-trim.md:108:1", 6, String.raw`
+    ExpectedDocument.assertEquals(editor, "./test/suite/commands/selections-trim.md:110:1", 6, String.raw`
       hello
       |^^^^^ 0
       world
@@ -181,7 +183,7 @@ suite("./test/suite/commands/selections-trim.md", function () {
     await executeCommand("dance.selections.trimLines");
 
     // Ensure document is as expected.
-    ExpectedDocument.assertEquals(editor, "./test/suite/commands/selections-trim.md:129:1", 6, String.raw`
+    ExpectedDocument.assertEquals(editor, "./test/suite/commands/selections-trim.md:131:1", 6, String.raw`
       hello
       world
       my

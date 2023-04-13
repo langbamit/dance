@@ -64,7 +64,10 @@ export function clamp(line: number, document?: vscode.TextDocument) {
   return line;
 }
 
-function diffAddedByTabs(text: string, editor: Pick<vscode.TextEditor, "options">) {
+function diffAddedByTabs(
+  text: string,
+  editor: Pick<vscode.TextEditor, "options">,
+) {
   const tabSize = editor.options.tabSize as number;
   let total = 0;
 
@@ -136,7 +139,9 @@ export function column(
   if (typeof line === "number") {
     editor ??= Context.current.editor;
 
-    const text = editor.document.lineAt(line).text.slice(0, character as number);
+    const text = editor.document
+      .lineAt(line)
+      .text.slice(0, character as number);
 
     return text.length + diffAddedByTabs(text, editor);
   }
@@ -145,7 +150,10 @@ export function column(
 
   const text = editor.document.lineAt(line.line).text.slice(0, line.character);
 
-  return new vscode.Position(line.line, text.length + diffAddedByTabs(text, editor));
+  return new vscode.Position(
+    line.line,
+    text.length + diffAddedByTabs(text, editor),
+  );
 }
 
 /**
@@ -178,22 +186,29 @@ export function character(
   if (typeof lineOrPosition === "number") {
     // Second overload.
     const line = lineOrPosition,
-          character = characterOrEditor as number,
-          editor = editorOrRoundUp as vscode.TextEditor ?? Context.current.editor;
+      character = characterOrEditor as number,
+      editor = (editorOrRoundUp as vscode.TextEditor) ?? Context.current.editor;
 
-    return getCharacter(editor.document.lineAt(line).text, character, editor, roundUp ?? false);
+    return getCharacter(
+      editor.document.lineAt(line).text,
+      character,
+      editor,
+      roundUp ?? false,
+    );
   }
 
   // First overload.
   const position = lineOrPosition,
-        editor = characterOrEditor as vscode.TextEditor ?? Context.current.editor;
+    editor = (characterOrEditor as vscode.TextEditor) ?? Context.current.editor;
 
-  roundUp = editorOrRoundUp as boolean ?? false;
+  roundUp = (editorOrRoundUp as boolean) ?? false;
 
   const text = editor.document.lineAt(position.line).text;
 
   return new vscode.Position(
-    position.line, getCharacter(text, position.character, editor, roundUp));
+    position.line,
+    getCharacter(text, position.character, editor, roundUp),
+  );
 }
 
 /**
@@ -202,7 +217,8 @@ export function character(
  */
 export function columns(
   line: number | vscode.Position,
-  editor: Pick<vscode.TextEditor, "document" | "options"> = Context.current.editor,
+  editor: Pick<vscode.TextEditor, "document" | "options"> = Context.current
+    .editor,
 ): number {
   if (typeof line !== "number") {
     line = line.line;

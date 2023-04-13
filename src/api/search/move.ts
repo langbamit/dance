@@ -46,7 +46,7 @@ export function moveWithReachedDocumentEdge() {
  * Moves the given position backward as long as the state returned by the
  * given function is not `undefined`.
  *
- * ### Example
+ * @example
  *
  * ```js
  * // Go backward as long as the previous character is equal to the current
@@ -103,7 +103,7 @@ export function moveWithBackward<T>(
  * Moves the given position forward as long as the state returned by the given
  * function is not `undefined`.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(
@@ -303,7 +303,7 @@ export function moveWhileReachedDocumentEdge() {
 /**
  * Moves the given position backward as long as the given predicate is true.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(
@@ -332,13 +332,18 @@ export function moveWhileBackward(
   origin: vscode.Position,
   document?: vscode.TextDocument,
 ): vscode.Position {
-  return moveWithBackward((ch) => predicate(ch) ? null : undefined, null, origin, document);
+  return moveWithBackward(
+    (ch) => (predicate(ch) ? null : undefined),
+    null,
+    origin,
+    document,
+  );
 }
 
 /**
  * Moves the given position forward as long as the given predicate is true.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(
@@ -367,7 +372,12 @@ export function moveWhileForward(
   origin: vscode.Position,
   document?: vscode.TextDocument,
 ): vscode.Position {
-  return moveWithForward((ch) => predicate(ch) ? null : undefined, null, origin, document);
+  return moveWithForward(
+    (ch) => (predicate(ch) ? null : undefined),
+    null,
+    origin,
+    document,
+  );
 }
 
 /**
@@ -405,7 +415,7 @@ export function moveWhileByCharCodeBackward(
   document?: vscode.TextDocument,
 ): vscode.Position {
   return moveWithByCharCodeBackward(
-    (ch) => predicate(ch) ? null : undefined,
+    (ch) => (predicate(ch) ? null : undefined),
     null,
     origin,
     document,
@@ -421,7 +431,7 @@ export function moveWhileByCharCodeForward(
   document?: vscode.TextDocument,
 ): vscode.Position {
   return moveWithByCharCodeForward(
-    (ch) => predicate(ch) ? null : undefined,
+    (ch) => (predicate(ch) ? null : undefined),
     null,
     origin,
     document,
@@ -477,8 +487,8 @@ export function lineByLineBackward<T>(
   didReachDocumentEdge = false;
 
   const originLine = document.lineAt(origin),
-        originLineText = originLine.text.slice(0, origin.character),
-        originResult = seek(originLineText, Positions.lineStart(origin.line));
+    originLineText = originLine.text.slice(0, origin.character),
+    originResult = seek(originLineText, Positions.lineStart(origin.line));
 
   if (originResult !== undefined) {
     return originResult;
@@ -486,7 +496,7 @@ export function lineByLineBackward<T>(
 
   for (let line = origin.line - 1; line >= 0; line--) {
     const lineText = document.lineAt(line).text,
-          result = seek(lineText, Positions.lineStart(line));
+      result = seek(lineText, Positions.lineStart(line));
 
     if (result !== undefined) {
       return result;
@@ -511,16 +521,20 @@ export function lineByLineForward<T>(
   didReachDocumentEdge = false;
 
   const originLine = document.lineAt(origin),
-        originLineText = originLine.text.slice(origin.character),
-        originResult = seek(originLineText, origin);
+    originLineText = originLine.text.slice(origin.character),
+    originResult = seek(originLineText, origin);
 
   if (originResult !== undefined) {
     return originResult;
   }
 
-  for (let line = origin.line + 1, lineCount = document.lineCount; line < lineCount; line++) {
+  for (
+    let line = origin.line + 1, lineCount = document.lineCount;
+    line < lineCount;
+    line++
+  ) {
     const lineText = document.lineAt(line).text,
-          result = seek(lineText, Positions.lineStart(line));
+      result = seek(lineText, Positions.lineStart(line));
 
     if (result !== undefined) {
       return result;

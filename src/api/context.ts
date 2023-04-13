@@ -28,7 +28,9 @@ export class ContextWithoutActiveEditor {
    */
   public static get current() {
     if (currentContext === undefined) {
-      throw new Error("attempted to access context object outside of execution context");
+      throw new Error(
+        "attempted to access context object outside of execution context",
+      );
     }
 
     return currentContext;
@@ -59,8 +61,10 @@ export class ContextWithoutActiveEditor {
     onFulfilled?: (value: T) => R,
     onRejected?: (reason: any) => R,
   ) {
-    return this.currentOrUndefined?.then(thenable, onFulfilled, onRejected)
-        ?? thenable.then(onFulfilled, onRejected);
+    return (
+      this.currentOrUndefined?.then(thenable, onFulfilled, onRejected) ??
+      thenable.then(onFulfilled, onRejected)
+    );
   }
 
   /**
@@ -99,7 +103,10 @@ export class ContextWithoutActiveEditor {
    */
   public withCancellationToken(cancellationToken: vscode.CancellationToken) {
     return new Context.WithoutActiveEditor(
-      this.extension, cancellationToken, this.commandDescriptor);
+      this.extension,
+      cancellationToken,
+      this.commandDescriptor,
+    );
   }
 
   /**
@@ -123,7 +130,10 @@ export class ContextWithoutActiveEditor {
    * Creates a new promise that executes within the current context.
    */
   public createPromise<T>(
-    executor: (resolve: (value: T) => void, reject: (error: any) => void) => void,
+    executor: (
+      resolve: (value: T) => void,
+      reject: (error: any) => void,
+    ) => void,
   ) {
     return this.wrap(new Promise<T>(executor));
   }
@@ -150,7 +160,9 @@ export class ContextWithoutActiveEditor {
   /**
    * Runs the given async function within the current context.
    */
-  public async runAsync<T>(f: (context: this) => T): Promise<T extends Thenable<infer R> ? R : T> {
+  public async runAsync<T>(
+    f: (context: this) => T,
+  ): Promise<T extends Thenable<infer R> ? R : T> {
     const previousContext = currentContext;
 
     if (previousContext === this) {
@@ -164,7 +176,7 @@ export class ContextWithoutActiveEditor {
     currentContext = this;
 
     try {
-      return await f(this) as any;
+      return (await f(this)) as any;
     } finally {
       currentContext = previousContext;
     }
@@ -187,7 +199,10 @@ export class ContextWithoutActiveEditor {
    */
   public wrap<T>(thenable: Thenable<T>): Thenable<T> {
     return {
-      then: <R>(onFulfilled?: (value: T) => R, onRejected?: (reason: any) => R) => {
+      then: <R>(
+        onFulfilled?: (value: T) => R,
+        onRejected?: (reason: any) => R,
+      ) => {
         return this.then(thenable, onFulfilled, onRejected);
       },
     };
@@ -211,7 +226,8 @@ export class ContextWithoutActiveEditor {
     if (onRejected !== undefined) {
       const f = onRejected;
 
-      onRejected = (reason: any) => this.runAsync(() => f(reason) as any) as any;
+      onRejected = (reason: any) =>
+        this.runAsync(() => f(reason) as any) as any;
     }
 
     return this.wrap(thenable.then(onFulfilled, onRejected));
@@ -254,7 +270,9 @@ export class Context extends ContextWithoutActiveEditor {
     return currentContext;
   }
 
-  public static assert(context: Context.WithoutActiveEditor): asserts context is Context {
+  public static assert(
+    context: Context.WithoutActiveEditor,
+  ): asserts context is Context {
     if (!(context instanceof Context)) {
       throw new Error("current context does not have an active text editor");
     }
@@ -266,7 +284,7 @@ export class Context extends ContextWithoutActiveEditor {
    */
   public static create(extension: Extension, command: CommandDescriptor) {
     const activeEditorState = extension.editors.active,
-          cancellationToken = extension.cancellationToken;
+      cancellationToken = extension.cancellationToken;
 
     return activeEditorState === undefined
       ? new Context.WithoutActiveEditor(extension, cancellationToken, command)
@@ -277,7 +295,10 @@ export class Context extends ContextWithoutActiveEditor {
    * Returns a {@link Context} or throws an exception if there is no active text
    * editor.
    */
-  public static createWithActiveTextEditor(extension: Extension, command: CommandDescriptor) {
+  public static createWithActiveTextEditor(
+    extension: Extension,
+    command: CommandDescriptor,
+  ) {
     const activeEditorState = extension.editors.active;
 
     EditorRequiredError.throwUnlessAvailable(activeEditorState);
@@ -312,6 +333,13 @@ export class Context extends ContextWithoutActiveEditor {
    */
   public get mode() {
     return this._mode;
+  }
+
+  /**
+   * Check if the current mode is "select".
+   */
+  public get isSelectMode() {
+    return this._mode.name === "select";
   }
 
   /**
@@ -364,7 +392,10 @@ export class Context extends ContextWithoutActiveEditor {
     const editor = this.editor as vscode.TextEditor;
 
     if (this.selectionBehavior === SelectionBehavior.Character) {
-      return selectionsFromCharacterMode([editor.selection], editor.document)[0];
+      return selectionsFromCharacterMode(
+        [editor.selection],
+        editor.document,
+      )[0];
     }
 
     return editor.selection;
@@ -386,8 +417,14 @@ export class Context extends ContextWithoutActiveEditor {
    * Returns a new context whose cancellation is controlled by the specified
    * cancellation token.
    */
-  public override withCancellationToken(cancellationToken: vscode.CancellationToken) {
-    return new Context(this.getState(), cancellationToken, this.commandDescriptor);
+  public override withCancellationToken(
+    cancellationToken: vscode.CancellationToken,
+  ) {
+    return new Context(
+      this.getState(),
+      cancellationToken,
+      this.commandDescriptor,
+    );
   }
 
   /**
@@ -401,25 +438,30 @@ export class Context extends ContextWithoutActiveEditor {
    * Performs changes on the editor of the context.
    */
   public edit<T>(
-    f: (editBuilder: vscode.TextEditorEdit, selections: readonly vscode.Selection[],
-        document: vscode.TextDocument) => T,
+    f: (
+      editBuilder: vscode.TextEditorEdit,
+      selections: readonly vscode.Selection[],
+      document: vscode.TextDocument,
+    ) => T,
   ) {
     let value: T;
 
     const document = this.document,
-          selections = f.length >= 2 ? this.selections : [];
+      selections = f.length >= 2 ? this.selections : [];
 
     return this.wrap(
-      this.editor.edit(
-        (editBuilder) => value = f(editBuilder, selections, document),
-        noUndoStops,
-      ).then((succeeded) => {
-        EditNotAppliedError.throwIfNotApplied(succeeded);
+      this.editor
+        .edit(
+          (editBuilder) => (value = f(editBuilder, selections, document)),
+          noUndoStops,
+        )
+        .then((succeeded) => {
+          EditNotAppliedError.throwIfNotApplied(succeeded);
 
-        this._flags |= ContextFlags.ShouldInsertUndoStop;
+          this._flags |= ContextFlags.ShouldInsertUndoStop;
 
-        return value;
-      }),
+          return value;
+        }),
     );
   }
 
@@ -428,7 +470,10 @@ export class Context extends ContextWithoutActiveEditor {
    * with `insertUndoStop`.
    */
   public hasEditsWithoutUndoStops() {
-    return (this._flags & ContextFlags.ShouldInsertUndoStop) === ContextFlags.ShouldInsertUndoStop;
+    return (
+      (this._flags & ContextFlags.ShouldInsertUndoStop) ===
+      ContextFlags.ShouldInsertUndoStop
+    );
   }
 
   /**
@@ -445,35 +490,50 @@ export class Context extends ContextWithoutActiveEditor {
   /**
    * Switches the context to the given document.
    */
-  public async switchToDocument(document: vscode.TextDocument, alsoFocusEditor = false) {
+  public async switchToDocument(
+    document: vscode.TextDocument,
+    alsoFocusEditor = false,
+  ) {
     if (this.document === document) {
       return;
     }
 
-    const notebook = (document as { notebook?: vscode.NotebookDocument }).notebook;
+    const notebook = (document as { notebook?: vscode.NotebookDocument })
+      .notebook;
     let notebookEditor: vscode.TextEditor | undefined;
 
     if (notebook !== undefined) {
       const uri = document.uri;
 
-      if (uri.scheme === "vscode-notebook-cell" && uri.fragment.startsWith("ch")) {
+      if (
+        uri.scheme === "vscode-notebook-cell" &&
+        uri.fragment.startsWith("ch")
+      ) {
         // Target document is a notebook cell; find its index and attempt to
         // focus it.
         const cellIndex = parseInt(uri.fragment.slice(2)),
-              cell = notebook.cellAt(cellIndex);
+          cell = notebook.cellAt(cellIndex);
 
         if (cell.index === cellIndex) {
           // `showTextDocument` will force a regular text editor. We use
           // `vscode.open` instead, which will focus the right cell.
-          await vscode.commands.executeCommand("vscode.open", cell.document.uri);
+          await vscode.commands.executeCommand(
+            "vscode.open",
+            cell.document.uri,
+          );
 
           notebookEditor = vscode.window.activeTextEditor;
         }
       }
     }
 
-    const editor = notebookEditor
-                ?? await vscode.window.showTextDocument(document, undefined, !alsoFocusEditor);
+    const editor =
+      notebookEditor ??
+      (await vscode.window.showTextDocument(
+        document,
+        undefined,
+        !alsoFocusEditor,
+      ));
 
     this._document = document;
     this._editor = editor;
@@ -499,7 +559,7 @@ export declare namespace Context {
 /**
  * Returns the text of the given range in the current context.
  *
- * ### Example
+ * @example
  * ```js
  * const start = new vscode.Position(0, 0),
  *       end = new vscode.Position(0, 3);
@@ -521,7 +581,7 @@ export function text(range: vscode.Range): string;
 /**
  * Returns the text of all the given ranges in the current context.
  *
- * ### Example
+ * @example
  * ```js
  * const start1 = new vscode.Position(0, 0),
  *       end1 = new vscode.Position(0, 3),
@@ -555,7 +615,7 @@ export function text(ranges: vscode.Range | readonly vscode.Range[]) {
 /**
  * Performs changes on the active editor.
  *
- * ### Example
+ * @example
  * ```js
  * await edit((editBuilder) => {
  *   const start = new vscode.Position(0, 2),
@@ -578,15 +638,19 @@ export function text(ranges: vscode.Range | readonly vscode.Range[]) {
  * ```
  */
 export async function edit<T>(
-  f: (editBuilder: vscode.TextEditorEdit, selections: readonly vscode.Selection[],
-      document: vscode.TextDocument) => T,
+  f: (
+    editBuilder: vscode.TextEditorEdit,
+    selections: readonly vscode.Selection[],
+    document: vscode.TextDocument,
+  ) => T,
   editor?: vscode.TextEditor,
 ) {
   if (editor !== undefined) {
     let value!: T;
 
     const succeeded = await editor.edit(
-      (editBuilder) => value = f(editBuilder, editor!.selections, editor!.document),
+      (editBuilder) =>
+        (value = f(editBuilder, editor!.selections, editor!.document)),
       noUndoStops,
     );
 
@@ -617,7 +681,7 @@ export function insertUndoStop(editor?: vscode.TextEditor) {
  * This function should be used before setting the selections of a
  * `vscode.TextEditor` if the selection behavior is `Character`.
  *
- * ### Example
+ * @example
  * Forward-facing, non-empty selections are reduced by one character.
  *
  * ```js
@@ -671,14 +735,14 @@ export function selectionsToCharacterMode(
 
   for (const selection of selections) {
     const selectionActive = selection.active,
-          selectionActiveLine = selectionActive.line,
-          selectionActiveCharacter = selectionActive.character,
-          selectionAnchor = selection.anchor,
-          selectionAnchorLine = selectionAnchor.line,
-          selectionAnchorCharacter = selectionAnchor.character;
+      selectionActiveLine = selectionActive.line,
+      selectionActiveCharacter = selectionActive.character,
+      selectionAnchor = selection.anchor,
+      selectionAnchorLine = selectionAnchor.line,
+      selectionAnchorCharacter = selectionAnchor.character;
     let active = selectionActive,
-        anchor = selectionAnchor,
-        changed = false;
+      anchor = selectionAnchor,
+      changed = false;
 
     if (selectionAnchorLine === selectionActiveLine) {
       if (selectionAnchorCharacter + 1 === selectionActiveCharacter) {
@@ -691,7 +755,10 @@ export function selectionsToCharacterMode(
         changed = true;
       } else if (selectionAnchorCharacter < selectionActiveCharacter) {
         // Selection is strictly forward-facing: make it shorter.
-        active = new vscode.Position(selectionActiveLine, selectionActiveCharacter - 1);
+        active = new vscode.Position(
+          selectionActiveLine,
+          selectionActiveCharacter - 1,
+        );
         changed = true;
       } else {
         // Selection is reversed or empty: do nothing.
@@ -699,7 +766,10 @@ export function selectionsToCharacterMode(
     } else if (selectionAnchorLine < selectionActiveLine) {
       // Selection is strictly forward-facing: make it shorter.
       if (selectionActiveCharacter > 0) {
-        active = new vscode.Position(selectionActiveLine, selectionActiveCharacter - 1);
+        active = new vscode.Position(
+          selectionActiveLine,
+          selectionActiveCharacter - 1,
+        );
         changed = true;
       } else {
         // The active character is the first one, so we have to get some
@@ -709,15 +779,19 @@ export function selectionsToCharacterMode(
         }
 
         const activePrevLine = selectionActiveLine - 1,
-              activePrevLineLength = document.lineAt(activePrevLine).text.length;
+          activePrevLineLength = document.lineAt(activePrevLine).text.length;
 
         active = new vscode.Position(activePrevLine, activePrevLineLength);
         changed = true;
       }
-    } else if (selectionAnchorLine === selectionActiveLine + 1
-               && selectionAnchorCharacter === 0
-               && selectionActiveCharacter === (document ?? (document = Context.current.document))
-                 .lineAt(selectionActiveLine).text.length) {
+    } else if (
+      selectionAnchorLine === selectionActiveLine + 1 &&
+      selectionAnchorCharacter === 0 &&
+      selectionActiveCharacter ===
+        (document ?? (document = Context.current.document)).lineAt(
+          selectionActiveLine,
+        ).text.length
+    ) {
       // Selection is reversed and one-character long: make it empty.
       anchor = selectionActive;
       changed = true;
@@ -725,7 +799,9 @@ export function selectionsToCharacterMode(
       // Selection is reversed: do nothing.
     }
 
-    characterModeSelections.push(changed ? new vscode.Selection(anchor, active) : selection);
+    characterModeSelections.push(
+      changed ? new vscode.Selection(anchor, active) : selection,
+    );
   }
 
   return characterModeSelections;
@@ -738,7 +814,7 @@ export function selectionsToCharacterMode(
  * This function should be used on the selections of a `vscode.TextEditor` if
  * the selection behavior is `Character`.
  *
- * ### Example
+ * @example
  * Selections remain empty in empty documents.
  *
  * ```js
@@ -751,7 +827,7 @@ export function selectionsToCharacterMode(
  * ```
  * ```
  *
- * ### Example
+ * @example
  * Empty selections automatically become 1-character selections.
  *
  * ```js
@@ -785,17 +861,18 @@ export function selectionsFromCharacterMode(
 
   for (const selection of selections) {
     const selectionActive = selection.active,
-          selectionActiveLine = selectionActive.line,
-          selectionActiveCharacter = selectionActive.character,
-          selectionAnchor = selection.anchor,
-          selectionAnchorLine = selectionAnchor.line,
-          selectionAnchorCharacter = selectionAnchor.character;
+      selectionActiveLine = selectionActive.line,
+      selectionActiveCharacter = selectionActive.character,
+      selectionAnchor = selection.anchor,
+      selectionAnchorLine = selectionAnchor.line,
+      selectionAnchorCharacter = selectionAnchor.character;
     let active = selectionActive,
-        changed = false;
+      changed = false;
 
-    const isEmptyOrForwardFacing = selectionAnchorLine < selectionActiveLine
-      || (selectionAnchorLine === selectionActiveLine
-          && selectionAnchorCharacter <= selectionActiveCharacter);
+    const isEmptyOrForwardFacing =
+      selectionAnchorLine < selectionActiveLine ||
+      (selectionAnchorLine === selectionActiveLine &&
+        selectionAnchorCharacter <= selectionActiveCharacter);
 
     if (isEmptyOrForwardFacing) {
       // Selection is empty or forward-facing: extend it if possible.
@@ -816,12 +893,17 @@ export function selectionsFromCharacterMode(
         }
       } else {
         // Character is not at the end of the line: we can extend the selection.
-        active = new vscode.Position(selectionActiveLine, selectionActiveCharacter + 1);
+        active = new vscode.Position(
+          selectionActiveLine,
+          selectionActiveCharacter + 1,
+        );
         changed = true;
       }
     }
 
-    caretModeSelections.push(changed ? new vscode.Selection(selectionAnchor, active) : selection);
+    caretModeSelections.push(
+      changed ? new vscode.Selection(selectionAnchor, active) : selection,
+    );
   }
 
   return caretModeSelections;

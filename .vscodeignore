@@ -11,3 +11,4 @@ test/**
 **/*.ts
 **/*.lock
 out/**/*.build.js
+out/meta.js

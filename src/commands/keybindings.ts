@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as vscode from "vscode";
 
-import type { RegisterOr } from ".";
-import { Context, prompt, promptMany, promptOne, todo } from "../api";
-import type { Register } from "../state/registers";
+import type { CommandArguments } from ".";
+import { promptMany, promptOne, todo } from "../api";
+import { Register } from "../state/registers";
 
 /**
  * Utilities for setting up keybindings.
@@ -12,8 +13,11 @@ declare module "./keybindings";
 /**
  * Set up Dance keybindings.
  */
-export async function setup(_: Context, register: RegisterOr<"dquote", Register.Flags.CanWrite>) {
-  await vscode.commands.executeCommand("workbench.action.openGlobalKeybindingsFile");
+export async function setup({ _, getRegister }: CommandArguments) {
+  const register = getRegister("dquote", Register.Flags.CanWrite);
+  await vscode.commands.executeCommand(
+    "workbench.action.openGlobalKeybindingsFile",
+  );
   await _.switchToDocument(_.extension.editors.active!.editor.document);
 
   const action = await promptOne([
@@ -26,9 +30,7 @@ export async function setup(_: Context, register: RegisterOr<"dquote", Register.
     return;
   }
 
-  const keybindings = await promptMany([
-    ["d", "default keybindings"],
-  ]);
+  const keybindings = await promptMany([["d", "default keybindings"]]);
 
   todo();
 

@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 
-import { moveWhileByCharCode, moveWhileByCharCodeBackward, moveWhileByCharCodeForward, moveWhileReachedDocumentEdge } from "./move";
+import {
+  moveWhileByCharCode,
+  moveWhileByCharCodeBackward,
+  moveWhileByCharCodeForward,
+  moveWhileReachedDocumentEdge,
+} from "./move";
 import { Context } from "../context";
 import { isEmpty as lineIsEmpty } from "../lines";
 import * as Positions from "../positions";
@@ -13,7 +18,11 @@ import { CharCodes } from "../../utils/regexp";
  * the position belongs.
  */
 export interface SeekStart {
-  (position: vscode.Position, inner: boolean, document: vscode.TextDocument): vscode.Position;
+  (
+    position: vscode.Position,
+    inner: boolean,
+    document: vscode.TextDocument,
+  ): vscode.Position;
 }
 
 /**
@@ -24,8 +33,12 @@ export interface SeekStart {
  * also be given.
  */
 export interface SeekEnd {
-  (position: vscode.Position, inner: boolean,
-   document: vscode.TextDocument, start?: vscode.Position): vscode.Position;
+  (
+    position: vscode.Position,
+    inner: boolean,
+    document: vscode.TextDocument,
+    start?: vscode.Position,
+  ): vscode.Position;
 }
 
 /**
@@ -33,7 +46,11 @@ export interface SeekEnd {
  * the position belongs.
  */
 export interface Seek {
-  (position: vscode.Position, inner: boolean, document: vscode.TextDocument): vscode.Selection;
+  (
+    position: vscode.Position,
+    inner: boolean,
+    document: vscode.TextDocument,
+  ): vscode.Selection;
 
   readonly start: SeekStart;
   readonly end: SeekEnd;
@@ -100,7 +117,7 @@ export function indent(
   // this by finding the start first and then scan from there to find the end
   // of indent block.
   const start = indentStart(position, inner, document),
-        end = indentEnd(start, inner, document);
+    end = indentEnd(start, inner, document);
 
   return new vscode.Selection(start, end);
 }
@@ -148,8 +165,11 @@ export function paragraph(
 ) {
   let start: vscode.Position;
 
-  if (position.line + 1 < document.lineCount
-      && lineIsEmpty(position.line, document) && !lineIsEmpty(position.line + 1, document)) {
+  if (
+    position.line + 1 < document.lineCount &&
+    lineIsEmpty(position.line, document) &&
+    !lineIsEmpty(position.line + 1, document)
+  ) {
     // Special case: if current line is empty, check next line and select
     // the NEXT paragraph if next line is not empty.
     start = Positions.lineStart(position.line + 1);
@@ -172,7 +192,7 @@ export function paragraphStart(
   document = Context.current.document,
 ) {
   if (position.line > 0 && lineIsEmpty(position.line, document)) {
-    position = Positions.lineStart(position.line - 1);  // Re-anchor to the previous line.
+    position = Positions.lineStart(position.line - 1); // Re-anchor to the previous line.
   }
 
   return toParagraphStart(position, document);
@@ -213,9 +233,13 @@ export function sentence(
   inner: boolean,
   document = Context.current.document,
 ) {
-  const beforeBlank = toBeforeBlank(position, document, /* canSkipToPrevious= */ false),
-        start = toSentenceStart(beforeBlank, document),
-        end = sentenceEnd(start, inner, document);
+  const beforeBlank = toBeforeBlank(
+      position,
+      document,
+      /* canSkipToPrevious= */ false,
+    ),
+    start = toSentenceStart(beforeBlank, document),
+    end = sentenceEnd(start, inner, document);
 
   return new vscode.Selection(start, end);
 }
@@ -230,7 +254,11 @@ export function sentenceStart(
 ) {
   // Special case to allow jumping to the previous sentence when position is
   // at current sentence start / leading blank chars.
-  const beforeBlank = toBeforeBlank(position, document, /* canSkipToPrevious= */ true);
+  const beforeBlank = toBeforeBlank(
+    position,
+    document,
+    /* canSkipToPrevious= */ true,
+  );
 
   return toSentenceStart(beforeBlank, document);
 }
@@ -256,7 +284,10 @@ export function sentenceEnd(
     // We're on an empty line which does not belong to last sentence or this
     // sentence. If next line is also empty, we should just stay here.
     // However, start scanning from the next line if it is not empty.
-    if (position.line + 1 >= document.lineCount || lineIsEmpty(position.line + 1, document)) {
+    if (
+      position.line + 1 >= document.lineCount ||
+      lineIsEmpty(position.line + 1, document)
+    ) {
       return position;
     } else {
       position = Positions.lineStart(position.line + 1);
@@ -332,7 +363,9 @@ Object.defineProperties(sentence, {
   end: { value: sentenceEnd },
 });
 
-const punctCharCodes = new Uint32Array(Array.from(".!?¡§¶¿;՞。", (ch) => ch.charCodeAt(0)));
+const punctCharCodes = new Uint32Array(
+  Array.from(".!?¡§¶¿;՞。", (ch) => ch.charCodeAt(0)),
+);
 //                                                        ^
 // I bet that's the first time you see a Greek question mark used as an actual
 // Greek question mark, rather than as a "prank" semicolon.
@@ -343,10 +376,11 @@ function toArgumentEdge(
   direction: Direction,
   document: vscode.TextDocument,
 ) {
-  const paren = direction === Direction.Backward ? CharCodes.LParen : CharCodes.RParen;
+  const paren =
+    direction === Direction.Backward ? CharCodes.LParen : CharCodes.RParen;
 
   let bbalance = 0,
-      pbalance = 0;
+    pbalance = 0;
 
   const afterSkip = moveWhileByCharCode(
     direction,
@@ -377,7 +411,9 @@ function toArgumentEdge(
   if (moveWhileReachedDocumentEdge()) {
     end = afterSkip;
   } else {
-    const charCode = document.lineAt(afterSkip.line).text.charCodeAt(afterSkip.character);
+    const charCode = document
+      .lineAt(afterSkip.line)
+      .text.charCodeAt(afterSkip.character);
     // Make sure parens are not included in the object. Deliminator commas
     // after the argument is included as outer, but ones before are NOT.
 
@@ -410,7 +446,7 @@ function toIndentEdge(
   document: vscode.TextDocument,
 ) {
   let line = from.line,
-      textLine = document.lineAt(line);
+    textLine = document.lineAt(line);
 
   // First, scan backwards through blank lines. (Note that whitespace-only
   // lines do not count -- those have a proper indentation level and should
@@ -524,7 +560,7 @@ function toBeforeBlank(
   const isBlank = getCharSetFunction(CharSet.Blank, document);
 
   let jumpedOverBlankLine = false,
-      hadLf = true;
+    hadLf = true;
 
   const beforeBlank = moveWhileByCharCodeBackward(
     (charCode) => {
@@ -552,15 +588,21 @@ function toBeforeBlank(
     return position;
   }
 
-  const beforeBlankChar = document.lineAt(beforeBlank.line).text.charCodeAt(beforeBlank.character),
-        hitPunctChar = punctCharCodes.includes(beforeBlankChar);
+  const beforeBlankChar = document
+      .lineAt(beforeBlank.line)
+      .text.charCodeAt(beforeBlank.character),
+    hitPunctChar = punctCharCodes.includes(beforeBlankChar);
 
   if (jumpedOverBlankLine && (!canSkipToPrevious || !hitPunctChar)) {
     // We jumped over blank lines but didn't hit a punct char. Don't accept.
     return position;
   }
 
-  if (!hitPunctChar || canSkipToPrevious || position.line === beforeBlank.line) {
+  if (
+    !hitPunctChar ||
+    canSkipToPrevious ||
+    position.line === beforeBlank.line
+  ) {
     return beforeBlank;
   }
 
@@ -604,7 +646,7 @@ function toSentenceStart(
   }
 
   let first = true,
-      hadLf = false;
+    hadLf = false;
 
   const afterSkip = moveWhileByCharCodeBackward(
     (charCode) => {

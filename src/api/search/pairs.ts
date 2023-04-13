@@ -32,7 +32,7 @@ export class Pair {
     ArgumentError.validate("balance", balance !== 0, "balance cannot be null");
 
     const re = this._re,
-          closeGroup = this._closeGroup;
+      closeGroup = this._closeGroup;
 
     for (;;) {
       const result = search(direction, re, searchOrigin);
@@ -76,10 +76,14 @@ export class Pair {
     }
 
     if (direction === Direction.Backward) {
-      return included ? result[0] : Positions.offset(result[0], result[1][0].length)!;
+      return included
+        ? result[0]
+        : Positions.offset(result[0], result[1][0].length)!;
     }
 
-    return included ? Positions.offset(result[0], result[1][0].length)! : result[0];
+    return included
+      ? Positions.offset(result[0], result[1][0].length)!
+      : result[0];
   }
 
   public searchOpening(
@@ -138,8 +142,12 @@ export function surroundedBy(
     return undefined;
   }
 
-  const innerStart = Positions.offset(startResult[0], startResult[1][0].length, document)!,
-        endResult = pair.searchClosing(innerStart);
+  const innerStart = Positions.offset(
+      startResult[0],
+      startResult[1][0].length,
+      document,
+    )!,
+    endResult = pair.searchClosing(innerStart);
 
   if (endResult === undefined) {
     return undefined;
@@ -167,21 +175,24 @@ export function closestSurroundedBy(
   open = true,
   document = Context.current.document,
 ) {
-  const re = new RegExp(pairs.map((p) => `(${p.open.source})|(${p.close.source})`).join("|"), "u"),
-        anchorSearch = search(direction, re, searchOrigin);
+  const re = new RegExp(
+      pairs.map((p) => `(${p.open.source})|(${p.close.source})`).join("|"),
+      "u",
+    ),
+    anchorSearch = search(direction, re, searchOrigin);
 
   if (anchorSearch === undefined) {
     return undefined;
   }
 
   const match = anchorSearch[1],
-        index = match.findIndex((x, i) => i > 0 && x !== undefined) - 1,
-        pairIndex = index >> 1,
-        pair = pairs[pairIndex];
+    index = match.findIndex((x, i) => i > 0 && x !== undefined) - 1,
+    pairIndex = index >> 1,
+    pair = pairs[pairIndex];
 
   // Then, find the matching char of the anchor.
   let anchor = anchorSearch[0],
-      active: vscode.Position;
+    active: vscode.Position;
 
   if (index & 1) {
     // Index is odd
@@ -197,21 +208,29 @@ export function closestSurroundedBy(
       anchor = Positions.offset(anchor, match[0].length, document)!;
       active = activeSearch[0];
     } else {
-      active = Positions.offset(activeSearch[0], activeSearch[1][0].length, document)!;
+      active = Positions.offset(
+        activeSearch[0],
+        activeSearch[1][0].length,
+        document,
+      )!;
     }
   } else {
     // Index is even
     //     <=> match is for opening pattern
     //     <=> we go forward looking for the closing pattern
     const searchAnchor = Positions.offset(anchor, match[0].length, document)!,
-          activeSearch = pair.searchClosing(searchAnchor);
+      activeSearch = pair.searchClosing(searchAnchor);
 
     if (activeSearch === undefined) {
       return undefined;
     }
 
     if (open) {
-      active = Positions.offset(activeSearch[0], activeSearch[1][0].length, document)!;
+      active = Positions.offset(
+        activeSearch[0],
+        activeSearch[1][0].length,
+        document,
+      )!;
     } else {
       anchor = searchAnchor;
       active = activeSearch[0];

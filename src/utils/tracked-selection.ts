@@ -10,7 +10,7 @@ export const enum Flags {
   Inclusive = 0,
 
   StrictStart = 0b01,
-  StrictEnd   = 0b10,
+  StrictEnd = 0b10,
 
   Strict = 0b11,
 
@@ -39,25 +39,32 @@ export function fromArray(
 
   for (let i = 0, len = selections.length; i < len; i++) {
     const selection = selections[i],
-          anchor = selection.anchor,
-          active = selection.active;
+      anchor = selection.anchor,
+      active = selection.active;
 
     if (anchor.line === active.line) {
       const anchorOffset = document.offsetAt(anchor),
-            activeOffset = anchorOffset + active.character - anchor.character;
+        activeOffset = anchorOffset + active.character - anchor.character;
 
       trackedSelections.push(anchorOffset, activeOffset);
     } else {
-      trackedSelections.push(document.offsetAt(anchor), document.offsetAt(active));
+      trackedSelections.push(
+        document.offsetAt(anchor),
+        document.offsetAt(active),
+      );
     }
   }
 
   return trackedSelections;
 }
 
-export function restore(array: Array, index: number, document: vscode.TextDocument) {
+export function restore(
+  array: Array,
+  index: number,
+  document: vscode.TextDocument,
+) {
   const anchor = document.positionAt(array[index << 1]),
-        active = document.positionAt(array[(index << 1) | 1]);
+    active = document.positionAt(array[(index << 1) | 1]);
 
   return new vscode.Selection(anchor, active);
 }
@@ -96,7 +103,7 @@ export function activeIsStart(array: Array, index: number) {
 
 export function setLength(array: Array, index: number, length: number) {
   const active = activeOffset(array, index),
-        anchor = anchorOffset(array, index);
+    anchor = anchorOffset(array, index);
 
   if (active < anchor) {
     setAnchorOffset(array, index, active + length);
@@ -143,14 +150,17 @@ export function restoreNonEmpty(array: Array, document: vscode.TextDocument) {
 
   for (let i = 0, len = array.length >> 1; i < len; i++) {
     const anchorOffset = array[i << 1],
-          activeOffset = array[(i << 1) | 1];
+      activeOffset = array[(i << 1) | 1];
 
     if (anchorOffset === activeOffset) {
       continue;
     }
 
     selections.push(
-      new vscode.Selection(document.positionAt(anchorOffset), document.positionAt(activeOffset)),
+      new vscode.Selection(
+        document.positionAt(anchorOffset),
+        document.positionAt(activeOffset),
+      ),
     );
   }
 
@@ -167,19 +177,21 @@ export function updateAfterDocumentChanged(
 ) {
   for (let i = 0, len = array.length; i < len; i += 2) {
     let anchorOffset = array[i],
-        activeOffset = array[i + 1],
-        inclusiveActive: boolean,
-        inclusiveAnchor: boolean;
+      activeOffset = array[i + 1],
+      inclusiveActive: boolean,
+      inclusiveAnchor: boolean;
 
     if (anchorOffset === activeOffset) {
       // Empty selection.
-      inclusiveActive = (flags & Flags.EmptyExtendsForward) === Flags.EmptyExtendsForward;
-      inclusiveAnchor = (flags & Flags.EmptyExtendsBackward) === Flags.EmptyExtendsBackward;
+      inclusiveActive =
+        (flags & Flags.EmptyExtendsForward) === Flags.EmptyExtendsForward;
+      inclusiveAnchor =
+        (flags & Flags.EmptyExtendsBackward) === Flags.EmptyExtendsBackward;
     } else {
       const activeIsStart = activeOffset <= anchorOffset,
-            anchorIsStart = activeOffset >= anchorOffset,
-            inclusiveStart = (flags & Flags.StrictStart) === 0,
-            inclusiveEnd = (flags & Flags.StrictEnd) === 0;
+        anchorIsStart = activeOffset >= anchorOffset,
+        inclusiveStart = (flags & Flags.StrictStart) === 0,
+        inclusiveEnd = (flags & Flags.StrictEnd) === 0;
 
       inclusiveActive = activeIsStart ? !inclusiveStart : inclusiveEnd;
       inclusiveAnchor = anchorIsStart ? !inclusiveStart : inclusiveEnd;
@@ -187,14 +199,20 @@ export function updateAfterDocumentChanged(
 
     for (let i = 0, len = changes.length; i < len; i++) {
       const change = changes[i],
-            diff = change.text.length - change.rangeLength,
-            offset = change.rangeOffset + change.rangeLength;
+        diff = change.text.length - change.rangeLength,
+        offset = change.rangeOffset + change.rangeLength;
 
-      if (offset < activeOffset || (inclusiveActive && offset === activeOffset)) {
+      if (
+        offset < activeOffset ||
+        (inclusiveActive && offset === activeOffset)
+      ) {
         activeOffset += diff;
       }
 
-      if (offset < anchorOffset || (inclusiveAnchor && offset === anchorOffset)) {
+      if (
+        offset < anchorOffset ||
+        (inclusiveAnchor && offset === anchorOffset)
+      ) {
         anchorOffset += diff;
       }
     }
@@ -225,11 +243,18 @@ export class Set implements vscode.Disposable {
     public readonly document: vscode.TextDocument,
     public flags = Flags.Inclusive,
   ) {
-    ArgumentError.validate("selections", selections.length > 0, "selections cannot be empty");
+    ArgumentError.validate(
+      "selections",
+      selections.length > 0,
+      "selections cannot be empty",
+    );
 
     this._selections = selections;
     this._onDidChangeTextDocumentSubscription =
-      vscode.workspace.onDidChangeTextDocument(this.updateAfterDocumentChanged, this);
+      vscode.workspace.onDidChangeTextDocument(
+        this.updateAfterDocumentChanged,
+        this,
+      );
   }
 
   public addArray(array: Array) {
@@ -248,15 +273,17 @@ export class Set implements vscode.Disposable {
 
   public deleteSelections(selections: readonly vscode.Selection[]) {
     const array = fromArray(selections, this.document),
-          thisArray = this._selections as number[];
+      thisArray = this._selections as number[];
 
     for (let i = 0; i < array.length; i += 2) {
       const anchorOffset = array[i],
-            activeOffset = array[i + 1];
+        activeOffset = array[i + 1];
 
-      for (let j = thisArray.indexOf(anchorOffset);
+      for (
+        let j = thisArray.indexOf(anchorOffset);
         j !== -1;
-        j = thisArray.indexOf(anchorOffset, j + 1)) {
+        j = thisArray.indexOf(anchorOffset, j + 1)
+      ) {
         if (j + 1 < thisArray.length && thisArray[j + 1] === activeOffset) {
           thisArray.splice(j, 2);
           j -= 2;
@@ -315,11 +342,17 @@ export class StyledSet extends Set {
     renderOptions: vscode.DecorationRenderOptions,
   ) {
     super(
-      selections, editorState.editor.document, rangeBehaviorToFlags(renderOptions.rangeBehavior));
+      selections,
+      editorState.editor.document,
+      rangeBehaviorToFlags(renderOptions.rangeBehavior),
+    );
 
-    this._decorationType = vscode.window.createTextEditorDecorationType(renderOptions);
-    this._onDidEditorVisibilityChangeSubscription = editorState.onVisibilityDidChange((e) =>
-      e.isVisible && this._updateDecorations());
+    this._decorationType =
+      vscode.window.createTextEditorDecorationType(renderOptions);
+    this._onDidEditorVisibilityChangeSubscription =
+      editorState.onVisibilityDidChange(
+        (e) => e.isVisible && this._updateDecorations(),
+      );
     this._updateDecorations();
   }
 
@@ -358,7 +391,9 @@ export class StyledSet extends Set {
     return this;
   }
 
-  protected override updateAfterDocumentChanged(e: vscode.TextDocumentChangeEvent) {
+  protected override updateAfterDocumentChanged(
+    e: vscode.TextDocumentChangeEvent,
+  ) {
     if (!super.updateAfterDocumentChanged(e)) {
       return false;
     }
@@ -376,22 +411,27 @@ export class StyledSet extends Set {
   }
 
   private _updateDecorations() {
-    this.editorState.editor.setDecorations(this._decorationType, this.restoreNonEmpty());
+    this.editorState.editor.setDecorations(
+      this._decorationType,
+      this.restoreNonEmpty(),
+    );
   }
 }
 
-function rangeBehaviorToFlags(rangeBehavior: vscode.DecorationRangeBehavior | undefined) {
+function rangeBehaviorToFlags(
+  rangeBehavior: vscode.DecorationRangeBehavior | undefined,
+) {
   switch (rangeBehavior) {
-  case vscode.DecorationRangeBehavior.ClosedOpen:
-    return Flags.StrictStart;
+    case vscode.DecorationRangeBehavior.ClosedOpen:
+      return Flags.StrictStart;
 
-  case vscode.DecorationRangeBehavior.OpenClosed:
-    return Flags.StrictEnd;
+    case vscode.DecorationRangeBehavior.OpenClosed:
+      return Flags.StrictEnd;
 
-  case vscode.DecorationRangeBehavior.ClosedClosed:
-    return Flags.Strict;
+    case vscode.DecorationRangeBehavior.ClosedClosed:
+      return Flags.Strict;
 
-  default:
-    return Flags.Inclusive;
+    default:
+      return Flags.Inclusive;
   }
 }

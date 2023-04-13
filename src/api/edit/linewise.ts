@@ -6,7 +6,7 @@ import { blankCharacters } from "../../utils/charset";
 /**
  * Increases the indentation of the given lines by the given count.
  *
- * ### Example
+ * @example
  * ```js
  * await indentLines([0, 1, 3]);
  * ```
@@ -27,7 +27,7 @@ import { blankCharacters } from "../../utils/charset";
  *   d
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * await indentLines([0], 2);
  * ```
@@ -42,7 +42,7 @@ import { blankCharacters } from "../../utils/charset";
  *     a
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * await indentLines([0, 1], 1, true);
  * ```
@@ -59,11 +59,15 @@ import { blankCharacters } from "../../utils/charset";
  * ··
  * ```
  */
-export function indentLines(lines: Iterable<number>, times = 1, indentEmpty = false) {
+export function indentLines(
+  lines: Iterable<number>,
+  times = 1,
+  indentEmpty = false,
+) {
   const options = Context.current.editor.options,
-        indent = options.insertSpaces
-          ? " ".repeat(options.tabSize as number * times)
-          : "\t".repeat(times);
+    indent = options.insertSpaces
+      ? " ".repeat((options.tabSize as number) * times)
+      : "\t".repeat(times);
 
   if (indentEmpty) {
     return edit((editBuilder) => {
@@ -87,7 +91,10 @@ export function indentLines(lines: Iterable<number>, times = 1, indentEmpty = fa
       for (const line of lines) {
         const cnt = seen.size;
 
-        if (seen.add(line).size === cnt || document.lineAt(line).isEmptyOrWhitespace) {
+        if (
+          seen.add(line).size === cnt ||
+          document.lineAt(line).isEmptyOrWhitespace
+        ) {
           // Avoid indenting empty lines or the same line more than once.
           continue;
         }
@@ -101,7 +108,7 @@ export function indentLines(lines: Iterable<number>, times = 1, indentEmpty = fa
 /**
  * Decreases the indentation of the given lines by the given count.
  *
- * ### Example
+ * @example
  * ```js
  * await deindentLines([0, 1, 3]);
  * ```
@@ -122,7 +129,7 @@ export function indentLines(lines: Iterable<number>, times = 1, indentEmpty = fa
  *   d
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * await deindentLines([0, 1, 3], 2);
  * ```
@@ -143,11 +150,15 @@ export function indentLines(lines: Iterable<number>, times = 1, indentEmpty = fa
  * d
  * ```
  */
-export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomplete = true) {
+export function deindentLines(
+  lines: Iterable<number>,
+  times = 1,
+  deindentIncomplete = true,
+) {
   return edit((editBuilder, _, document) => {
     const tabSize = Context.current.editor.options.tabSize as number,
-          needed = times * tabSize,
-          seen = new Set<number>();
+      needed = times * tabSize,
+      seen = new Set<number>();
 
     for (const line of lines) {
       const cnt = seen.size;
@@ -158,10 +169,10 @@ export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomp
       }
 
       const textLine = document.lineAt(line),
-            text = textLine.text;
+        text = textLine.text;
 
-      let column = 0,  // Column, accounting for tab size.
-          j = 0;       // Index in source line, and number of characters to remove.
+      let column = 0, // Column, accounting for tab size.
+        j = 0; // Index in source line, and number of characters to remove.
 
       for (; column < needed; j++) {
         const char = text[j];
@@ -180,7 +191,9 @@ export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomp
       }
 
       if (j !== 0) {
-        editBuilder.delete(textLine.range.with(undefined, textLine.range.start.translate(0, j)));
+        editBuilder.delete(
+          textLine.range.with(undefined, textLine.range.start.translate(0, j)),
+        );
       }
     }
   });
@@ -190,7 +203,7 @@ export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomp
  * Joins all consecutive lines in the given list together with the given
  * separator.
  *
- * ### Example
+ * @example
  * ```js
  * await joinLines([0]);
  * ```
@@ -210,7 +223,7 @@ export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomp
  * g h
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * await joinLines([0, 1]);
  * ```
@@ -230,7 +243,7 @@ export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomp
  * g h
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * await joinLines([0, 2]);
  * ```
@@ -249,7 +262,7 @@ export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomp
  * e f g h
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * await joinLines([1], "    ");
  * ```
@@ -269,7 +282,10 @@ export function deindentLines(lines: Iterable<number>, times = 1, deindentIncomp
  * g h
  * ```
  */
-export async function joinLines(lines: Iterable<number>, separator: string = " ") {
+export async function joinLines(
+  lines: Iterable<number>,
+  separator: string = " ",
+) {
   // Sort lines (no need to dedup).
   const sortedLines = [...lines].sort((a, b) => a - b);
 
@@ -282,7 +298,7 @@ export async function joinLines(lines: Iterable<number>, separator: string = " "
 
   for (let i = 1, len = sortedLines.length; i < len; i++) {
     const line = sortedLines[i],
-          lastLine = sortedLines[i - 1];
+      lastLine = sortedLines[i - 1];
 
     if (line === lastLine) {
       continue;
@@ -300,9 +316,9 @@ export async function joinLines(lines: Iterable<number>, separator: string = " "
     // Perform edit on each line.
     for (let i = 0, len = ranges.length; i < len; i += 2) {
       const startLine = ranges[i],
-            count = ranges[i + 1] || 1;
+        count = ranges[i + 1] || 1;
       let prevLine = document.lineAt(startLine),
-          currentEnd = 0;
+        currentEnd = 0;
 
       for (let j = 0; j < count; j++) {
         const nextLine = document.lineAt(startLine + j + 1);
@@ -319,16 +335,24 @@ export async function joinLines(lines: Iterable<number>, separator: string = " "
         }
 
         const start = new vscode.Position(prevLine.lineNumber, endCharacter),
-              end = new vscode.Position(nextLine.lineNumber,
-                                        nextLine.firstNonWhitespaceCharacterIndex),
-              finalCharacter = currentEnd + endCharacter,
-              finalStart = new vscode.Position(startLine - diff, finalCharacter),
-              finalEnd = new vscode.Position(startLine - diff, finalCharacter + separator.length);
+          end = new vscode.Position(
+            nextLine.lineNumber,
+            nextLine.firstNonWhitespaceCharacterIndex,
+          ),
+          finalCharacter = currentEnd + endCharacter,
+          finalStart = new vscode.Position(startLine - diff, finalCharacter),
+          finalEnd = new vscode.Position(
+            startLine - diff,
+            finalCharacter + separator.length,
+          );
 
         editBuilder.replace(new vscode.Range(start, end), separator);
         selections.push(new vscode.Selection(finalStart, finalEnd));
         prevLine = nextLine;
-        currentEnd = finalCharacter + separator.length - nextLine.firstNonWhitespaceCharacterIndex;
+        currentEnd =
+          finalCharacter +
+          separator.length -
+          nextLine.firstNonWhitespaceCharacterIndex;
       }
 
       diff += count;

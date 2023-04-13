@@ -16,8 +16,8 @@
         "isDefault": true
       },
       "runOptions": {
-        "runOn": "folderOpen",
-      },
+        "runOn": "folderOpen"
+      }
     },
     {
       "type": "npm",
@@ -28,8 +28,8 @@
         "reveal": "never"
       },
       "runOptions": {
-        "runOn": "folderOpen",
-      },
-    },
-  ],
+        "runOn": "folderOpen"
+      }
+    }
+  ]
 }

@@ -9,7 +9,9 @@ export function todo(): never {
   const context = Context.WithoutActiveEditor.currentOrUndefined;
 
   if (context?.commandDescriptor !== undefined) {
-    throw new Error(`command not implemented: ${context.commandDescriptor.identifier}`);
+    throw new Error(
+      `command not implemented: ${context.commandDescriptor.identifier}`,
+    );
   }
 
   throw new Error("function not implemented");

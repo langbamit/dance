@@ -56,7 +56,7 @@ module.exports = {
         path: "^src/utils",
       },
       to: {
-        pathNot: "^src/(utils|state/recorder)",  // exception for state/recorder.ts
+        pathNot: "^src/(utils|state/recorder)", // exception for state/recorder.ts
       },
     },
     {
@@ -76,9 +76,9 @@ module.exports = {
         orphan: true,
         pathNot: [
           "(^|/)\\.[^/]+\\.(js|cjs|mjs|ts|json)$", // dot files
-          "\\.d\\.ts$",                            // TypeScript declaration files
-          "(^|/)tsconfig\\.json$",                 // TypeScript config
-          "meta\\.ts$|\\.build\\.ts$",  // build files
+          "\\.d\\.ts$", // TypeScript declaration files
+          "(^|/)tsconfig\\.json$", // TypeScript config
+          "meta\\.ts$|\\.build\\.ts$", // build files
         ],
       },
       to: {},
@@ -86,10 +86,10 @@ module.exports = {
   ],
 
   options: {
-    exclude : {
+    exclude: {
       path: "\\.build\\.ts$",
     },
-    includeOnly : "^src",
+    includeOnly: "^src",
 
     tsConfig: {
       fileName: "tsconfig.json",

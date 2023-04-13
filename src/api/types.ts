@@ -48,7 +48,7 @@ export const enum SelectionBehavior {
 }
 
 export const Forward = Direction.Forward,
-             Backward = Direction.Backward,
-             Jump = Shift.Jump,
-             Select = Shift.Select,
-             Extend = Shift.Extend;
+  Backward = Direction.Backward,
+  Jump = Shift.Jump,
+  Select = Shift.Select,
+  Extend = Shift.Extend;

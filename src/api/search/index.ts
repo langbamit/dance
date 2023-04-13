@@ -3,7 +3,11 @@ import * as vscode from "vscode";
 import { Context } from "../context";
 import * as Positions from "../positions";
 import { Direction } from "../types";
-import { canMatchLineFeed, execLast, matchesStaticStrings } from "../../utils/regexp";
+import {
+  canMatchLineFeed,
+  execLast,
+  matchesStaticStrings,
+} from "../../utils/regexp";
 
 /**
  * Searches backward or forward for a pattern starting at the given position.
@@ -34,7 +38,7 @@ export declare namespace search {
 /**
  * Searches backward for a pattern starting at the given position.
  *
- * ### Example
+ * @example
  *
  * ```ts
  * const [p1, [t1]] = searchBackward(/\w/, new vscode.Position(0, 1))!;
@@ -72,8 +76,8 @@ export function searchBackward(
   end ??= Positions.zero;
 
   const searchStart = document.offsetAt(end),
-        searchEnd = document.offsetAt(origin),
-        possibleSearchLength = searchEnd - searchStart;
+    searchEnd = document.offsetAt(origin),
+    possibleSearchLength = searchEnd - searchStart;
 
   if (possibleSearchLength < 0) {
     return;
@@ -97,7 +101,7 @@ export function searchBackward(
 /**
  * Searches forward for a pattern starting at the given position.
  *
- * ### Example
+ * @example
  *
  * ```ts
  * const [p1, [t1]] = searchForward(/\w/, new vscode.Position(0, 0))!;
@@ -135,8 +139,8 @@ export function searchForward(
   end ??= Positions.last(document);
 
   const searchStart = document.offsetAt(origin),
-        searchEnd = document.offsetAt(end),
-        possibleSearchLength = searchEnd - searchStart;
+    searchEnd = document.offsetAt(end),
+    possibleSearchLength = searchEnd - searchStart;
 
   if (possibleSearchLength < 0) {
     return;
@@ -187,7 +191,7 @@ function searchNaiveBackward(
 
   // Find all matches before the origin and take the last one.
   const searchRange = new vscode.Range(end, origin),
-        match = execLast(re, document.getText(searchRange));
+    match = execLast(re, document.getText(searchRange));
 
   if (match === null) {
     return;
@@ -206,13 +210,15 @@ function searchNaiveForward(
 
   // Look for a match in all the rest of the document.
   const searchRange = new vscode.Range(origin, end),
-        match = re.exec(document.getText(searchRange));
+    match = re.exec(document.getText(searchRange));
 
   if (match === null) {
     return;
   }
 
-  const matchPosition = document.positionAt(document.offsetAt(origin) + match.index);
+  const matchPosition = document.positionAt(
+    document.offsetAt(origin) + match.index,
+  );
 
   return [matchPosition, match] as search.Result;
 }
@@ -227,29 +233,38 @@ function searchSingleLineRegExpBackward(
 
   // Loop for a match line by line, starting at the current line.
   const currentLine = document.lineAt(origin),
-        match = execLast(re, currentLine.text.slice(0, origin.character));
+    match = execLast(re, currentLine.text.slice(0, origin.character));
 
   if (match !== null) {
-    return [new vscode.Position(origin.line, match.index), match] as search.Result;
+    return [
+      new vscode.Position(origin.line, match.index),
+      match,
+    ] as search.Result;
   }
 
   const endLine = end.line;
 
   for (let line = origin.line - 1; line > endLine; line--) {
     const textLine = document.lineAt(line),
-          match = execLast(re, textLine.text);
+      match = execLast(re, textLine.text);
 
     if (match !== null) {
       return [new vscode.Position(line, match.index), match] as search.Result;
     }
   }
 
-  const endMatch = execLast(re, document.lineAt(endLine).text.slice(end.character));
+  const endMatch = execLast(
+    re,
+    document.lineAt(endLine).text.slice(end.character),
+  );
 
   if (endMatch !== null) {
     const endCharacter = end.character + endMatch.index;
 
-    return [new vscode.Position(endLine, endCharacter), endMatch] as search.Result;
+    return [
+      new vscode.Position(endLine, endCharacter),
+      endMatch,
+    ] as search.Result;
   }
 
   return;
@@ -265,7 +280,7 @@ function searchSingleLineRegExpForward(
 
   // Loop for a match line by line, starting at the current line.
   const currentLine = document.lineAt(origin),
-        match = re.exec(currentLine.text.slice(origin.character));
+    match = re.exec(currentLine.text.slice(origin.character));
 
   if (match !== null) {
     return [origin.translate(undefined, match.index), match] as search.Result;
@@ -275,17 +290,22 @@ function searchSingleLineRegExpForward(
 
   for (let line = origin.line + 1; line < endLine; line++) {
     const textLine = document.lineAt(line),
-          match = re.exec(textLine.text);
+      match = re.exec(textLine.text);
 
     if (match !== null) {
       return [new vscode.Position(line, match.index), match] as search.Result;
     }
   }
 
-  const endMatch = re.exec(document.lineAt(endLine).text.slice(0, end.character));
+  const endMatch = re.exec(
+    document.lineAt(endLine).text.slice(0, end.character),
+  );
 
   if (endMatch !== null) {
-    return [new vscode.Position(endLine, endMatch.index), endMatch] as search.Result;
+    return [
+      new vscode.Position(endLine, endMatch.index),
+      endMatch,
+    ] as search.Result;
   }
 
   return;
@@ -313,8 +333,8 @@ function searchOneOfBackward(
   re.lastIndex = 0;
 
   const originLine = origin.line,
-        lines = [document.lineAt(originLine).text.slice(0, origin.character)],
-        joiner = document.eol === vscode.EndOfLine.CRLF ? "\r\n" : "\n";
+    lines = [document.lineAt(originLine).text.slice(0, origin.character)],
+    joiner = document.eol === vscode.EndOfLine.CRLF ? "\r\n" : "\n";
 
   for (let i = 1; i < lineRange; i++) {
     lines.unshift(document.lineAt(originLine - i).text);
@@ -330,7 +350,7 @@ function searchOneOfBackward(
     }
 
     const text = lines.join(joiner),
-          match = re.exec(text);
+      match = re.exec(text);
 
     if (match !== null) {
       return [new vscode.Position(line, match.index), match] as search.Result;
@@ -366,19 +386,24 @@ function searchOneOfForward(
   re.lastIndex = 0;
 
   const originLine = origin.line,
-        lines = [document.lineAt(originLine).text.slice(origin.character)],
-        joiner = document.eol === vscode.EndOfLine.CRLF ? "\r\n" : "\n";
+    lines = [document.lineAt(originLine).text.slice(origin.character)],
+    joiner = document.eol === vscode.EndOfLine.CRLF ? "\r\n" : "\n";
 
   for (let i = 1; i < lineRange; i++) {
     lines.push(document.lineAt(originLine + i).text);
   }
 
-  for (let line = originLine, loopEnd = endLine - lineRange + 1; line < loopEnd; line++) {
+  for (
+    let line = originLine, loopEnd = endLine - lineRange + 1;
+    line < loopEnd;
+    line++
+  ) {
     const text = lines.join(joiner),
-          match = re.exec(text);
+      match = re.exec(text);
 
     if (match !== null) {
-      const character = line === originLine ? origin.character + match.index : match.index;
+      const character =
+        line === originLine ? origin.character + match.index : match.index;
 
       return [new vscode.Position(line, character), match] as search.Result;
     }

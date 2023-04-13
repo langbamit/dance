@@ -12,8 +12,8 @@ export function toMode(modeName: string, count: number): Thenable<void>;
 
 export async function toMode(modeName: string, count?: number) {
   const context = Context.current,
-        extension = context.extension,
-        mode = extension.modes.get(modeName);
+    extension = context.extension,
+    mode = extension.modes.get(modeName);
 
   if (mode === undefined || mode.isPendingDeletion) {
     throw new Error(`mode ${JSON.stringify(modeName)} does not exist`);
@@ -24,15 +24,15 @@ export async function toMode(modeName: string, count?: number) {
   }
 
   const editorState = context.getState(),
-        initialMode = editorState.mode,
-        disposable = extension
-          .createAutoDisposable()
-          .disposeOnEvent(editorState.onVisibilityDidChange)
-          .addDisposable({
-            dispose() {
-              context.switchToMode(initialMode);
-            },
-          });
+    initialMode = editorState.mode,
+    disposable = extension
+      .createAutoDisposable()
+      .disposeOnEvent(editorState.onVisibilityDidChange)
+      .addDisposable({
+        dispose() {
+          context.switchToMode(initialMode);
+        },
+      });
 
   await context.switchToMode(mode);
 
@@ -42,16 +42,20 @@ export async function toMode(modeName: string, count?: number) {
   setTimeout(() => {
     const { Entry } = extension.recorder;
 
-    disposable
-      .addDisposable(extension.recorder.onDidAddEntry((entry) => {
-        if (entry instanceof Entry.ExecuteCommand
-          && entry.descriptor().identifier.endsWith("updateCount")) {
+    disposable.addDisposable(
+      extension.recorder.onDidAddEntry((entry) => {
+        if (
+          entry instanceof Entry.ExecuteCommand &&
+          entry.descriptor().identifier.endsWith("updateCount")
+        ) {
           // Ignore number inputs.
           return;
         }
 
-        if (entry instanceof Entry.ChangeTextEditor
-          || entry instanceof Entry.ChangeTextEditorMode) {
+        if (
+          entry instanceof Entry.ChangeTextEditor ||
+          entry instanceof Entry.ChangeTextEditorMode
+        ) {
           // Immediately dispose.
           return disposable.dispose();
         }
@@ -59,6 +63,7 @@ export async function toMode(modeName: string, count?: number) {
         if (--count! === 0) {
           disposable.dispose();
         }
-      }));
+      }),
+    );
   }, 0);
 }

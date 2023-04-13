@@ -2,7 +2,14 @@ import * as vscode from "vscode";
 
 import type { Extension } from "./extension";
 import type { Mode } from "./modes";
-import { command, commands, Context, Positions, SelectionBehavior, Selections } from "../api";
+import {
+  command,
+  commands,
+  Context,
+  Positions,
+  SelectionBehavior,
+  Selections,
+} from "../api";
 import { extensionName } from "../utils/constants";
 import { assert } from "../utils/errors";
 
@@ -75,8 +82,8 @@ export class PerEditorState implements vscode.Disposable {
     this._clearDecorations(this._mode);
 
     const options = this._editor.options,
-          mode = this._mode,
-          vscodeMode = mode.modes.vscodeMode;
+      mode = this._mode,
+      vscodeMode = mode.modes.vscodeMode;
 
     options.cursorStyle = vscodeMode.cursorStyle;
     options.lineNumbers = vscodeMode.lineNumbers;
@@ -108,8 +115,11 @@ export class PerEditorState implements vscode.Disposable {
   /**
    * Returns a `Token` that can later be used to store editor-specific data.
    */
-  public static registerState<T>(isDisposable: T extends vscode.Disposable ? true : false) {
-    return this._registeredStates.push(isDisposable) - 1 as unknown as PerEditorState.Token<T>;
+  public static registerState<T>(
+    isDisposable: T extends vscode.Disposable ? true : false,
+  ) {
+    return (this._registeredStates.push(isDisposable) -
+      1) as unknown as PerEditorState.Token<T>;
   }
 
   private readonly _storage: unknown[] = [];
@@ -145,7 +155,9 @@ export class PerEditorState implements vscode.Disposable {
    */
   public async setMode(mode: Mode) {
     if (this._isChangingMode) {
-      throw new Error("calling EditorState.setMode in a mode change handler is forbidden");
+      throw new Error(
+        "calling EditorState.setMode in a mode change handler is forbidden",
+      );
     }
 
     if (this._mode === mode) {
@@ -160,9 +172,12 @@ export class PerEditorState implements vscode.Disposable {
       this._modeChangeSubscription.dispose();
       this._clearDecorations(previousMode);
 
-      await this._runCommands(previousMode.onLeaveMode, (e) =>
-        `error trying to execute onLeaveMode commands for mode ${
-          JSON.stringify(previousMode.name)}: ${e}`,
+      await this._runCommands(
+        previousMode.onLeaveMode,
+        (e) =>
+          `error trying to execute onLeaveMode commands for mode ${JSON.stringify(
+            previousMode.name,
+          )}: ${e}`,
       );
 
       if (previousMode.selectionBehavior !== mode.selectionBehavior) {
@@ -174,30 +189,34 @@ export class PerEditorState implements vscode.Disposable {
     this._modeChangeSubscription = mode.onChanged(([mode, props]) => {
       for (const prop of props) {
         switch (prop) {
-        case "cursorStyle":
-          this._editor.options.cursorStyle = mode.cursorStyle;
-          break;
+          case "cursorStyle":
+            this._editor.options.cursorStyle = mode.cursorStyle;
+            break;
 
-        case "lineNumbers":
-          this._editor.options.lineNumbers = mode.lineNumbers;
-          break;
+          case "lineNumbers":
+            this._editor.options.lineNumbers = mode.lineNumbers;
+            break;
 
-        case "decorations":
-        case "lineHighlight":
-        case "selectionDecorationType":
-          this._updateDecorations(mode);
-          break;
+          case "decorations":
+          case "lineHighlight":
+          case "selectionDecorationType":
+            this._updateDecorations(mode);
+            break;
 
-        case "selectionBehavior":
-          this._updateSelectionsAfterBehaviorChange(mode);
-          break;
+          case "selectionBehavior":
+            this._updateSelectionsAfterBehaviorChange(mode);
+            break;
         }
       }
     });
     this._updateDecorations(mode);
 
-    await this._runCommands(mode.onEnterMode, (e) =>
-      `error trying to execute onEnterMode commands for mode ${JSON.stringify(mode.name)}: ${e}`,
+    await this._runCommands(
+      mode.onEnterMode,
+      (e) =>
+        `error trying to execute onEnterMode commands for mode ${JSON.stringify(
+          mode.name,
+        )}: ${e}`,
     );
 
     if (this.isActive) {
@@ -213,7 +232,10 @@ export class PerEditorState implements vscode.Disposable {
     commandsToRun: readonly command.Any[],
     error: (e: any) => string,
   ) {
-    const context = new Context(this, this.extension.cancellationToken).doNotRecord();
+    const context = new Context(
+      this,
+      this.extension.cancellationToken,
+    ).doNotRecord();
 
     return this.extension.runPromiseSafely(
       () => context.runAsync(() => commands(...commandsToRun)),
@@ -239,7 +261,11 @@ export class PerEditorState implements vscode.Disposable {
     editor.options.lineNumbers = mode.lineNumbers;
     editor.options.cursorStyle = mode.cursorStyle;
 
-    return vscode.commands.executeCommand("setContext", extensionName + ".mode", mode.name);
+    return vscode.commands.executeCommand(
+      "setContext",
+      extensionName + ".mode",
+      mode.name,
+    );
   }
 
   /**
@@ -252,7 +278,11 @@ export class PerEditorState implements vscode.Disposable {
     if (!newEditorIsActive) {
       this.extension.statusBar.activeModeSegment.setContent("<no active mode>");
 
-      return vscode.commands.executeCommand("setContext", extensionName + ".mode", undefined);
+      return vscode.commands.executeCommand(
+        "setContext",
+        extensionName + ".mode",
+        undefined,
+      );
     }
 
     return Promise.resolve();
@@ -306,34 +336,40 @@ export class PerEditorState implements vscode.Disposable {
 
   private _clearDecorations(mode: Mode) {
     const editor = this._editor,
-          empty = [] as never[];
+      empty = [] as never[];
 
     for (const decoration of mode.decorations) {
       editor.setDecorations(decoration.type, empty);
     }
 
-    editor.setDecorations(this.extension.editors.characterDecorationType, empty);
+    editor.setDecorations(
+      this.extension.editors.characterDecorationType,
+      empty,
+    );
 
     if (mode.hiddenSelectionsIndicatorsDecorationType !== undefined) {
-      editor.setDecorations(mode.hiddenSelectionsIndicatorsDecorationType, empty);
+      editor.setDecorations(
+        mode.hiddenSelectionsIndicatorsDecorationType,
+        empty,
+      );
     }
   }
 
   private _updateDecorations(mode: Mode) {
     const editor = this._editor,
-          allSelections = editor.selections;
+      allSelections = editor.selections;
 
     for (const decoration of mode.decorations) {
       const selections =
         decoration.applyTo === "all"
           ? allSelections
           : decoration.applyTo === "main"
-            ? [allSelections[0]]
-            : allSelections.slice(1);
+          ? [allSelections[0]]
+          : allSelections.slice(1);
 
       if (decoration.renderOptions.isWholeLine) {
         const lines = Selections.lines(selections),
-              ranges: vscode.Range[] = [];
+          ranges: vscode.Range[] = [];
 
         for (let i = 0, len = lines.length; i < len; i++) {
           const startLine = lines[i];
@@ -345,7 +381,8 @@ export class PerEditorState implements vscode.Disposable {
           }
 
           const start = new vscode.Position(startLine, 0),
-                end = startLine === endLine ? start : new vscode.Position(endLine, 0);
+            end =
+              startLine === endLine ? start : new vscode.Position(endLine, 0);
 
           ranges.push(new vscode.Range(start, end));
         }
@@ -358,7 +395,7 @@ export class PerEditorState implements vscode.Disposable {
 
     if (mode.selectionBehavior === SelectionBehavior.Character) {
       const document = this._editor.document,
-            ranges = [] as vscode.Range[];
+        ranges = [] as vscode.Range[];
 
       for (let i = 0; i < allSelections.length; i++) {
         const selection = allSelections[i];
@@ -368,16 +405,20 @@ export class PerEditorState implements vscode.Disposable {
 
           if (end !== undefined) {
             const active = selection.active,
-                  start = active.character === 0 || active === selection.start
-                    ? active
-                    : new vscode.Position(active.line, active.character - 1);
+              start =
+                active.character === 0 || active === selection.start
+                  ? active
+                  : new vscode.Position(active.line, active.character - 1);
 
             ranges.push(new vscode.Range(start, end));
           }
         }
       }
 
-      editor.setDecorations(this.extension.editors.characterDecorationType, ranges);
+      editor.setDecorations(
+        this.extension.editors.characterDecorationType,
+        ranges,
+      );
     } else {
       editor.setDecorations(this.extension.editors.characterDecorationType, []);
     }
@@ -390,12 +431,13 @@ export class PerEditorState implements vscode.Disposable {
 
   private _updateSelectionsAfterBehaviorChange(mode: Mode) {
     const editor = this._editor,
-          document = editor.document,
-          selections = editor.selections;
+      document = editor.document,
+      selections = editor.selections;
 
-    editor.selections = mode.selectionBehavior === SelectionBehavior.Character
-      ? Selections.toCharacterMode(selections, document)
-      : Selections.fromCharacterMode(selections, document);
+    editor.selections =
+      mode.selectionBehavior === SelectionBehavior.Character
+        ? Selections.toCharacterMode(selections, document)
+        : Selections.fromCharacterMode(selections, document);
   }
 
   private _updateOffscreenSelectionsIndicators(mode: Mode) {
@@ -406,9 +448,8 @@ export class PerEditorState implements vscode.Disposable {
     }
 
     const editor = this._editor,
-          selections = editor.selections,
-          visibleRanges = editor.visibleRanges;
-
+      selections = editor.selections,
+      visibleRanges = editor.visibleRanges;
     // Find which selections are offscreen.
     const offscreenSelections = [] as vscode.Selection[];
 
@@ -435,7 +476,7 @@ export class PerEditorState implements vscode.Disposable {
 
     // Otherwise, add decorations for offscreen selections.
     const sortedVisibleRanges = visibleRanges.slice(),
-          decorations = [] as vscode.DecorationOptions[];
+      decorations = [] as vscode.DecorationOptions[];
 
     sortedVisibleRanges.sort((a, b) => a.start.compareTo(b.start));
     offscreenSelections.sort((a, b) => a.start.compareTo(b.start));
@@ -450,7 +491,9 @@ export class PerEditorState implements vscode.Disposable {
         range: new vscode.Range(position, position),
         renderOptions: {
           after: {
-            contentText: `  ${count} hidden selection${count === 1 ? "" : "s"} ${relatively}`,
+            contentText: `  ${count} hidden selection${
+              count === 1 ? "" : "s"
+            } ${relatively}`,
           },
         },
       });
@@ -461,11 +504,14 @@ export class PerEditorState implements vscode.Disposable {
 
     for (let i = 0; i < sortedVisibleRanges.length; i++) {
       const visibleRange = sortedVisibleRanges[i],
-            visibleRangeStartLine = visibleRange.start.line;
+        visibleRangeStartLine = visibleRange.start.line;
       let count = 0;
 
-      while (offscreenSelections.length > offscreenSelectionIdx
-          && offscreenSelections[offscreenSelectionIdx].end.line < visibleRangeStartLine) {
+      while (
+        offscreenSelections.length > offscreenSelectionIdx &&
+        offscreenSelections[offscreenSelectionIdx].end.line <
+          visibleRangeStartLine
+      ) {
         offscreenSelectionIdx++;
         count++;
       }
@@ -477,7 +523,7 @@ export class PerEditorState implements vscode.Disposable {
 
     // Hidden selections below the last visible range.
     const visibleRange = sortedVisibleRanges[sortedVisibleRanges.length - 1],
-          count = offscreenSelections.length - offscreenSelectionIdx;
+      count = offscreenSelections.length - offscreenSelectionIdx;
 
     if (count > 0) {
       pushDecoration(decorations, count, visibleRange.end, "below");
@@ -488,7 +534,7 @@ export class PerEditorState implements vscode.Disposable {
 }
 
 export declare namespace PerEditorState {
-  export class Token<T> {
+  export class Token<_T> {
     private can_never_implement_this: never;
   }
 }
@@ -509,9 +555,10 @@ export class Editors implements vscode.Disposable {
   /**
    * @deprecated Do not access -- internal implementation detail.
    */
-  public readonly characterDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor("editor.selectionBackground"),
-  });
+  public readonly characterDecorationType =
+    vscode.window.createTextEditorDecorationType({
+      backgroundColor: new vscode.ThemeColor("editor.selectionBackground"),
+    });
 
   /**
    * The Dance-specific state for the active `vscode.TextEditor`, or `undefined`
@@ -526,21 +573,37 @@ export class Editors implements vscode.Disposable {
    */
   public readonly onModeDidChange = this._onModeDidChange.event;
 
-  public constructor(
-    private readonly _extension: Extension,
-  ) {
+  public constructor(private readonly _extension: Extension) {
     vscode.window.onDidChangeActiveTextEditor(
-      this._handleDidChangeActiveTextEditor, this, this._subscriptions);
+      this._handleDidChangeActiveTextEditor,
+      this,
+      this._subscriptions,
+    );
     vscode.window.onDidChangeTextEditorSelection(
-      this._handleDidChangeTextEditorSelection, this, this._subscriptions);
+      this._handleDidChangeTextEditorSelection,
+      this,
+      this._subscriptions,
+    );
     vscode.window.onDidChangeTextEditorVisibleRanges(
-      this._handleDidChangeTextEditorVisibleRanges, this, this._subscriptions);
+      this._handleDidChangeTextEditorVisibleRanges,
+      this,
+      this._subscriptions,
+    );
     vscode.window.onDidChangeVisibleTextEditors(
-      this._handleDidChangeVisibleTextEditors, this, this._subscriptions);
+      this._handleDidChangeVisibleTextEditors,
+      this,
+      this._subscriptions,
+    );
     vscode.workspace.onDidOpenTextDocument(
-      this._handleDidOpenTextDocument, this, this._subscriptions);
+      this._handleDidOpenTextDocument,
+      this,
+      this._subscriptions,
+    );
     vscode.workspace.onDidCloseTextDocument(
-      this._handleDidCloseTextDocument, this, this._subscriptions);
+      this._handleDidCloseTextDocument,
+      this,
+      this._subscriptions,
+    );
 
     queueMicrotask(() => {
       this._handleDidChangeVisibleTextEditors(vscode.window.visibleTextEditors);
@@ -590,17 +653,23 @@ export class Editors implements vscode.Disposable {
     }
   }
 
-  private _handleDidChangeTextEditorSelection(e: vscode.TextEditorSelectionChangeEvent) {
+  private _handleDidChangeTextEditorSelection(
+    e: vscode.TextEditorSelectionChangeEvent,
+  ) {
     this._editors.get(e.textEditor)?.notifyDidChangeTextEditorSelection();
   }
 
-  private _handleDidChangeTextEditorVisibleRanges(e: vscode.TextEditorVisibleRangesChangeEvent) {
+  private _handleDidChangeTextEditorVisibleRanges(
+    e: vscode.TextEditorVisibleRangesChangeEvent,
+  ) {
     this._editors.get(e.textEditor)?.notifyDidChangeTextEditorVisibleRanges();
   }
 
-  private _handleDidChangeVisibleTextEditors(visibleEditors: readonly vscode.TextEditor[]) {
+  private _handleDidChangeVisibleTextEditors(
+    visibleEditors: readonly vscode.TextEditor[],
+  ) {
     const hiddenEditors = new Map(this._editors),
-          addedEditors = new Set<vscode.TextEditor>();
+      addedEditors = new Set<vscode.TextEditor>();
 
     for (const visibleEditor of visibleEditors) {
       if (!hiddenEditors.delete(visibleEditor)) {
@@ -623,7 +692,9 @@ export class Editors implements vscode.Disposable {
         this._fallbacks.delete(addedEditor.document);
       } else {
         this._editors.set(
-          addedEditor, new PerEditorState(this._extension, addedEditor, defaultMode));
+          addedEditor,
+          new PerEditorState(this._extension, addedEditor, defaultMode),
+        );
       }
     }
 
@@ -723,7 +794,7 @@ export class Editors implements vscode.Disposable {
 
 function getTotalRange(editor: vscode.TextEditor) {
   let minStart = editor.document.lineCount - 1,
-      maxEnd = 0;
+    maxEnd = 0;
 
   for (const range of editor.visibleRanges) {
     minStart = Math.min(range.start.line, minStart);
@@ -739,5 +810,7 @@ function isMoreInteresting(
 ) {
   // Compute the total range of each editor; the "most interesting editor" is
   // the one with the greatest total range.
-  return getTotalRange(currentEditor) < getTotalRange(potentiallyMoreInteresting);
+  return (
+    getTotalRange(currentEditor) < getTotalRange(potentiallyMoreInteresting)
+  );
 }

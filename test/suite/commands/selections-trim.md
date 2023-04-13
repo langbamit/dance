@@ -79,15 +79,17 @@ friends
 
 - .selections.expandToLines
 
-No changes, each selection is already a full line.
+Each selection expands to the next full line
 
 ```
 hello
 ^^^^^^ 0
 world
+^^^^^^ 0
 my dear
 |^^^^^^^ 1
 friends
+^^^^^^^ 1
 ```
 
 # 3

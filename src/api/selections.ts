@@ -1,6 +1,10 @@
 import * as vscode from "vscode";
 
-import { Context, selectionsFromCharacterMode as fromCharacterMode, selectionsToCharacterMode as toCharacterMode } from "./context";
+import {
+  Context,
+  selectionsFromCharacterMode as fromCharacterMode,
+  selectionsToCharacterMode as toCharacterMode,
+} from "./context";
 import { NotASelectionError } from "./errors";
 import * as Positions from "./positions";
 import { Direction, SelectionBehavior, Shift } from "./types";
@@ -12,7 +16,7 @@ export { fromCharacterMode, toCharacterMode };
 /**
  * Sets the current selections.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const start = new vscode.Position(0, 6),
@@ -33,13 +37,16 @@ export { fromCharacterMode, toCharacterMode };
  *       ^^^^^ 0
  * ```
  *
- * ### Example
+ * @example
  * ```js
  * expect(() => Selections.set([]), "to throw an", EmptySelectionsError);
  * expect(() => Selections.set([1 as any]), "to throw a", NotASelectionError);
  * ```
  */
-export function set(selections: readonly vscode.Selection[], context = Context.current) {
+export function set(
+  selections: readonly vscode.Selection[],
+  context = Context.current,
+) {
   NotASelectionError.throwIfNotASelectionArray(selections);
 
   context.selections = selections;
@@ -55,7 +62,7 @@ export function set(selections: readonly vscode.Selection[], context = Context.c
  * @param selections The `vscode.Selection` array to filter from, or `undefined`
  *   to filter the selections of the active text editor.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const atChar = (character: number) => new vscode.Position(0, character);
@@ -85,7 +92,7 @@ export function filter(
  * @param selections The `vscode.Selection` array to filter from, or `undefined`
  *   to filter the selections of the active text editor.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const atChar = (character: number) => new vscode.Position(0, character);
@@ -114,7 +121,8 @@ export function filter(
   selections?: readonly vscode.Selection[],
 ) {
   return filterByIndex(
-    (i, selection, document) => predicate(document.getText(selection), selection, i) as any,
+    (i, selection, document) =>
+      predicate(document.getText(selection), selection, i) as any,
     selections,
   ) as any;
 }
@@ -151,18 +159,20 @@ export function filterByIndex(
 ): Thenable<vscode.Selection[]>;
 
 export function filterByIndex(
-  predicate: filterByIndex.Predicate<boolean> | filterByIndex.Predicate<Thenable<boolean>>,
+  predicate:
+    | filterByIndex.Predicate<boolean>
+    | filterByIndex.Predicate<Thenable<boolean>>,
   selections?: readonly vscode.Selection[],
 ) {
   const context = Context.current,
-        document = context.document;
+    document = context.document;
 
   if (selections === undefined) {
     selections = context.selections;
   }
 
   const firstSelection = selections[0],
-        firstResult = predicate(0, firstSelection, document);
+    firstResult = predicate(0, firstSelection, document);
 
   if (typeof firstResult === "boolean") {
     if (selections.length === 1) {
@@ -182,7 +192,9 @@ export function filterByIndex(
     return resultingSelections;
   } else {
     if (selections.length === 1) {
-      return context.then(firstResult, (value) => value ? [firstSelection] : []);
+      return context.then(firstResult, (value) =>
+        value ? [firstSelection] : [],
+      );
     }
 
     const promises = [firstResult];
@@ -193,7 +205,7 @@ export function filterByIndex(
       promises.push(predicate(i, selection, document) as Thenable<boolean>);
     }
 
-    const savedSelections = selections.slice();  // In case the original
+    const savedSelections = selections.slice(); // In case the original
     //                                              selections are mutated.
 
     return context.then(Promise.all(promises), (results) => {
@@ -215,7 +227,11 @@ export declare namespace filterByIndex {
    * A predicate passed to {@link filterByIndex}.
    */
   export interface Predicate<T extends boolean | Thenable<boolean>> {
-    (index: number, selection: vscode.Selection, document: vscode.TextDocument): T;
+    (
+      index: number,
+      selection: vscode.Selection,
+      document: vscode.TextDocument,
+    ): T;
   }
 }
 
@@ -226,7 +242,7 @@ export declare namespace filterByIndex {
  * @param selections The `vscode.Selection` array to map from, or `undefined`
  *   to map the selections of the active text editor.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(
@@ -255,7 +271,7 @@ export function map<T>(
  * @param selections The `vscode.Selection` array to map from, or `undefined`
  *   to map the selections of the active text editor.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(
@@ -321,25 +337,30 @@ export function mapByIndex<T>(
 ): Thenable<T[]>;
 
 export function mapByIndex<T>(
-  f: mapByIndex.Mapper<T | undefined> | mapByIndex.Mapper<Thenable<T | undefined>>,
+  f:
+    | mapByIndex.Mapper<T | undefined>
+    | mapByIndex.Mapper<Thenable<T | undefined>>,
   selections?: readonly vscode.Selection[],
 ) {
   const context = Context.current,
-        document = context.document;
+    document = context.document;
 
   if (selections === undefined) {
     selections = context.selections;
   }
 
   const firstSelection = selections[0],
-        firstResult = f(0, firstSelection, document);
+    firstResult = f(0, firstSelection, document);
 
-  if (firstResult === undefined || typeof (firstResult as Thenable<T>)?.then !== "function") {
+  if (
+    firstResult === undefined ||
+    typeof (firstResult as Thenable<T>)?.then !== "function"
+  ) {
     const results = firstResult !== undefined ? [firstResult as T] : [];
 
     for (let i = 1; i < selections.length; i++) {
       const selection = selections[i],
-            value = f(i, selection, document) as T | undefined;
+        value = f(i, selection, document) as T | undefined;
 
       if (value !== undefined) {
         results.push(value);
@@ -358,7 +379,7 @@ export function mapByIndex<T>(
 
     for (let i = 1; i < selections.length; i++) {
       const selection = selections[i],
-            promise = f(i, selection, document) as Thenable<T | undefined>;
+        promise = f(i, selection, document) as Thenable<T | undefined>;
 
       promises.push(promise);
     }
@@ -384,7 +405,11 @@ export declare namespace mapByIndex {
    * A mapper function passed to {@link mapByIndex}.
    */
   export interface Mapper<T> {
-    (index: number, selection: vscode.Selection, document: vscode.TextDocument): T | undefined;
+    (
+      index: number,
+      selection: vscode.Selection,
+      document: vscode.TextDocument,
+    ): T | undefined;
   }
 }
 
@@ -392,7 +417,7 @@ export declare namespace mapByIndex {
  * Sets the selections of the current editor after transforming them according
  * to the given function.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const reverseUnlessNumber = (text: string, sel: vscode.Selection) =>
@@ -414,7 +439,7 @@ export declare namespace mapByIndex {
  * |^^ 0
  * ```
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(() => Selections.update(() => undefined), "to throw an", EmptySelectionsError);
@@ -435,7 +460,7 @@ export function update(
  * Sets the selections of the current editor after transforming them according
  * to the given async function.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const reverseIfNumber = async (text: string, sel: vscode.Selection) =>
@@ -463,22 +488,27 @@ export function update(
 ): Thenable<vscode.Selection[]>;
 
 export function update(
-  f: map.Mapper<vscode.Selection | undefined>
-   | map.Mapper<Thenable<vscode.Selection | undefined>>,
+  f:
+    | map.Mapper<vscode.Selection | undefined>
+    | map.Mapper<Thenable<vscode.Selection | undefined>>,
   context?: Context,
 ): any {
   const selections = map(f as any, context?.selections);
 
   if (Array.isArray(selections)) {
-    return set(selections, context);
+    return set(selections as vscode.Selection[], context);
   }
 
-  return (selections as Thenable<vscode.Selection[]>).then((xs) => set(xs, context));
+  return (selections as Thenable<vscode.Selection[]>).then((xs) =>
+    set(xs, context),
+  );
 }
 
-function mapFallbackSelections(values: (vscode.Selection | readonly [vscode.Selection])[]) {
+function mapFallbackSelections(
+  values: (vscode.Selection | readonly [vscode.Selection])[],
+) {
   let selectionsCount = 0,
-      fallbackSelectionsCount = 0;
+    fallbackSelectionsCount = 0;
 
   for (const value of values) {
     if (Array.isArray(value)) {
@@ -534,17 +564,20 @@ export function updateByIndex(
 ): Thenable<vscode.Selection[]>;
 
 export function updateByIndex(
-  f: mapByIndex.Mapper<vscode.Selection | undefined>
-   | mapByIndex.Mapper<Thenable<vscode.Selection | undefined>>,
+  f:
+    | mapByIndex.Mapper<vscode.Selection | undefined>
+    | mapByIndex.Mapper<Thenable<vscode.Selection | undefined>>,
   context?: Context,
 ): any {
   const selections = mapByIndex(f as any, context?.selections);
 
   if (Array.isArray(selections)) {
-    return set(selections, context);
+    return set(selections as vscode.Selection[], context);
   }
 
-  return (selections as Thenable<vscode.Selection[]>).then((xs) => set(xs, context));
+  return (selections as Thenable<vscode.Selection[]>).then((xs) =>
+    set(xs, context),
+  );
 }
 
 /**
@@ -552,20 +585,24 @@ export function updateByIndex(
  * selection. If no selection remains after the end of the update, fallback
  * selections will be used instead.
  */
-export function updateWithFallback<T extends updateWithFallback.SelectionOrFallback
-                                           | Thenable<updateWithFallback.SelectionOrFallback>>(
+export function updateWithFallback<
+  T extends
+    | updateWithFallback.SelectionOrFallback
+    | Thenable<updateWithFallback.SelectionOrFallback>,
+>(
   f: map.Mapper<T>,
 ): T extends Thenable<updateWithFallback.SelectionOrFallback>
-    ? Thenable<vscode.Selection[]>
-    : vscode.Selection[] {
+  ? Thenable<vscode.Selection[]>
+  : vscode.Selection[] {
   const selections = map(f as any);
 
   if (Array.isArray(selections)) {
-    return set(mapFallbackSelections(selections)) as any;
+    return set(mapFallbackSelections(selections as vscode.Selection[])) as any;
   }
 
-  return (selections as Thenable<(vscode.Selection | readonly [vscode.Selection])[]>)
-    .then((values) => set(mapFallbackSelections(values))) as any;
+  return (
+    selections as Thenable<(vscode.Selection | readonly [vscode.Selection])[]>
+  ).then((values) => set(mapFallbackSelections(values))) as any;
 }
 
 export declare namespace updateWithFallback {
@@ -574,7 +611,10 @@ export declare namespace updateWithFallback {
    * {@link updateWithFallback}. An array with a single selection corresponds to
    * a fallback selection.
    */
-  export type SelectionOrFallback = vscode.Selection | readonly [vscode.Selection] | undefined;
+  export type SelectionOrFallback =
+    | vscode.Selection
+    | readonly [vscode.Selection]
+    | undefined;
 }
 
 /**
@@ -582,27 +622,29 @@ export declare namespace updateWithFallback {
  * selection.
  */
 export function updateWithFallbackByIndex<
-  T extends updateWithFallback.SelectionOrFallback
-          | Thenable<updateWithFallback.SelectionOrFallback>
+  T extends
+    | updateWithFallback.SelectionOrFallback
+    | Thenable<updateWithFallback.SelectionOrFallback>,
 >(
   f: mapByIndex.Mapper<T>,
 ): T extends Thenable<updateWithFallback.SelectionOrFallback>
-    ? Thenable<vscode.Selection[]>
-    : vscode.Selection[] {
+  ? Thenable<vscode.Selection[]>
+  : vscode.Selection[] {
   const selections = mapByIndex(f as any);
 
   if (Array.isArray(selections)) {
-    return set(mapFallbackSelections(selections)) as any;
+    return set(mapFallbackSelections(selections as vscode.Selection[])) as any;
   }
 
-  return (selections as Thenable<(vscode.Selection | readonly [vscode.Selection])[]>)
-    .then((values) => set(mapFallbackSelections(values))) as any;
+  return (
+    selections as Thenable<(vscode.Selection | readonly [vscode.Selection])[]>
+  ).then((values) => set(mapFallbackSelections(values))) as any;
 }
 
 /**
  * Rotates selections in the given direction.
  *
- * ### Example
+ * @example
  *
  * ```js
  * Selections.set(Selections.rotate(1));
@@ -622,7 +664,7 @@ export function updateWithFallbackByIndex<
  *     ^^^ 2
  * ```
  *
- * ### Example
+ * @example
  *
  * ```js
  * Selections.set(Selections.rotate(-1));
@@ -669,7 +711,7 @@ export function rotate(
  * active selections. Though the resulting array is not sorted, it is likely
  * that consecutive lines will be consecutive in the array as well.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.lines(), "to only contain", 0, 1, 3, 4, 5, 6);
@@ -701,7 +743,7 @@ export function lines(
 
   for (const selection of selections) {
     const startLine = selection.start.line,
-          endLine_ = endLine(selection);
+      endLine_ = endLine(selection);
 
     // The first and last lines of the selection may contain other selections,
     // so we check for duplicates with them. However, the intermediate
@@ -743,7 +785,7 @@ export function split(re: RegExp, selections = Context.current.selections) {
  * Returns the selections obtained by finding all the matches within the given
  * selections using the given RegExp.
  *
- * ### Example
+ * @example
  *
  * ```ts
  * expect(Selections.selectWithin(/\d/).map<string>(text), "to equal", [
@@ -763,7 +805,10 @@ export function split(re: RegExp, selections = Context.current.selections) {
  *   ^^^^^^ 1
  * ```
  */
-export function selectWithin(re: RegExp, selections = Context.current.selections) {
+export function selectWithin(
+  re: RegExp,
+  selections = Context.current.selections,
+) {
   const document = Context.current.document;
 
   return map((text, selection) => {
@@ -778,9 +823,12 @@ export function selectWithin(re: RegExp, selections = Context.current.selections
 /**
  * Reveals selections in the current editor.
  */
-export function reveal(selection?: vscode.Selection, context = Context.current) {
+export function reveal(
+  selection?: vscode.Selection,
+  context = Context.current,
+) {
   const editor = context.editor,
-        active = (selection ?? (editor as vscode.TextEditor).selection).active;
+    active = (selection ?? (editor as vscode.TextEditor).selection).active;
 
   editor.revealRange(new vscode.Range(active, active));
 }
@@ -790,7 +838,7 @@ function merge(
   alsoMergeConsecutiveSelections: boolean,
 ) {
   const len = selections.length,
-        ignoreSelections = new Uint8Array(selections.length);
+    ignoreSelections = new Uint8Array(selections.length);
   let newSelections: vscode.Selection[] | undefined;
 
   for (let i = 0; i < len; i++) {
@@ -800,9 +848,9 @@ function merge(
 
     const a = selections[i];
     let aStart = a.start,
-        aEnd = a.end,
-        aIsEmpty = aStart.isEqual(aEnd),
-        changed = false;
+      aEnd = a.end,
+      aIsEmpty = aStart.isEqual(aEnd),
+      changed = false;
 
     for (let j = i + 1; j < len; j++) {
       if (ignoreSelections[j] === 1) {
@@ -810,8 +858,8 @@ function merge(
       }
 
       const b = selections[j],
-            bStart = b.start,
-            bEnd = b.end;
+        bStart = b.start,
+        bEnd = b.end;
 
       if (aIsEmpty) {
         if (bStart.isEqual(bEnd)) {
@@ -842,8 +890,11 @@ function merge(
         continue;
       }
 
-      if (aStart.isAfterOrEqual(bStart)
-          && (aStart.isBefore(bEnd) || (alsoMergeConsecutiveSelections && aStart.isEqual(bEnd)))) {
+      if (
+        aStart.isAfterOrEqual(bStart) &&
+        (aStart.isBefore(bEnd) ||
+          (alsoMergeConsecutiveSelections && aStart.isEqual(bEnd)))
+      ) {
         // Selection A starts within selection B...
         if (aEnd.isBeforeOrEqual(bEnd)) {
           // ... and ends within selection B (it is included in selection B).
@@ -859,8 +910,11 @@ function merge(
           }
           aStart = bStart;
         }
-      } else if ((aEnd.isAfter(bStart) || (alsoMergeConsecutiveSelections && aEnd.isEqual(bStart)))
-                 && aEnd.isBeforeOrEqual(bEnd)) {
+      } else if (
+        (aEnd.isAfter(bStart) ||
+          (alsoMergeConsecutiveSelections && aEnd.isEqual(bStart))) &&
+        aEnd.isBeforeOrEqual(bEnd)
+      ) {
         // Selection A ends within selection B. Furthermore, we know that
         // selection A does not start within selection B, so it starts before
         // selection B.
@@ -876,7 +930,7 @@ function merge(
       changed = true;
       ignoreSelections[j] = 1;
 
-      j = i;  // `j++` above will set `j` to `i + 1`.
+      j = i; // `j++` above will set `j` to `i + 1`.
     }
 
     if (changed) {
@@ -903,7 +957,7 @@ function merge(
  * Given an array of selections, returns an array of selections where all
  * overlapping selections have been merged.
  *
- * ### Example
+ * @example
  *
  * Equal selections.
  *
@@ -918,7 +972,7 @@ function merge(
  *  ^^ 1
  * ```
  *
- * ### Example
+ * @example
  *
  * Equal empty selections.
  *
@@ -933,7 +987,7 @@ function merge(
  *  | 1
  * ```
  *
- * ### Example
+ * @example
  *
  * Overlapping selections.
  *
@@ -950,14 +1004,16 @@ function merge(
  *  ^^^ 1
  * ```
  */
-export function mergeOverlapping(selections: readonly vscode.Selection[] = current()) {
+export function mergeOverlapping(
+  selections: readonly vscode.Selection[] = current(),
+) {
   return merge(selections, /* alsoMergeConsecutiveSelections= */ false);
 }
 
 /**
  * Same as `mergeOverlapping`, but also merging consecutive selections.
  *
- * ### Example
+ * @example
  *
  * Consecutive selections.
  *
@@ -976,7 +1032,7 @@ export function mergeOverlapping(selections: readonly vscode.Selection[] = curre
  *   ^^ 1
  * ```
  *
- * ### Example
+ * @example
  *
  * Consecutive selections (reversed).
  *
@@ -995,7 +1051,9 @@ export function mergeOverlapping(selections: readonly vscode.Selection[] = curre
  *   ^^ 0
  * ```
  */
-export function mergeConsecutive(selections: readonly vscode.Selection[] = current()) {
+export function mergeConsecutive(
+  selections: readonly vscode.Selection[] = current(),
+) {
   return merge(selections, /* alsoMergeConsecutiveSelections= */ true);
 }
 
@@ -1009,7 +1067,10 @@ export function current() {
 /**
  * Returns the selection at the given index.
  */
-export function nth(index: number, selections: readonly vscode.Selection[] = current()) {
+export function nth(
+  index: number,
+  selections: readonly vscode.Selection[] = current(),
+) {
   return selections[index] as vscode.Selection | undefined;
 }
 
@@ -1018,10 +1079,12 @@ export function nth(index: number, selections: readonly vscode.Selection[] = cur
  */
 export function track(selections?: readonly vscode.Selection[]) {
   const context = Context.current,
-        document = context.document;
+    document = context.document;
 
   return new TrackedSelection.Set(
-    TrackedSelection.fromArray(selections ?? context.selections, document), document);
+    TrackedSelection.fromArray(selections ?? context.selections, document),
+    document,
+  );
 }
 
 /**
@@ -1065,9 +1128,11 @@ export function end(selection: vscode.Range) {
  */
 export function forward(selection: vscode.Selection) {
   const active = selection.active,
-        anchor = selection.anchor;
+    anchor = selection.anchor;
 
-  return active.isAfterOrEqual(anchor) ? selection : new vscode.Selection(active, anchor);
+  return active.isAfterOrEqual(anchor)
+    ? selection
+    : new vscode.Selection(active, anchor);
 }
 
 /**
@@ -1076,9 +1141,11 @@ export function forward(selection: vscode.Selection) {
  */
 export function backward(selection: vscode.Selection) {
   const active = selection.active,
-        anchor = selection.anchor;
+    anchor = selection.anchor;
 
-  return active.isBeforeOrEqual(anchor) ? selection : new vscode.Selection(active, anchor);
+  return active.isBeforeOrEqual(anchor)
+    ? selection
+    : new vscode.Selection(active, anchor);
 }
 
 /**
@@ -1092,7 +1159,10 @@ export function empty(position: vscode.Position): vscode.Selection;
  */
 export function empty(line: number, character: number): vscode.Selection;
 
-export function empty(positionOrLine: vscode.Position | number, character?: number) {
+export function empty(
+  positionOrLine: vscode.Position | number,
+  character?: number,
+) {
   if (typeof positionOrLine === "number") {
     positionOrLine = new vscode.Position(positionOrLine, character!);
   }
@@ -1105,14 +1175,20 @@ export function empty(positionOrLine: vscode.Position | number, character?: numb
  */
 export function overlap(a: vscode.Range, b: vscode.Range) {
   const aStart = a.start,
-        aEnd = a.end,
-        bStart = b.start,
-        bEnd = b.end;
+    aEnd = a.end,
+    bStart = b.start,
+    bEnd = b.end;
 
-  return !(aEnd.line < bStart.line
-          || (aEnd.line === bEnd.line && aEnd.character < bStart.character))
-      && !(bEnd.line < aStart.line
-          || (bEnd.line === aEnd.line && bEnd.character < aStart.character));
+  return (
+    !(
+      aEnd.line < bStart.line ||
+      (aEnd.line === bEnd.line && aEnd.character < bStart.character)
+    ) &&
+    !(
+      bEnd.line < aStart.line ||
+      (bEnd.line === aEnd.line && bEnd.character < aStart.character)
+    )
+  );
 }
 
 /**
@@ -1122,9 +1198,9 @@ export function overlap(a: vscode.Range, b: vscode.Range) {
  */
 export function endLine(selection: vscode.Selection | vscode.Range) {
   const startLine = selection.start.line,
-        end = selection.end,
-        endLine = end.line,
-        endCharacter = end.character;
+    end = selection.end,
+    endLine = end.line,
+    endCharacter = end.character;
 
   if (startLine !== endLine && endCharacter === 0) {
     // If the selection ends after a line break, do not consider the next line
@@ -1151,12 +1227,14 @@ export function endCharacter(
   document?: vscode.TextDocument,
 ) {
   const startLine = selection.start.line,
-        end = selection.end,
-        endLine = end.line,
-        endCharacter = end.character;
+    end = selection.end,
+    endLine = end.line,
+    endCharacter = end.character;
 
   if (startLine !== endLine && endCharacter === 0) {
-    return (document ?? Context.current.document).lineAt(endLine - 1).text.length + 1;
+    return (
+      (document ?? Context.current.document).lineAt(endLine - 1).text.length + 1
+    );
   }
 
   return endCharacter;
@@ -1201,7 +1279,10 @@ export function activeLine(selection: vscode.Selection) {
  *
  * @see activeLine
  */
-export function activeCharacter(selection: vscode.Selection, document?: vscode.TextDocument) {
+export function activeCharacter(
+  selection: vscode.Selection,
+  document?: vscode.TextDocument,
+) {
   if (selection.isReversed) {
     return selection.active.character;
   }
@@ -1212,7 +1293,10 @@ export function activeCharacter(selection: vscode.Selection, document?: vscode.T
 /**
  * Returns the position of the active position of the given selection.
  */
-export function activePosition(selection: vscode.Selection, document?: vscode.TextDocument) {
+export function activePosition(
+  selection: vscode.Selection,
+  document?: vscode.TextDocument,
+) {
   if (selection.isReversed) {
     return selection.active;
   }
@@ -1238,14 +1322,17 @@ export function isSingleCharacter(
   document = Context.current.document,
 ) {
   const start = selection.start,
-        end = selection.end;
+    end = selection.end;
 
   if (start.line === end.line) {
     return start.character === end.character - 1;
   }
 
   if (start.line === end.line - 1) {
-    return end.character === 0 && document.lineAt(start.line).text.length === start.character;
+    return (
+      end.character === 0 &&
+      document.lineAt(start.line).text.length === start.character
+    );
   }
 
   return false;
@@ -1255,10 +1342,15 @@ export function isSingleCharacter(
  * Returns whether the given selection has length `1` and corresponds to an
  * empty selection extended by one character by `fromCharacterMode`.
  */
-export function isNonDirectional(selection: vscode.Selection, context = Context.current) {
-  return context.selectionBehavior === SelectionBehavior.Character
-      && !selection.isReversed
-      && isSingleCharacter(selection, context.document);
+export function isNonDirectional(
+  selection: vscode.Selection,
+  context = Context.current,
+) {
+  return (
+    context.selectionBehavior === SelectionBehavior.Character &&
+    !selection.isReversed &&
+    isSingleCharacter(selection, context.document)
+  );
 }
 
 /**
@@ -1269,7 +1361,10 @@ export function isNonDirectional(selection: vscode.Selection, context = Context.
  * {@link vscode.Selection.isReversed} returns `true` even for empty selections,
  * which is not suitable in many cases.
  */
-export function isStrictlyReversed(selection: vscode.Selection, context = Context.current) {
+export function isStrictlyReversed(
+  selection: vscode.Selection,
+  context = Context.current,
+) {
   if (selection.isEmpty || !selection.isReversed) {
     // Empty or forward: not reversed.
     return false;
@@ -1300,8 +1395,12 @@ export function seekFrom(
     const doc = context.document;
 
     return direction === Direction.Forward
-      ? (position === selection.start ? position : Positions.previous(position, doc) ?? position)
-      : (position === selection.end ? position : Positions.next(position, doc) ?? position);
+      ? position === selection.start
+        ? position
+        : Positions.previous(position, doc) ?? position
+      : position === selection.end
+      ? position
+      : Positions.next(position, doc) ?? position;
   }
 
   return position;
@@ -1312,7 +1411,10 @@ export function seekFrom(
  *
  * If the current character behavior is `Caret`, this is `selection.active`.
  */
-export function activeStart(selection: vscode.Selection, context = Context.current) {
+export function activeStart(
+  selection: vscode.Selection,
+  context = Context.current,
+) {
   const active = selection.active;
 
   if (context.selectionBehavior !== SelectionBehavior.Character) {
@@ -1325,7 +1427,9 @@ export function activeStart(selection: vscode.Selection, context = Context.curre
     return start;
   }
 
-  return active === start ? start : Positions.previous(active, context.document)!;
+  return active === start
+    ? start
+    : Positions.previous(active, context.document)!;
 }
 
 /**
@@ -1333,7 +1437,10 @@ export function activeStart(selection: vscode.Selection, context = Context.curre
  *
  * If the current character behavior is `Caret`, this is `selection.active`.
  */
-export function activeEnd(selection: vscode.Selection, context = Context.current) {
+export function activeEnd(
+  selection: vscode.Selection,
+  context = Context.current,
+) {
   const active = selection.active;
 
   if (context.selectionBehavior !== SelectionBehavior.Character) {
@@ -1370,7 +1477,7 @@ export function activeTowards(
  * - If `Shift.Select`, `result.active == position`, `result.anchor == selection.active`.
  * - If `Shift.Extend`, `result.active == position`, `result.anchor == selection.anchor`.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const s1 = Selections.empty(0, 0),
@@ -1385,7 +1492,7 @@ export function activeTowards(
  * line with 23 characters
  * ```
  *
- * ### Example
+ * @example
  *
  * ```js
  * setSelectionBehavior(SelectionBehavior.Character);
@@ -1397,14 +1504,20 @@ export function shift(
   shift: Shift,
   context = Context.current,
 ) {
-  let anchor = shift === Shift.Jump
-    ? position
-    : shift === Shift.Select
+  let anchor =
+    shift === Shift.Jump
+      ? position
+      : shift === Shift.Select
       ? selection.active
       : selection.anchor;
 
-  if (context.selectionBehavior === SelectionBehavior.Character && shift !== Shift.Jump) {
-    const direction = anchor.isAfter(position) ? Direction.Backward : Direction.Forward;
+  if (
+    context.selectionBehavior === SelectionBehavior.Character &&
+    shift !== Shift.Jump
+  ) {
+    const direction = anchor.isAfter(position)
+      ? Direction.Backward
+      : Direction.Forward;
 
     anchor = seekFrom(selection, direction, anchor, context);
   }
@@ -1427,8 +1540,10 @@ export function shiftTowards(
   direction: Direction,
   context = Context.current,
 ) {
-  if (context.selectionBehavior === SelectionBehavior.Character
-      && direction === Direction.Backward) {
+  if (
+    context.selectionBehavior === SelectionBehavior.Character &&
+    direction === Direction.Backward
+  ) {
     position = Positions.next(position) ?? position;
   }
 
@@ -1438,7 +1553,7 @@ export function shiftTowards(
 /**
  * Returns whether the given selection spans an entire line.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.isEntireLine(Selections.nth(0)!), "to be true");
@@ -1454,7 +1569,7 @@ export function shiftTowards(
  * ^^^ 1
  * ```
  *
- * ### Example
+ * @example
  * Use `isEntireLines` for multi-line selections.
  *
  * ```js
@@ -1472,15 +1587,17 @@ export function shiftTowards(
  */
 export function isEntireLine(selection: vscode.Selection | vscode.Range) {
   const start = selection.start,
-        end = selection.end;
+    end = selection.end;
 
-  return start.character === 0 && end.character === 0 && start.line === end.line - 1;
+  return (
+    start.character === 0 && end.character === 0 && start.line === end.line - 1
+  );
 }
 
 /**
  * Returns whether the given selection spans one or more entire lines.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.isEntireLines(Selections.nth(0)!), "to be true");
@@ -1504,16 +1621,17 @@ export function isEntireLine(selection: vscode.Selection | vscode.Range) {
  */
 export function isEntireLines(selection: vscode.Selection | vscode.Range) {
   const start = selection.start,
-        end = selection.end;
+    end = selection.end;
 
-  return start.character === 0 && end.character === 0 && start.line !== end.line;
+  return (
+    start.character === 0 && end.character === 0 && start.line !== end.line
+  );
 }
-
 
 /**
  * Returns whether the given selection starts with an entire line.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.startsWithEntireLine(Selections.nth(0)!), "to be false");
@@ -1540,7 +1658,9 @@ export function isEntireLines(selection: vscode.Selection | vscode.Range) {
  * vwx
  * ```
  */
-export function startsWithEntireLine(selection: vscode.Selection | vscode.Range) {
+export function startsWithEntireLine(
+  selection: vscode.Selection | vscode.Range,
+) {
   const start = selection.start;
 
   return start.character === 0 && start.line !== selection.end.line;
@@ -1549,7 +1669,7 @@ export function startsWithEntireLine(selection: vscode.Selection | vscode.Range)
 /**
  * Returns whether the given selection ends with an entire line.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.endsWithEntireLine(Selections.nth(0)!), "to be false");
@@ -1579,15 +1699,18 @@ export function startsWithEntireLine(selection: vscode.Selection | vscode.Range)
 export function endsWithEntireLine(selection: vscode.Selection | vscode.Range) {
   const end = selection.end;
 
-  return end.character === 0
-      && (selection.start.line < end.line - 1
-        || (selection.start.line === end.line - 1 && selection.start.character === 0));
+  return (
+    end.character === 0 &&
+    (selection.start.line < end.line - 1 ||
+      (selection.start.line === end.line - 1 &&
+        selection.start.character === 0))
+  );
 }
 
 /**
  * Returns whether the given selection ends with a line break (included).
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.endsWithLineBreak(Selections.nth(0)!), "to be true");
@@ -1625,7 +1748,10 @@ export function activeLineIsFullySelected(selection: vscode.Selection) {
     : endsWithEntireLine(selection);
 }
 
-export function isMovingTowardsAnchor(selection: vscode.Selection, direction: Direction) {
+export function isMovingTowardsAnchor(
+  selection: vscode.Selection,
+  direction: Direction,
+) {
   return direction === Direction.Backward
     ? selection.active === selection.end
     : selection.active === selection.start;
@@ -1634,7 +1760,7 @@ export function isMovingTowardsAnchor(selection: vscode.Selection, direction: Di
 /**
  * Returns the text contents of the given selection.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.text(Selections.nth(0)!), "to be", "abc\ndef");
@@ -1663,7 +1789,7 @@ export function text(
 /**
  * Returns the length of the given selection.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.length(Selections.nth(0)!), "to be", 7);
@@ -1687,7 +1813,7 @@ export function length(
   document = Context.current.document,
 ) {
   const start = selection.start,
-        end = selection.end;
+    end = selection.end;
 
   if (start.line === end.line) {
     return end.character - start.character;
@@ -1699,7 +1825,7 @@ export function length(
 /**
  * Returns a string representation of the positions of the selection.
  *
- * ### Example
+ * @example
  *
  * ```js
  * expect(Selections.toString(Selections.nth(0)!), "to be", "1:1 → 1:3");
@@ -1717,8 +1843,9 @@ export function length(
  * ```
  */
 export function toString(selection: vscode.Selection = nth(0)!) {
-  return `${Positions.toString(selection.anchor)} → ${Positions.toString(selection.active)}` as
-    const;
+  return `${Positions.toString(selection.anchor)} → ${Positions.toString(
+    selection.active,
+  )}` as const;
 }
 
 /**
@@ -1731,8 +1858,7 @@ export function fromLength(
   reversed = false,
   document = Context.current.document,
 ) {
-  let startOffset: number,
-      startPosition: vscode.Position;
+  let startOffset: number, startPosition: vscode.Position;
 
   if (length === 0) {
     if (typeof start === "number") {
@@ -1765,7 +1891,7 @@ export function fromLength(
  * `end === active`. Otherwise, the returned solution will be such that
  * `start === active` and `end === anchor`.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const p0 = new vscode.Position(0, 0),
@@ -1810,7 +1936,9 @@ export function fromStartEnd(
     end = document.positionAt(end);
   }
 
-  return reversed ? new vscode.Selection(end, start) : new vscode.Selection(start, end);
+  return reversed
+    ? new vscode.Selection(end, start)
+    : new vscode.Selection(start, end);
 }
 
 /**
@@ -1867,16 +1995,21 @@ export function fromAnchorActive(
   if (activeCharacter !== undefined) {
     // Four arguments: this is the last overload.
     const anchorLine = anchorOrAnchorLine as number,
-          anchorCharacter = activeOrAnchorCharacterOrActiveLine as number,
-          activeLine = activeOrActiveLineOrActiveCharacter as number;
+      anchorCharacter = activeOrAnchorCharacterOrActiveLine as number,
+      activeLine = activeOrActiveLineOrActiveCharacter as number;
 
-    return new vscode.Selection(anchorLine, anchorCharacter, activeLine, activeCharacter);
+    return new vscode.Selection(
+      anchorLine,
+      anchorCharacter,
+      activeLine,
+      activeCharacter,
+    );
   }
 
   if (activeOrActiveLineOrActiveCharacter === undefined) {
     // Two arguments: this is the first overload.
     const anchor = anchorOrAnchorLine as vscode.Position,
-          active = activeOrAnchorCharacterOrActiveLine as vscode.Position;
+      active = activeOrAnchorCharacterOrActiveLine as vscode.Position;
 
     return new vscode.Selection(anchor, active);
   }
@@ -1884,18 +2017,24 @@ export function fromAnchorActive(
   if (typeof activeOrActiveLineOrActiveCharacter === "number") {
     // Third argument is a number: this is the third overload.
     const anchor = anchorOrAnchorLine as vscode.Position,
-          activeLine = activeOrAnchorCharacterOrActiveLine as number,
-          activeCharacter = activeOrActiveLineOrActiveCharacter as number;
+      activeLine = activeOrAnchorCharacterOrActiveLine as number,
+      activeCharacter = activeOrActiveLineOrActiveCharacter as number;
 
-    return new vscode.Selection(anchor, new vscode.Position(activeLine, activeCharacter));
+    return new vscode.Selection(
+      anchor,
+      new vscode.Position(activeLine, activeCharacter),
+    );
   }
 
   // Third argument is a position: this is the second overload.
   const anchorLine = anchorOrAnchorLine as number,
-        anchorCharacter = activeOrAnchorCharacterOrActiveLine as number,
-        active = activeOrActiveLineOrActiveCharacter as vscode.Position;
+    anchorCharacter = activeOrAnchorCharacterOrActiveLine as number,
+    active = activeOrActiveLineOrActiveCharacter as vscode.Position;
 
-  return new vscode.Selection(new vscode.Position(anchorLine, anchorCharacter), active);
+  return new vscode.Selection(
+    new vscode.Position(anchorLine, anchorCharacter),
+    active,
+  );
 }
 
 /**
@@ -1908,21 +2047,30 @@ export const from = fromAnchorActive;
  * will be sorted from top to bottom. Otherwise, they will be sorted from bottom
  * to top.
  */
-export function sort(direction: Direction, selections: vscode.Selection[] = current().slice()) {
-  return selections.sort(direction === Direction.Forward ? sortTopToBottom : sortBottomToTop);
+export function sort(
+  direction: Direction,
+  selections: vscode.Selection[] = current().slice(),
+) {
+  return selections.sort(
+    direction === Direction.Forward ? sortTopToBottom : sortBottomToTop,
+  );
 }
 
 /**
  * Sorts selections from top to bottom in place.
  */
-export function topToBottom(selections: vscode.Selection[] = current().slice()) {
+export function topToBottom(
+  selections: vscode.Selection[] = current().slice(),
+) {
   return selections.sort(sortTopToBottom);
 }
 
 /**
  * Sorts selections from bottom to top in place.
  */
-export function bottomToTop(selections: vscode.Selection[] = current().slice()) {
+export function bottomToTop(
+  selections: vscode.Selection[] = current().slice(),
+) {
   return selections.sort(sortBottomToTop);
 }
 

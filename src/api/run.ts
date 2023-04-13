@@ -12,7 +12,10 @@ export function run(string: string, context?: object): Thenable<unknown>;
 /**
  * Runs the given strings of JavaScript code.
  */
-export function run(strings: readonly string[], context?: object): Thenable<unknown[]>;
+export function run(
+  strings: readonly string[],
+  context?: object,
+): Thenable<unknown[]>;
 
 export function run(strings: string | readonly string[], context: object = {}) {
   const isSingleStringArgument = typeof strings === "string";
@@ -36,7 +39,7 @@ export function run(strings: string | readonly string[], context: object = {}) {
   }
 
   const promises: Thenable<unknown>[] = [],
-        contextValues = Object.values(context);
+    contextValues = Object.values(context);
 
   for (const func of functions) {
     promises.push(func(...parameterValues, ...contextValues));
@@ -46,7 +49,7 @@ export function run(strings: string | readonly string[], context: object = {}) {
 }
 
 const cachedParameterNames = [] as string[],
-      cachedParameters = [] as unknown[];
+  cachedParameters = [] as unknown[];
 let globalsObject: Record<string, any> = {};
 
 function ensureCacheIsPopulated() {
@@ -116,8 +119,8 @@ interface CompiledFunction {
 }
 
 const AsyncFunction: new (...names: string[]) => CompiledFunction =
-        async function () {}.constructor as any,
-      functionCache = new Map<string, CachedFunction>();
+    async function () {}.constructor as any,
+  functionCache = new Map<string, CachedFunction>();
 
 type CachedFunction = [funct: CompiledFunction, lastAccessTimestamp: number];
 
@@ -132,13 +135,16 @@ const safeExpressions = [
 /**
  * Compiles the given JavaScript code into a function.
  */
-export function compileFunction(code: string, additionalParameterNames: readonly string[] = []) {
+export function compileFunction(
+  code: string,
+  additionalParameterNames: readonly string[] = [],
+) {
   if (!canRunArbitraryCode && !safeExpressions.some((re) => re.test(code))) {
     throw new Error("execution of arbitrary code is disabled");
   }
 
   const cacheId = additionalParameterNames.join(";") + code,
-        cached = functionCache.get(cacheId);
+    cached = functionCache.get(cacheId);
 
   if (cached !== undefined) {
     cached[1] = Date.now();
@@ -150,7 +156,11 @@ export function compileFunction(code: string, additionalParameterNames: readonly
 
   try {
     // Wrap code in block to allow shadowing of parameters.
-    func = new AsyncFunction(...runParameterNames(), ...additionalParameterNames, `{\n${code}\n}`);
+    func = new AsyncFunction(
+      ...runParameterNames(),
+      ...additionalParameterNames,
+      `{\n${code}\n}`,
+    );
   } catch (e) {
     throw new Error(`cannot parse function body: ${code}: ${e}`);
   }
@@ -178,7 +188,7 @@ export function clearCompiledFunctionsCache(olderThanMs = 1000 * 60 * 5) {
   }
 
   const olderThan = Date.now() - olderThanMs,
-        toDelete = [] as string[];
+    toDelete = [] as string[];
 
   for (const [code, value] of functionCache) {
     if (value[1] < olderThan) {
@@ -234,7 +244,7 @@ function buildAssignment(argument: unknown): ArgumentAssignment {
   }
 
   const { $include, $exclude, ...baseValue } = argument as Record<string, any>,
-        assignment: ArgumentAssignment = { baseValue };
+    assignment: ArgumentAssignment = { baseValue };
 
   if (Array.isArray($include)) {
     assignment.include = $include;
@@ -270,16 +280,18 @@ function buildAssignments(args: unknown): ArgumentAssignments {
  */
 export function buildCommands(
   commands: readonly command.Any[],
-  extension: { readonly commands: Commands } = Context.WithoutActiveEditor.current.extension,
+  extension: { readonly commands: Commands } = Context.WithoutActiveEditor
+    .current.extension,
 ) {
   const batches = [] as (
-          [CommandDescriptor, ArgumentAssignment][] | [string, ArgumentAssignments])[],
-        currentBatch = [] as [CommandDescriptor, ArgumentAssignment][];
+      | [CommandDescriptor, ArgumentAssignment][]
+      | [string, ArgumentAssignments]
+    )[],
+    currentBatch = [] as [CommandDescriptor, ArgumentAssignment][];
 
   // Build and validate commands.
   for (let i = 0, len = commands.length; i < len; i++) {
-    let commandName: string,
-        commandArguments: unknown;
+    let commandName: string, commandArguments: unknown;
 
     const command = commands[i];
 
@@ -291,14 +303,18 @@ export function buildCommands(
       commandArguments = command.slice(1);
 
       if (typeof commandName !== "string") {
-        throw new Error("the first element of a command tuple must be a command name");
+        throw new Error(
+          "the first element of a command tuple must be a command name",
+        );
       }
     } else if (typeof command === "object" && command !== null) {
       commandName = (command as command.Command).command;
       commandArguments = (command as command.Command).args;
 
       if (typeof commandName !== "string") {
-        throw new Error("the \"command\" property of a command object must be a command name");
+        throw new Error(
+          'the "command" property of a command object must be a command name',
+        );
       }
     } else {
       throw new Error(
@@ -314,11 +330,15 @@ export function buildCommands(
       const descriptor = extension.commands[commandName];
 
       if (descriptor === undefined) {
-        throw new Error(`command ${JSON.stringify(commandName)} does not exist`);
+        throw new Error(
+          `command ${JSON.stringify(commandName)} does not exist`,
+        );
       }
 
-      const argument = Array.isArray(commandArguments) ? commandArguments[0] : commandArguments,
-            assignment = buildAssignment(argument);
+      const argument = Array.isArray(commandArguments)
+          ? commandArguments[0]
+          : commandArguments,
+        assignment = buildAssignment(argument);
 
       currentBatch.push([descriptor, assignment]);
     } else {
@@ -334,32 +354,45 @@ export function buildCommands(
     batches.push(currentBatch);
   }
 
-  return async (argument: Record<string, any>, context = Context.WithoutActiveEditor.current) => {
+  return async (
+    argument: Record<string, any>,
+    context = Context.WithoutActiveEditor.current,
+  ) => {
     // Execute all commands.
     const results: unknown[] = [],
-          ownedArguments: any[] = [];
+      ownedArguments: any[] = [];
 
     for (const batch of batches) {
       if (typeof batch[0] === "string") {
-        const ownedArgument = assignArguments(batch[1] as ArgumentAssignments, argument);
+        const ownedArgument = assignArguments(
+          batch[1] as ArgumentAssignments,
+          argument,
+        );
 
-        results.push(await vscode.commands.executeCommand(batch[0], ...ownedArgument));
+        results.push(
+          await vscode.commands.executeCommand(batch[0], ...ownedArgument),
+        );
         ownedArguments.push(ownedArgument);
       } else {
         const context = Context.WithoutActiveEditor.current;
         let { currentCount, currentRegister } = context.extension;
 
-        for (const [descriptor, assignment] of batch as [CommandDescriptor, ArgumentAssignment][]) {
+        for (const [descriptor, assignment] of batch as [
+          CommandDescriptor,
+          ArgumentAssignment,
+        ][]) {
           const ownedArgument = assignArgument(assignment, argument);
 
           if (currentCount !== context.extension.currentCount) {
-            currentCount = ownedArgument["count"] = context.extension.currentCount;
+            currentCount = ownedArgument["count"] =
+              context.extension.currentCount;
 
             context.extension.currentCount = 0;
           }
 
           if (currentRegister !== context.extension.currentRegister) {
-            currentRegister = ownedArgument["register"] = context.extension.currentRegister;
+            currentRegister = ownedArgument["register"] =
+              context.extension.currentRegister;
 
             context.extension.currentRegister = undefined;
           }
@@ -411,14 +444,19 @@ export function buildCommands(
 /**
  * Runs the VS Code command with the given identifier and optional arguments.
  */
-export async function command(commandName: string, ...args: readonly any[]): Promise<any> {
+export async function command(
+  commandName: string,
+  ...args: readonly any[]
+): Promise<any> {
   return (await commands([commandName, ...args]))[0];
 }
 
 /**
  * Runs the VS Code commands with the given identifiers and optional arguments.
  */
-export async function commands(...commands: readonly command.Any[]): Promise<any[]> {
+export async function commands(
+  ...commands: readonly command.Any[]
+): Promise<any[]> {
   return await buildCommands(commands)({});
 }
 
@@ -452,19 +490,23 @@ export function execute(
   cancellationToken = Context.WithoutActiveEditor.current.cancellationToken,
 ) {
   const {
-    cwd = function () {
+    cwd = (function () {
       const currentFileUri = Context.currentOrUndefined?.document.uri;
 
       return currentFileUri?.scheme === "file"
         ? vscode.Uri.joinPath(currentFileUri, "..").fsPath
         : vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    }(),
+    })(),
     env: givenEnv = process.env,
   } = options;
 
-  if (process.platform as string === "web") {
+  if ((process.platform as string) === "web") {
     return Context.WithoutActiveEditor.wrap(
-      Promise.reject(new Error("execution of arbitrary commands is not supported on the web")),
+      Promise.reject(
+        new Error(
+          "execution of arbitrary commands is not supported on the web",
+        ),
+      ),
     );
   }
 
@@ -474,48 +516,75 @@ export function execute(
     );
   }
 
-  const promise = import("child_process").then((cp) =>
-    new Promise<string>((resolve, reject) => {
-      const automationProfile = getAutomationProfile(),
-            shell = typeof automationProfile?.path === "string" ? automationProfile.path : "",
-            args = Array.isArray(automationProfile?.args) ? automationProfile!.args : [],
-            env = {
-              ...(cwd == null ? {} : { PWD: cwd }),
-              ...(typeof automationProfile?.env === "object" ? automationProfile.env : {}),
-              ...givenEnv,
-            },
-            child = shell.length === 0
-              ? cp.spawn(command, { ...commonSpawnOptions, shell: true, env, cwd })
-              : cp.spawn(shell,
-                         [...args, command],
-                         { ...commonSpawnOptions, shell: false, env, cwd });
+  const promise = import("child_process").then(
+    (cp) =>
+      new Promise<string>((resolve, reject) => {
+        const automationProfile = getAutomationProfile(),
+          shell =
+            typeof automationProfile?.path === "string"
+              ? automationProfile.path
+              : "",
+          args = Array.isArray(automationProfile?.args)
+            ? automationProfile!.args
+            : [],
+          env = {
+            ...(cwd == null ? {} : { PWD: cwd }),
+            ...(typeof automationProfile?.env === "object"
+              ? automationProfile.env
+              : {}),
+            ...givenEnv,
+          },
+          child =
+            shell.length === 0
+              ? cp.spawn(command, {
+                  ...commonSpawnOptions,
+                  shell: true,
+                  env,
+                  cwd,
+                })
+              : cp.spawn(shell, [...args, command], {
+                  ...commonSpawnOptions,
+                  shell: false,
+                  env,
+                  cwd,
+                });
 
-      let stdout = "",
+        let stdout = "",
           stderr = "";
 
-      const disposable = cancellationToken.onCancellationRequested(() => {
-        child.kill("SIGINT");
-      });
+        const disposable = cancellationToken.onCancellationRequested(() => {
+          child.kill("SIGINT");
+        });
 
-      child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString("utf-8")));
-      child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString("utf-8")));
-      child.stdin.end(input, "utf-8");
+        child.stdout.on(
+          "data",
+          (chunk: Buffer) => (stdout += chunk.toString("utf-8")),
+        );
+        child.stderr.on(
+          "data",
+          (chunk: Buffer) => (stderr += chunk.toString("utf-8")),
+        );
+        child.stdin.end(input, "utf-8");
 
-      child.once("error", (err) => {
-        disposable.dispose();
+        child.once("error", (err) => {
+          disposable.dispose();
 
-        reject(err);
-      });
-      child.once("exit", (code) => {
-        disposable.dispose();
+          reject(err);
+        });
+        child.once("exit", (code) => {
+          disposable.dispose();
 
-        code === 0
-          ? resolve(stdout.trimRight())
-          : reject(new Error(`Command exited with error ${code}: ${
-              stderr.length > 0 ? stderr.trimRight() : "<No error output>"
-            }`));
-      });
-    }),
+          code === 0
+            ? resolve(stdout.trimRight())
+            : reject(
+                new Error(
+                  `Command exited with error ${code}: ${
+                    stderr.length > 0 ? stderr.trimRight() : "<No error output>"
+                  }`,
+                ),
+              );
+        });
+      }),
   );
 
   return Context.WithoutActiveEditor.wrap(promise);
@@ -542,24 +611,25 @@ function getAutomationProfile() {
   let os: string;
 
   switch (process.platform) {
-  case "cygwin":
-  case "linux":
-    os = "linux";
-    break;
+    case "cygwin":
+    case "linux":
+      os = "linux";
+      break;
 
-  case "darwin":
-    os = "osx";
-    break;
+    case "darwin":
+      os = "osx";
+      break;
 
-  case "win32":
-    os = "windows";
-    break;
+    case "win32":
+      os = "windows";
+      break;
 
-  default:
-    return undefined;
+    default:
+      return undefined;
   }
 
-  return vscode.workspace.getConfiguration("terminal.integrated.automationProfile")
+  return vscode.workspace
+    .getConfiguration("terminal.integrated.automationProfile")
     .get<AutomationProfile | null>(os);
 }
 
@@ -570,7 +640,10 @@ function getAutomationProfile() {
  *    returned.
  * 2. If the string starts with "#", instead a command will be run.
  */
-export function switchRun(string: string, context: { $: string } & Record<string, any>) {
+export function switchRun(
+  string: string,
+  context: { $: string } & Record<string, any>,
+) {
   if (string.length === 0) {
     // An empty expression is just `undefined`.
     return Context.WithoutActiveEditor.wrap(Promise.resolve());
@@ -581,10 +654,14 @@ export function switchRun(string: string, context: { $: string } & Record<string
     const [regexp, replacement] = parseRegExpWithReplacement(string);
 
     if (replacement === undefined) {
-      return Context.WithoutActiveEditor.wrap(Promise.resolve(regexp.exec(context.$)));
+      return Context.WithoutActiveEditor.wrap(
+        Promise.resolve(regexp.exec(context.$)),
+      );
     }
 
-    return Context.WithoutActiveEditor.wrap(Promise.resolve(context.$.replace(regexp, replacement)));
+    return Context.WithoutActiveEditor.wrap(
+      Promise.resolve(context.$.replace(regexp, replacement)),
+    );
   }
 
   if (string[0] === "#") {

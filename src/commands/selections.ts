@@ -1,10 +1,24 @@
 import * as vscode from "vscode";
 
-import type { Argument, InputOr, RegisterOr } from ".";
-import { Context, Direction, manipulateSelectionsInteractively, moveWhile, moveWhileBackward, moveWhileForward, Positions, prompt, promptOne, promptRegexpOpts, SelectionBehavior, Selections, switchRun, validateForSwitchRun } from "../api";
+import type { CommandArguments } from ".";
+import {
+  Context,
+  Direction,
+  manipulateSelectionsInteractively,
+  moveWhileBackward,
+  moveWhileForward,
+  Positions,
+  prompt,
+  promptOne,
+  promptRegexpOpts,
+  SelectionBehavior,
+  Selections,
+  switchRun,
+  validateForSwitchRun,
+} from "../api";
 import { PerEditorState } from "../state/editors";
 import { Mode } from "../state/modes";
-import type { Register } from "../state/registers";
+import { Register } from "../state/registers";
 import { CharSet, getCharacters } from "../utils/charset";
 import { AutoDisposable } from "../utils/disposables";
 import { ArgumentError, EmptySelectionsError } from "../utils/errors";
@@ -21,13 +35,14 @@ declare module "./selections";
 /**
  * Copy selections text.
  *
- * @keys `y` (kakoune: normal)
+ * @keys `y` (helix: normal), `y` (helix: select)
  */
-export function saveText(
-  document: vscode.TextDocument,
-  selections: readonly vscode.Selection[],
-  register: RegisterOr<"dquote", Register.Flags.CanWrite>,
-) {
+export function saveText({
+  document,
+  selections,
+  getRegister,
+}: CommandArguments) {
+  const register = getRegister("dquote", Register.Flags.CanWrite);
   register.set(selections.map(document.getText.bind(document)));
 }
 
@@ -36,28 +51,38 @@ export function saveText(
  *
  * @keys `s-z` (kakoune: normal)
  */
-export function save(
-  _: Context,
-  document: vscode.TextDocument,
-  selections: readonly vscode.Selection[],
-  register: RegisterOr<"caret", Register.Flags.CanWriteSelections>,
-
-  style?: Argument<object>,
-  until?: Argument<AutoDisposable.Event[]>,
-  untilDelay: Argument<number> = 100,
-) {
+export function save({
+  _,
+  document,
+  selections,
+  getRegister,
+  style,
+  until,
+  untilDelay = 100,
+}: CommandArguments<{
+  style?: object;
+  until?: AutoDisposable.Event[];
+  untilDelay?: number;
+}>) {
+  const register = getRegister("caret", Register.Flags.CanWriteSelections);
   const trackedSelections = TrackedSelection.fromArray(selections, document);
   let trackedSelectionSet: TrackedSelection.Set;
 
   if (typeof style === "object") {
     const validator = new SettingsValidator(),
-          renderOptions = Mode.decorationObjectToDecorationRenderOptions(style, validator);
+      renderOptions = Mode.decorationObjectToDecorationRenderOptions(
+        style,
+        validator,
+      );
 
     validator.throwErrorIfNeeded();
 
     renderOptions.rangeBehavior = vscode.DecorationRangeBehavior.ClosedOpen;
-    trackedSelectionSet =
-      new TrackedSelection.StyledSet(trackedSelections, _.getState(), renderOptions);
+    trackedSelectionSet = new TrackedSelection.StyledSet(
+      trackedSelections,
+      _.getState(),
+      renderOptions,
+    );
     trackedSelectionSet.flags |= TrackedSelection.Flags.EmptyMoves;
   } else {
     trackedSelectionSet = new TrackedSelection.Set(trackedSelections, document);
@@ -66,11 +91,16 @@ export function save(
   const disposable = _.extension
     .createAutoDisposable()
     .addNotifyingDisposable(trackedSelectionSet)
-    .addDisposable(new vscode.Disposable(() => {
-      if (register.canReadSelections() && register.getSelectionSet() === trackedSelectionSet) {
-        register.replaceSelectionSet()!.dispose();
-      }
-    }));
+    .addDisposable(
+      new vscode.Disposable(() => {
+        if (
+          register.canReadSelections() &&
+          register.getSelectionSet() === trackedSelectionSet
+        ) {
+          register.replaceSelectionSet()!.dispose();
+        }
+      }),
+    );
 
   if (Array.isArray(until)) {
     if (untilDelay <= 0) {
@@ -97,14 +127,14 @@ export function save(
  *
  * @keys `z` (kakoune: normal)
  */
-export async function restore(
-  _: Context,
-  register: RegisterOr<"caret", Register.Flags.CanReadSelections>,
-) {
+export async function restore({ _, getRegister }: CommandArguments) {
+  const register = getRegister("caret", Register.Flags.CanReadSelections);
   const selectionSet = register.getSelectionSet();
 
   if (selectionSet === undefined) {
-    throw new EmptySelectionsError(`no selections are saved in register "${register.name}"`);
+    throw new EmptySelectionsError(
+      `no selections are saved in register "${register.name}"`,
+    );
   }
 
   await _.switchToDocument(selectionSet.document, /* alsoFocusEditor= */ true);
@@ -115,7 +145,8 @@ export async function restore(
 /**
  * Combine register selections with current ones.
  *
- * @keys `a-z` (kakoune: normal)
+ * @keys     `a-z` (kakoune: normal)
+ * @commands
  *
  * The following keybinding is also available:
  *
@@ -124,39 +155,47 @@ export async function restore(
  * | `s-a-z` (kakoune: normal) | `[".selections.restore.withCurrent", { reverse: true, ... }]` |
  *
  * See https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc#marks
+ 
  */
-export async function restore_withCurrent(
-  _: Context,
-  document: vscode.TextDocument,
-  register: RegisterOr<"caret", Register.Flags.CanReadSelections>,
-
-  reverse: Argument<boolean> = false,
-  action?: Argument<"a" | "u" | "i" | "<" | ">" | "+" | "-">,
-) {
+export async function restore_withCurrent({
+  _,
+  document,
+  getRegister,
+  reverse = false,
+  action,
+}: CommandArguments<{
+  reverse?: boolean;
+  action?: "a" | "u" | "i" | "<" | ">" | "+" | "-";
+}>) {
+  const register = getRegister("caret", Register.Flags.CanReadSelections);
   const savedSelections = register.getSelections();
 
   EmptySelectionsError.throwIfRegisterIsEmpty(savedSelections, register.name);
 
   let from = savedSelections,
-      add = _.selections;
+    add = _.selections;
 
   if (reverse) {
     from = _.selections;
     add = savedSelections;
   }
 
-  const type = await promptOne([
-    ["a", "Append lists"],
-    ["u", "Union"],
-    ["i", "Intersection"],
-    ["<", "Select leftmost cursor"],
-    [">", "Select rightmost cursor"],
-    ["+", "Select longest"],
-    ["-", "Select shortest"],
-  ], undefined, {
-    defaultPick: action,
-    defaultPickName: "action",
-  });
+  const type = await promptOne(
+    [
+      ["a", "Append lists"],
+      ["u", "Union"],
+      ["i", "Intersection"],
+      ["<", "Select leftmost cursor"],
+      [">", "Select rightmost cursor"],
+      ["+", "Select longest"],
+      ["-", "Select shortest"],
+    ],
+    undefined,
+    {
+      defaultPick: action,
+      defaultPickName: "action",
+    },
+  );
 
   if (type === 0) {
     _.selections = from.concat(add);
@@ -172,64 +211,64 @@ export async function restore_withCurrent(
 
   for (let i = 0; i < from.length; i++) {
     const a = from[i],
-          b = add[i];
+      b = add[i];
 
     switch (type) {
-    case 1: {
-      const anchor = a.start.isBefore(b.start) ? a.start : b.start,
-            active = a.end.isAfter(b.end) ? a.end : b.end;
+      case 1: {
+        const anchor = a.start.isBefore(b.start) ? a.start : b.start,
+          active = a.end.isAfter(b.end) ? a.end : b.end;
 
-      selections.push(new vscode.Selection(anchor, active));
-      break;
-    }
-
-    case 2: {
-      const anchor = a.start.isAfter(b.start) ? a.start : b.start,
-            active = a.end.isBefore(b.end) ? a.end : b.end;
-
-      selections.push(new vscode.Selection(anchor, active));
-      break;
-    }
-
-    case 3:
-      if (a.active.isBeforeOrEqual(b.active)) {
-        selections.push(a);
-      } else {
-        selections.push(b);
+        selections.push(new vscode.Selection(anchor, active));
+        break;
       }
-      break;
 
-    case 4:
-      if (a.active.isAfterOrEqual(b.active)) {
-        selections.push(a);
-      } else {
-        selections.push(b);
+      case 2: {
+        const anchor = a.start.isAfter(b.start) ? a.start : b.start,
+          active = a.end.isBefore(b.end) ? a.end : b.end;
+
+        selections.push(new vscode.Selection(anchor, active));
+        break;
       }
-      break;
 
-    case 5: {
-      const aLength = document.offsetAt(a.end) - document.offsetAt(a.start),
-            bLength = document.offsetAt(b.end) - document.offsetAt(b.start);
+      case 3:
+        if (a.active.isBeforeOrEqual(b.active)) {
+          selections.push(a);
+        } else {
+          selections.push(b);
+        }
+        break;
 
-      if (aLength > bLength) {
-        selections.push(a);
-      } else {
-        selections.push(b);
+      case 4:
+        if (a.active.isAfterOrEqual(b.active)) {
+          selections.push(a);
+        } else {
+          selections.push(b);
+        }
+        break;
+
+      case 5: {
+        const aLength = document.offsetAt(a.end) - document.offsetAt(a.start),
+          bLength = document.offsetAt(b.end) - document.offsetAt(b.start);
+
+        if (aLength > bLength) {
+          selections.push(a);
+        } else {
+          selections.push(b);
+        }
+        break;
       }
-      break;
-    }
 
-    case 6: {
-      const aLength = document.offsetAt(a.end) - document.offsetAt(a.start),
-            bLength = document.offsetAt(b.end) - document.offsetAt(b.start);
+      case 6: {
+        const aLength = document.offsetAt(a.end) - document.offsetAt(a.start),
+          bLength = document.offsetAt(b.end) - document.offsetAt(b.start);
 
-      if (aLength < bLength) {
-        selections.push(a);
-      } else {
-        selections.push(b);
+        if (aLength < bLength) {
+          selections.push(a);
+        } else {
+          selections.push(b);
+        }
+        break;
       }
-      break;
-    }
     }
   }
 
@@ -245,41 +284,62 @@ const pipeHistory: string[] = [];
  * save the result to a register.
  *
  * @keys `a-|` (kakoune: normal)
+ * @commands
  *
  * See https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc#changes-through-external-programs
  *
- * #### Additional commands
  *
  * | Title               | Identifier     | Keybinding              | Commands                                                                                                                    |
  * | ------------------- | -------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
  * | Pipe and replace    | `pipe.replace` | `|` (kakoune: normal)   | `[".selections.pipe", { +expression,register }], [".edit.insert", { register: "|",                                  ... }]` |
  * | Pipe and append     | `pipe.append`  | `!` (kakoune: normal)   | `[".selections.pipe", { +expression,register }], [".edit.insert", { register: "|", where: "end"  , shift: "select", ... }]` |
  * | Pipe and prepend    | `pipe.prepend` | `a-!` (kakoune: normal) | `[".selections.pipe", { +expression,register }], [".edit.insert", { register: "|", where: "start", shift: "select", ... }]` |
+ 
  */
-export async function pipe(
-  _: Context,
-  register: RegisterOr<"pipe", Register.Flags.CanWrite>,
-  expressionOr: InputOr<"expression", string>,
-) {
-  const expression = await expressionOr(() => prompt({
-    prompt: "Expression",
-    validateInput(value) {
-      try {
-        return void validateForSwitchRun(value);
-      } catch (e) {
-        return (e as Error)?.message ?? `${e}`;
-      }
-    },
-    history: pipeHistory,
-  }, _));
+export async function pipe({
+  _,
+  getRegister,
+  getInputOr,
+}: CommandArguments<{
+  expression: string;
+}>) {
+  const expressionOr = getInputOr("expression");
+  const register = getRegister("pipe", Register.Flags.CanWrite);
+  const expression = await expressionOr(() =>
+    prompt(
+      {
+        prompt: "Expression",
+        validateInput(value) {
+          try {
+            return void validateForSwitchRun(value);
+          } catch (e) {
+            return (e as Error)?.message ?? `${e}`;
+          }
+        },
+        history: pipeHistory,
+      },
+      _,
+    ),
+  );
 
   const selections = _.selections,
-        document = _.document,
-        selectionsStrings = selections.map((selection) => document.getText(selection));
+    document = _.document,
+    selectionsStrings = selections.map((selection) =>
+      document.getText(selection),
+    );
 
-  const results = await Promise.all(_.run((_) => selectionsStrings.map((string, i, strings) =>
-    switchRun(expression!, { $: string, $$: strings, i, n: strings.length }),
-  )));
+  const results = await Promise.all(
+    _.run(() =>
+      selectionsStrings.map((string, i, strings) =>
+        switchRun(expression!, {
+          $: string,
+          $$: strings,
+          i,
+          n: strings.length,
+        }),
+      ),
+    ),
+  );
 
   const strings = results.map(resultToString);
 
@@ -292,76 +352,98 @@ const filterHistory: string[] = [];
  * Filter selections.
  *
  * @keys `$` (kakoune: normal)
+ * @commands
  *
- * #### Variants
  *
- * | Title                      | Identifier              | Keybinding                | Commands                                                                 |
- * | -------------------------- | ----------------------- | --------------------------| ------------------------------------------------------------------------ |
- * | Keep matching selections   | `filter.regexp`         | `a-k` (kakoune: normal)   | `[".selections.filter", { defaultExpression: "/"               , ... }]` |
- * | Clear matching selections  | `filter.regexp.inverse` | `s-a-k` (kakoune: normal) | `[".selections.filter", { defaultExpression: "/", inverse: true, ... }]` |
- * | Clear secondary selections | `clear.secondary`       | `,` (kakoune: normal)     | `[".selections.filter", { expression: "i === count"            , ... }]` |
- * | Clear main selections      | `clear.main`            | `a-,` (kakoune: normal)   | `[".selections.filter", { expression: "i !== count"            , ... }]` |
+ * | Title                      | Identifier              | Keybinding                                       | Commands                                                                 |
+ * | -------------------------- | ----------------------- | ------------------------------------------------ | ------------------------------------------------------------------------ |
+ * | Keep matching selections   | `filter.regexp`         | `s-k` (helix: normal), `s-k` (helix: select)     | `[".selections.filter", { defaultExpression: "/"               , ... }]` |
+ * | Clear matching selections  | `filter.regexp.inverse` | `s-a-k` (helix: normal), `s-a-k` (helix: select) | `[".selections.filter", { defaultExpression: "/", inverse: true, ... }]` |
+ * | Clear secondary selections | `clear.secondary`       | `,` (helix: normal), `,` (helix: select)         | `[".selections.filter", { expression: "i === count"            , ... }]` |
+ * | Clear main selections      | `clear.main`            | `a-,` (helix: normal), `a-,` (helix: select)     | `[".selections.filter", { expression: "i !== count"            , ... }]` |
+ 
  */
-export function filter(
-  _: Context,
-
-  argument: { expression?: string },
-  defaultExpression?: Argument<string>,
-  inverse: Argument<boolean> = false,
-  interactive: Argument<boolean> = true,
-  count: number = 0,
-) {
+export function filter({
+  _,
+  defaultExpression,
+  inverse = false,
+  interactive = true,
+  count,
+  argument,
+}: CommandArguments<{
+  expression?: string;
+  defaultExpression?: string;
+  inverse?: boolean;
+  interactive?: boolean;
+}>) {
   const document = _.document,
-        strings = _.selections.map((selection) => document.getText(selection));
+    strings = _.selections.map((selection) => document.getText(selection));
 
-  return manipulateSelectionsInteractively(_, "expression", argument, interactive, {
-    prompt: "Expression",
-    validateInput(value) {
-      try {
-        return void validateForSwitchRun(value);
-      } catch (e) {
-        return (e as Error)?.message ?? `${e}`;
-      }
+  return manipulateSelectionsInteractively(
+    _,
+    "expression",
+    argument,
+    interactive,
+    {
+      prompt: "Expression",
+      validateInput(value) {
+        try {
+          return void validateForSwitchRun(value);
+        } catch (e) {
+          return (e as Error)?.message ?? `${e}`;
+        }
+      },
+      value: defaultExpression,
+      valueSelection: defaultExpression
+        ? [defaultExpression.length, defaultExpression.length]
+        : undefined,
+      history: filterHistory,
     },
-    value: defaultExpression,
-    valueSelection: defaultExpression
-      ? [defaultExpression.length, defaultExpression.length]
-      : undefined,
-    history: filterHistory,
-  }, async (expression, selections) => {
-    Selections.set(await Selections.filterByIndex(async (i) => {
-      const context = { $: strings[i], $$: strings, i, n: strings.length, count };
+    async (expression, selections) => {
+      Selections.set(
+        await Selections.filterByIndex(async (i) => {
+          const context = {
+            $: strings[i],
+            $$: strings,
+            i,
+            n: strings.length,
+            count,
+          };
 
-      try {
-        return !!(await switchRun(expression, context)) !== inverse;
-      } catch {
-        return inverse;
-      }
-    }, selections));
+          try {
+            return !!(await switchRun(expression, context)) !== inverse;
+          } catch {
+            return inverse;
+          }
+        }, selections),
+      );
 
-    return expression;
-  });
+      return expression;
+    },
+  );
 }
 
 /**
  * Select within selections.
  *
- * #### Variants
+ * @commands
  *
- * | Title          | Identifier      | Keybinding            | Command                                                                                           |
- * | -------------- | --------------- | --------------------- | ------------------------------------------------------------------------------------------------- |
- * | Leap or select | `select.orLeap` | `s` (kakoune: normal) | `[".ifEmpty", { then: [[".seek.leap", { ... }]], otherwise: [[".selections.select", { ... }]] }]` |
+ * | Title          | Identifier      | Keybinding                               | Command                                                                                           |
+ * | -------------- | --------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+ * | Leap or select | `select.orLeap` | `s` (helix: normal), `s` (helix: select) | `[".ifEmpty", { then: [[".seek.leap", { ... }]], otherwise: [[".selections.select", { ... }]] }]` |
  */
-export function select(
-  _: Context,
-
-  interactive: Argument<boolean> = true,
-  argument: { re?: string | RegExp },
-) {
+export function select({
+  _,
+  re,
+  interactive = true,
+}: CommandArguments<{
+  re?: string | RegExp;
+  interactive?: boolean;
+}>) {
   return manipulateSelectionsInteractively(
     _,
     "re",
-    argument,
+    { re },
     interactive,
     promptRegexpOpts("mu"),
     (re, selections) => {
@@ -369,7 +451,9 @@ export function select(
         re = newRegExp(re, "mu");
       }
 
-      Selections.set(Selections.bottomToTop(Selections.selectWithin(re, selections)));
+      Selections.set(
+        Selections.bottomToTop(Selections.selectWithin(re, selections)),
+      );
 
       return Promise.resolve(re);
     },
@@ -379,19 +463,22 @@ export function select(
 /**
  * Split selections.
  *
- * @keys `s-s` (kakoune: normal)
+ * @keys `s-s` (helix: normal), `s-s` (helix: select)
  */
-export function split(
-  _: Context,
-
-  excludeEmpty: Argument<boolean> = false,
-  interactive: Argument<boolean> = true,
-  argument: { re?: string | RegExp },
-) {
+export function split({
+  _,
+  excludeEmpty = false,
+  interactive = true,
+  re,
+}: CommandArguments<{
+  re?: string | RegExp;
+  excludeEmpty?: boolean;
+  interactive?: boolean;
+}>) {
   return manipulateSelectionsInteractively(
     _,
     "re",
-    argument,
+    { re },
     interactive,
     promptRegexpOpts("mu"),
     (re, selections) => {
@@ -415,30 +502,30 @@ export function split(
 /**
  * Split selections at line boundaries.
  *
- * #### Variants
+ * @commands
  *
- * | Title                   | Identifier                   | Keybinding              | Command                                                                                                              |
- * | ----------------------- | ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
- * | Leap or select backward | `splitLines.orLeap.backward` | `a-s` (kakoune: normal) | `[".ifEmpty", { then: [[".seek.leap", { direction: -1, ... }]], otherwise: [[".selections.splitLines", { ... }]] }]` |
+ * | Title                   | Identifier                   | Keybinding                                   | Command                                                                                                              |
+ * | ----------------------- | ---------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+ * | Leap or select backward | `splitLines.orLeap.backward` | `a-s` (helix: normal), `a-s` (helix: select) | `[".ifEmpty", { then: [[".seek.leap", { direction: -1, ... }]], otherwise: [[".selections.splitLines", { ... }]] }]` |
  */
-export function splitLines(
-  _: Context,
-  document: vscode.TextDocument,
-  selections: readonly vscode.Selection[],
-  repetitions: number,
-
-  excludeEol: Argument<boolean> = false,
-) {
+export function splitLines({
+  document,
+  selections,
+  repetitions,
+  excludeEol = false,
+}: CommandArguments<{
+  excludeEol?: boolean;
+}>) {
   const newSelections = [] as vscode.Selection[],
-        lineEnd = excludeEol ? Positions.lineEnd : Positions.lineBreak;
+    lineEnd = excludeEol ? Positions.lineEnd : Positions.lineBreak;
 
   for (let i = 0, len = selections.length; i < len; i++) {
     const selection = selections[i],
-          start = selection.start,
-          end = selection.end,
-          startLine = start.line,
-          endLine = end.line,
-          isReversed = selection.isReversed;
+      start = selection.start,
+      end = selection.end,
+      startLine = start.line,
+      endLine = end.line,
+      isReversed = selection.isReversed;
 
     if (startLine === endLine) {
       newSelections.push(selection);
@@ -446,24 +533,39 @@ export function splitLines(
       return;
     }
 
-
     // Add start line.
     newSelections.push(
-      Selections.fromStartEnd(start, lineEnd(startLine, document), isReversed, document),
+      Selections.fromStartEnd(
+        start,
+        lineEnd(startLine, document),
+        isReversed,
+        document,
+      ),
     );
 
     // Add intermediate lines.
-    for (let line = startLine + repetitions; line < endLine; line += repetitions) {
+    for (
+      let line = startLine + repetitions;
+      line < endLine;
+      line += repetitions
+    ) {
       const start = Positions.lineStart(line),
-            end = lineEnd(line, document);
+        end = lineEnd(line, document);
 
-      newSelections.push(Selections.fromStartEnd(start, end, isReversed, document));
+      newSelections.push(
+        Selections.fromStartEnd(start, end, isReversed, document),
+      );
     }
 
     // Add end line.
     if (endLine % repetitions === 0 && end.character > 0) {
       newSelections.push(
-        Selections.fromStartEnd(Positions.lineStart(endLine), end, isReversed, document),
+        Selections.fromStartEnd(
+          Positions.lineStart(endLine),
+          end,
+          isReversed,
+          document,
+        ),
       );
     }
   }
@@ -476,20 +578,23 @@ export function splitLines(
  *
  * Expand selections to contain full lines (including end-of-line characters).
  *
- * @keys `x` (kakoune: normal)
+ * @keys `x` (helix: normal), `x` (helix: select)
  */
-export function expandToLines(_: Context) {
+export function expandToLines({ _ }: CommandArguments) {
   return Selections.updateByIndex((_i, selection, document) => {
     const start = selection.start,
-          end = selection.end;
+      end = selection.end;
 
     // Move start to line start and end to include line break.
     const newStart = start.with(undefined, 0);
     let newEnd: vscode.Position;
 
-    if (end.character === 0 && end.line !== start.line) {
-      // End is next line start, which means the selection already includes the
-      // line break of last line.
+    if (
+      end.character === 0 &&
+      end.line !== start.line &&
+      start.character !== 0
+    ) {
+      // End is next line start
       newEnd = end;
     } else if (end.line + 1 < document.lineCount) {
       // Move end to the next line start to include the line break.
@@ -501,7 +606,11 @@ export function expandToLines(_: Context) {
     }
 
     // After expanding, the selection should be in the same direction as before.
-    return Selections.fromStartEnd(newStart, newEnd, Selections.isStrictlyReversed(selection, _));
+    return Selections.fromStartEnd(
+      newStart,
+      newEnd,
+      Selections.isStrictlyReversed(selection, _),
+    );
   });
 }
 
@@ -510,20 +619,21 @@ export function expandToLines(_: Context) {
  *
  * Trim selections to only contain full lines (from start to line break).
  *
- * @keys `a-x` (kakoune: normal)
+ * @keys `a-x` (helix: normal), `a-x` (helix: select)
  */
-export function trimLines(_: Context) {
+export function trimLines() {
   return Selections.updateByIndex((_, selection) => {
     const start = selection.start,
-          end = selection.end;
+      end = selection.end;
 
     // If start is not at line start, move it to the next line start.
-    const newStart = start.character === 0 ? start : new vscode.Position(start.line + 1, 0);
+    const newStart =
+      start.character === 0 ? start : new vscode.Position(start.line + 1, 0);
     // Move end to the line start, so that the selection ends with a line break.
     const newEnd = new vscode.Position(end.line, 0);
 
     if (newStart.isAfterOrEqual(newEnd)) {
-      return undefined;  // No full line contained.
+      return undefined; // No full line contained.
     }
 
     // After trimming, the selection should be in the same direction as before.
@@ -542,18 +652,18 @@ export function trimLines(_: Context) {
  *
  * Trim whitespace at beginning and end of selections.
  *
- * @keys `_` (kakoune: normal)
+ * @keys `_` (helix: normal), `_` (helix: select)
  */
-export function trimWhitespace(_: Context) {
+export function trimWhitespace({ _ }: CommandArguments) {
   const blank = getCharacters(CharSet.Blank, _.document),
-        isBlank = (character: string) => blank.includes(character);
+    isBlank = (character: string) => blank.includes(character);
 
   return Selections.updateByIndex((_, selection, document) => {
     const firstCharacter = selection.start,
-          lastCharacter = selection.end;
+      lastCharacter = selection.end;
 
     const start = moveWhileForward(isBlank, firstCharacter, document),
-          end = moveWhileBackward(isBlank, lastCharacter, document);
+      end = moveWhileBackward(isBlank, lastCharacter, document);
 
     if (start.isAfter(end)) {
       return undefined;
@@ -569,20 +679,23 @@ export function trimWhitespace(_: Context) {
  * @param where Which edge each selection should be reduced to; defaults to
  *   "active".
  *
- * @keys `;` (kakoune: normal)
+ * @keys `;` (helix: normal), `;` (helix: select)
+ * @commands
  *
- * #### Variant
  *
- * | Title                           | Identifier     | Keybinding                | Command                                                        |
- * | ------------------------------- | -------------- | ------------------------- | -------------------------------------------------------------- |
- * | Reduce selections to their ends | `reduce.edges` | `s-a-s` (kakoune: normal) | `[".selections.reduce", { where: "both", empty: false, ... }]` |
+ * | Title                           | Identifier     | Keybinding                                          | Command                                                        |
+ * | ------------------------------- | -------------- | --------------------------------------------------- | -------------------------------------------------------------- |
+ * | Reduce selections to their ends | `reduce.edges` | `s-a-s` (kakoune: normal), `s-a-s` (kakoune: select) | `[".selections.reduce", { where: "both", empty: false, ... }]` |
+ 
  */
-export function reduce(
-  _: Context,
-
-  where: Argument<"active" | "anchor" | "start" | "end" | "both"> = "active",
-  empty: Argument<boolean> = true,
-) {
+export function reduce({
+  _,
+  where = "active",
+  empty = true,
+}: CommandArguments<{
+  where?: "active" | "anchor" | "start" | "end" | "both";
+  empty?: boolean;
+}>) {
   ArgumentError.validate(
     "where",
     ["active", "anchor", "start", "end", "both"].includes(where),
@@ -591,30 +704,37 @@ export function reduce(
 
   if (empty && _.selectionBehavior !== SelectionBehavior.Character) {
     if (where !== "both") {
-      Selections.updateByIndex((_, selection) => Selections.empty(selection[where]));
+      Selections.updateByIndex((_, selection) =>
+        Selections.empty(selection[where]),
+      );
     } else {
-      Selections.set(_.selections.flatMap((selection) => {
-        if (selection.isEmpty) {
-          return [selection];
-        }
+      Selections.set(
+        _.selections.flatMap((selection) => {
+          if (selection.isEmpty) {
+            return [selection];
+          }
 
-        return [
-          Selections.empty(selection.active),
-          Selections.empty(selection.anchor),
-        ];
-      }));
+          return [
+            Selections.empty(selection.active),
+            Selections.empty(selection.anchor),
+          ];
+        }),
+      );
     }
 
     return;
   }
 
-  const takeWhere = (selection: vscode.Selection, prop: Exclude<typeof where, "both">) => {
+  const takeWhere = (
+    selection: vscode.Selection,
+    prop: Exclude<typeof where, "both">,
+  ) => {
     if (selection.isEmpty) {
       return selection;
     }
 
     let start = selection[prop],
-        end: vscode.Position;
+      end: vscode.Position;
 
     if (start === selection.end && !start.isEqual(selection.start)) {
       end = start;
@@ -632,16 +752,15 @@ export function reduce(
     return;
   }
 
-  Selections.set(_.selections.flatMap((selection) => {
-    if (selection.isEmpty || Selections.isNonDirectional(selection)) {
-      return [selection];
-    }
+  Selections.set(
+    _.selections.flatMap((selection) => {
+      if (selection.isEmpty || Selections.isNonDirectional(selection)) {
+        return [selection];
+      }
 
-    return [
-      takeWhere(selection, "active"),
-      takeWhere(selection, "anchor"),
-    ];
-  }));
+      return [takeWhere(selection, "active"), takeWhere(selection, "anchor")];
+    }),
+  );
 }
 
 /**
@@ -650,37 +769,45 @@ export function reduce(
  * @param direction If unspecified, flips each direction. Otherwise, ensures
  *   that all selections face the given direction.
  *
- * @keys `a-;` (kakoune: normal)
+ * @keys `a-;` (helix: normal), `a-;` (helix: select)
+ * @commands
  *
- * #### Variants
  *
- * | Title               | Identifier     | Keybinding              | Command                                              |
- * | ------------------- | -------------- | ----------------------- | ---------------------------------------------------- |
- * | Forward selections  | `faceForward`  | `a-:` (kakoune: normal) | `[".selections.changeDirection", { direction:  1 }]` |
- * | Backward selections | `faceBackward` |                         | `[".selections.changeDirection", { direction: -1 }]` |
+ * | Title               | Identifier     | Keybinding                                     | Command                                              |
+ * | ------------------- | -------------- | ---------------------------------------------- | ---------------------------------------------------- |
+ * | Forward selections  | `faceForward`  | `a-:` (helix: normal), `a-:` (helix: select)   | `[".selections.changeDirection", { direction:  1 }]` |
+ * | Backward selections | `faceBackward` |                                                | `[".selections.changeDirection", { direction: -1 }]` |
+ 
  */
-export function changeDirection(_: Context, direction?: Direction) {
+export function changeDirection({
+  direction,
+}: CommandArguments<{ direction?: Direction }>) {
   switch (direction) {
-  case Direction.Backward:
-    Selections.updateByIndex((_, selection) =>
-      selection.isReversed || selection.isEmpty || Selections.isNonDirectional(selection)
-        ? selection
-        : new vscode.Selection(selection.end, selection.start));
-    break;
+    case Direction.Backward:
+      Selections.updateByIndex((_, selection) =>
+        selection.isReversed ||
+        selection.isEmpty ||
+        Selections.isNonDirectional(selection)
+          ? selection
+          : new vscode.Selection(selection.end, selection.start),
+      );
+      break;
 
-  case Direction.Forward:
-    Selections.updateByIndex((_, selection) =>
-      selection.isReversed
-        ? new vscode.Selection(selection.start, selection.end)
-        : selection);
-    break;
+    case Direction.Forward:
+      Selections.updateByIndex((_, selection) =>
+        selection.isReversed
+          ? new vscode.Selection(selection.start, selection.end)
+          : selection,
+      );
+      break;
 
-  default:
-    Selections.updateByIndex((_, selection) =>
-      selection.isEmpty || Selections.isNonDirectional(selection)
-        ? selection
-        : new vscode.Selection(selection.active, selection.anchor));
-    break;
+    default:
+      Selections.updateByIndex((_, selection) =>
+        selection.isEmpty || Selections.isNonDirectional(selection)
+          ? selection
+          : new vscode.Selection(selection.active, selection.anchor),
+      );
+      break;
   }
 }
 
@@ -691,23 +818,27 @@ export function changeDirection(_: Context, direction?: Direction) {
  *   selections. Otherwise, ensures directions are sorted top-to-bottom
  *   (`direction === 1`) or bottom-to-top (`direction === -1`).
  *
- * #### Variants
+ * @commands
  *
  * | Title                       | Identifier        | Command                                          |
  * | --------------------------- | ----------------- | ------------------------------------------------ |
  * | Order selections descending | `orderDescending` | `[".selections.changeOrder", { direction:  1 }]` |
  * | Order selections ascending  | `orderAscending`  | `[".selections.changeOrder", { direction: -1 }]` |
  */
-export function changeOrder(_: Context, selections: vscode.Selection[], direction?: Direction) {
+export function changeOrder({
+  direction,
+  _,
+}: CommandArguments<{ direction?: Direction }>) {
+  const selections = _.selections.slice();
   switch (direction) {
-  case Direction.Backward:
-  case Direction.Forward:
-    Selections.set(Selections.sort(direction, selections), _);
-    break;
+    case Direction.Backward:
+    case Direction.Forward:
+      Selections.set(Selections.sort(direction, selections), _);
+      break;
 
-  default:
-    Selections.set(selections.reverse(), _);
-    break;
+    default:
+      Selections.set(selections.reverse(), _);
+      break;
   }
 }
 
@@ -719,32 +850,47 @@ export function changeOrder(_: Context, selections: vscode.Selection[], directio
  *
  * @param direction If `Backward`, selections will be sorted descendingly.
  */
-export async function sort(
-  _: Context,
-  expressionOr: InputOr<"expression", string>,
+export async function sort({
+  _,
+  getInputOr,
   direction = Direction.Forward,
-) {
-  const expression = await expressionOr(() => prompt({
-    prompt: "Expression",
-    validateInput(value) {
-      try {
-        return void validateForSwitchRun(value);
-      } catch (e) {
-        return (e as Error)?.message ?? `${e}`;
-      }
-    },
-    history: pipeHistory,
-  }, _));
+}: CommandArguments<{
+  expression: string;
+  direction?: Direction;
+}>) {
+  const expressionOr = getInputOr("expression");
+  const expression = await expressionOr(() =>
+    prompt(
+      {
+        prompt: "Expression",
+        validateInput(value) {
+          try {
+            return void validateForSwitchRun(value);
+          } catch (e) {
+            return (e as Error)?.message ?? `${e}`;
+          }
+        },
+        history: pipeHistory,
+      },
+      _,
+    ),
+  );
 
   const document = _.document,
-        selectionsStrings = _.selections.map((selection) => document.getText(selection));
+    selectionsStrings = _.selections.map((selection) =>
+      document.getText(selection),
+    );
 
-  const results = await Promise.all(_.run((_) => selectionsStrings.map((string, i, strings) =>
-    switchRun(expression, { $: string, $$: strings, i, n: strings.length }),
-  )));
+  const results = await Promise.all(
+    _.run(() =>
+      selectionsStrings.map((string, i, strings) =>
+        switchRun(expression, { $: string, $$: strings, i, n: strings.length }),
+      ),
+    ),
+  );
 
   const numbers: number[] = [],
-        strings: string[] = [];
+    strings: string[] = [];
 
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
@@ -779,13 +925,18 @@ export async function sort(
   }
 
   const selections = _.selections.slice(),
-        selectionToIndex = new Map(selections.map((s, i) => [s, i]));
+    selectionToIndex = new Map(selections.map((s, i) => [s, i]));
 
   if (numbers.length === results.length) {
-    selections.sort((a, b) => numbers[selectionToIndex.get(a)!] - numbers[selectionToIndex.get(b)!]);
+    selections.sort(
+      (a, b) =>
+        numbers[selectionToIndex.get(a)!] - numbers[selectionToIndex.get(b)!],
+    );
   } else {
     selections.sort((a, b) =>
-      strings[selectionToIndex.get(a)!].localeCompare(strings[selectionToIndex.get(b)!]),
+      strings[selectionToIndex.get(a)!].localeCompare(
+        strings[selectionToIndex.get(b)!],
+      ),
     );
   }
 
@@ -799,35 +950,41 @@ export async function sort(
 /**
  * Copy selections below.
  *
- * @keys `s-c` (kakoune: normal)
+ * @keys `s-c` (helix: normal), `s-c` (helix: select)
+ * @commands
  *
- * #### Variant
  *
- * | Title                 | Identifier   | Keybinding                | Command                                   |
- * | --------------------- | ------------ | ------------------------- | ----------------------------------------- |
- * | Copy selections above | `copy.above` | `s-a-c` (kakoune: normal) | `[".selections.copy", { direction: -1 }]` |
+ * | Title                 | Identifier   | Keybinding                                         | Command                                   |
+ * | --------------------- | ------------ | -------------------------------------------------- | ----------------------------------------- |
+ * | Copy selections above | `copy.above` | `s-a-c` (helix: normal), `s-a-c` (helix: select)   | `[".selections.copy", { direction: -1 }]` |
+ 
  */
-export function copy(
-  _: Context,
-  document: vscode.TextDocument,
-  selections: readonly vscode.Selection[],
-  repetitions: number,
-
+export function copy({
+  document,
+  selections,
+  repetitions,
   direction = Direction.Forward,
-) {
+}: CommandArguments<{
+  expression: string;
+  direction?: Direction;
+}>) {
   const newSelections = [] as vscode.Selection[],
-        lineCount = document.lineCount;
+    lineCount = document.lineCount;
 
   for (const selection of selections) {
     const activeLine = Selections.activeLine(selection);
     let currentLine = activeLine + direction;
 
-    for (let i = 0; i < repetitions;) {
+    for (let i = 0; i < repetitions; ) {
       if (currentLine < 0 || currentLine >= lineCount) {
         break;
       }
 
-      const copiedSelection = tryCopySelection(document, selection, currentLine);
+      const copiedSelection = tryCopySelection(
+        document,
+        selection,
+        currentLine,
+      );
 
       if (copiedSelection === undefined) {
         currentLine += direction;
@@ -837,9 +994,10 @@ export function copy(
       newSelections.push(copiedSelection);
 
       i++;
-      currentLine = direction === Direction.Backward
-        ? copiedSelection.end.line - 1
-        : copiedSelection.start.line + 1;
+      currentLine =
+        direction === Direction.Backward
+          ? copiedSelection.end.line - 1
+          : copiedSelection.start.line + 1;
     }
   }
 
@@ -851,9 +1009,9 @@ export function copy(
 /**
  * Merge contiguous selections.
  *
- * @keys `a-_` (kakoune: normal)
+ * @keys `a-_` (helix: normal), `a-_` (helix: select)
  */
-export function merge(_: Context) {
+export function merge() {
   Selections.set(Selections.mergeConsecutive(Selections.current()));
 }
 
@@ -864,33 +1022,42 @@ export async function open(_: Context) {
   const basePath = vscode.Uri.joinPath(_.document.uri, "..");
 
   await Promise.all(
-    Selections.map(async (text) =>
-      await vscode.window.showTextDocument(
-        await vscode.workspace.openTextDocument(vscode.Uri.joinPath(basePath, text))),
+    Selections.map(
+      async (text) =>
+        await vscode.window.showTextDocument(
+          await vscode.workspace.openTextDocument(
+            vscode.Uri.joinPath(basePath, text),
+          ),
+        ),
     ),
   );
 }
 
-const indicesToken = PerEditorState.registerState<AutoDisposable>(/* isDisposable= */ true);
+const indicesToken = PerEditorState.registerState<AutoDisposable>(
+  /* isDisposable= */ true,
+);
 
 /**
  * Toggle selection indices.
  *
- * @keys `enter` (dance: normal)
+ * @keys `enter` (dance: normal), `enter` (dance: select)
+ * @commands
  *
- * #### Variants
  *
  * | Title                  | Identifier    | Command                                                  |
  * | ---------------------- | ------------- | -------------------------------------------------------- |
  * | Show selection indices | `showIndices` | `[".selections.toggleIndices", { display: true , ... }]` |
  * | Hide selection indices | `hideIndices` | `[".selections.toggleIndices", { display: false, ... }]` |
+ 
  */
-export function toggleIndices(
-  _: Context,
-
-  display: Argument<boolean | undefined> = undefined,
-  until: Argument<AutoDisposable.Event[]> = [],
-) {
+export function toggleIndices({
+  _,
+  display,
+  until = [],
+}: CommandArguments<{
+  display?: boolean;
+  until?: AutoDisposable.Event[];
+}>) {
   const editorState = _.getState();
   let disposable = editorState.get(indicesToken);
 
@@ -921,16 +1088,20 @@ export function toggleIndices(
     // Collect selection indices for each line; keep the column of the cursor in
     // memory for later.
     const selections = unsafeSelections(editor),
-          selectionsPerLine = new Map<number, [activeColumn: number, selectionIndex: number][]>();
+      selectionsPerLine = new Map<
+        number,
+        [activeColumn: number, selectionIndex: number][]
+      >();
 
     for (let i = 0; i < selections.length; i++) {
       const selection = selections[i],
-            active = selection.active,
-            activeLine = Selections.activeLine(selection),
-            activeCharacter = activeLine === active.line
-              ? active.character
-              : Number.MAX_SAFE_INTEGER,  // We were at the end of the line.
-            selectionsForLine = selectionsPerLine.get(activeLine);
+        active = selection.active,
+        activeLine = Selections.activeLine(selection),
+        activeCharacter =
+          activeLine === active.line
+            ? active.character
+            : Number.MAX_SAFE_INTEGER, // We were at the end of the line.
+        selectionsForLine = selectionsPerLine.get(activeLine);
 
       if (selectionsForLine === undefined) {
         selectionsPerLine.set(activeLine, [[activeCharacter, i]]);
@@ -948,7 +1119,7 @@ export function toggleIndices(
       selectionsForLine.sort((a, b) => a[0] - b[0]);
 
       const rangePosition = new vscode.Position(line, 0),
-            range = new vscode.Range(rangePosition, rangePosition);
+        range = new vscode.Range(rangePosition, rangePosition);
 
       ranges.push({
         range,
@@ -966,12 +1137,18 @@ export function toggleIndices(
   disposable = _.extension
     .createAutoDisposable()
     .addDisposable(indicesDecorationType)
-    .addDisposable(vscode.window.onDidChangeTextEditorSelection((e) =>
-      e.textEditor === editorState.editor && onDidChangeSelection(e.textEditor),
-    ))
-    .addDisposable(editorState.onVisibilityDidChange((e) =>
-      e.isVisible && onDidChangeSelection(e.editor),
-    ));
+    .addDisposable(
+      vscode.window.onDidChangeTextEditorSelection(
+        (e) =>
+          e.textEditor === editorState.editor &&
+          onDidChangeSelection(e.textEditor),
+      ),
+    )
+    .addDisposable(
+      editorState.onVisibilityDidChange(
+        (e) => e.isVisible && onDidChangeSelection(e.editor),
+      ),
+    );
 
   editorState.store(indicesToken, disposable);
 
@@ -988,11 +1165,13 @@ function tryCopySelection(
   newActiveLine: number,
 ) {
   const active = selection.active,
-        anchor = selection.anchor,
-        activeLine = Selections.activeLine(selection),
-        endCharacter = Selections.endCharacter(selection, document);
-  let activeCharacter = selection.end === active ? endCharacter : active.character,
-      anchorCharacter = selection.end === anchor ? endCharacter : anchor.character;
+    anchor = selection.anchor,
+    activeLine = Selections.activeLine(selection),
+    endCharacter = Selections.endCharacter(selection, document);
+  let activeCharacter =
+      selection.end === active ? endCharacter : active.character,
+    anchorCharacter =
+      selection.end === anchor ? endCharacter : anchor.character;
 
   if (activeLine === anchor.line) {
     const newLineLength = document.lineAt(newActiveLine).text.length;
@@ -1003,11 +1182,26 @@ function tryCopySelection(
       }
 
       return selection.end === active
-        ? new vscode.Selection(newActiveLine, anchorCharacter, newActiveLine + 1, 0)
-        : new vscode.Selection(newActiveLine + 1, 0, newActiveLine, activeCharacter);
+        ? new vscode.Selection(
+            newActiveLine,
+            anchorCharacter,
+            newActiveLine + 1,
+            0,
+          )
+        : new vscode.Selection(
+            newActiveLine + 1,
+            0,
+            newActiveLine,
+            activeCharacter,
+          );
     }
 
-    return new vscode.Selection(newActiveLine, anchorCharacter, newActiveLine, activeCharacter);
+    return new vscode.Selection(
+      newActiveLine,
+      anchorCharacter,
+      newActiveLine,
+      activeCharacter,
+    );
   }
 
   let newAnchorLine = newActiveLine + anchor.line - activeLine;
@@ -1038,8 +1232,12 @@ function tryCopySelection(
     activeCharacter = 0;
   }
 
-  const newSelection = new vscode.Selection(newAnchorLine, anchorCharacter,
-                                            newActiveLine, activeCharacter);
+  const newSelection = new vscode.Selection(
+    newAnchorLine,
+    anchorCharacter,
+    newActiveLine,
+    activeCharacter,
+  );
 
   if (Selections.overlap(selection, newSelection)) {
     return undefined;

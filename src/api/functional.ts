@@ -13,7 +13,7 @@ export type PS = vscode.Position | vscode.Selection;
 /**
  * Returns whether the given value is a `vscode.Position` object.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const position = new vscode.Position(0, 0),
@@ -32,7 +32,7 @@ export function isPosition(x: unknown): x is vscode.Position {
 /**
  * Returns whether the given value is a `vscode.Range` object.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const position = new vscode.Position(0, 0),
@@ -51,7 +51,7 @@ export function isRange(x: unknown): x is vscode.Range {
 /**
  * Returns whether the given value is a `vscode.Selection` object.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const position = new vscode.Position(0, 0),
@@ -70,7 +70,7 @@ export function isSelection(x: unknown): x is vscode.Selection {
 /**
  * Returns a `PRS` whose start position is mapped using the given function.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const p1 = new vscode.Position(0, 0),
@@ -98,11 +98,14 @@ export function isSelection(x: unknown): x is vscode.Selection {
  * );
  * ```
  */
-export function mapStart<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.Position) {
+export function mapStart<T extends PRS>(
+  x: T,
+  f: (_: vscode.Position) => vscode.Position,
+) {
   if (isSelection(x)) {
     return x.start === x.anchor
-      ? new vscode.Selection(f(x.start), x.end) as T
-      : new vscode.Selection(x.end, f(x.start)) as T;
+      ? (new vscode.Selection(f(x.start), x.end) as T)
+      : (new vscode.Selection(x.end, f(x.start)) as T);
   }
 
   if (isRange(x)) {
@@ -115,7 +118,7 @@ export function mapStart<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.
 /**
  * Returns a `PRS` whose end position is mapped using the given function.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const p1 = new vscode.Position(0, 0),
@@ -143,11 +146,14 @@ export function mapStart<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.
  * );
  * ```
  */
-export function mapEnd<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.Position) {
+export function mapEnd<T extends PRS>(
+  x: T,
+  f: (_: vscode.Position) => vscode.Position,
+) {
   if (isSelection(x)) {
     return x.start === x.anchor
-      ? new vscode.Selection(x.start, f(x.end)) as T
-      : new vscode.Selection(f(x.end), x.start) as T;
+      ? (new vscode.Selection(x.start, f(x.end)) as T)
+      : (new vscode.Selection(f(x.end), x.start) as T);
   }
 
   if (isRange(x)) {
@@ -160,7 +166,7 @@ export function mapEnd<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.Po
 /**
  * Returns a `PS` whose active position is mapped using the given function.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const p1 = new vscode.Position(0, 0),
@@ -178,7 +184,10 @@ export function mapEnd<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.Po
  * );
  * ```
  */
-export function mapActive<T extends PS>(x: T, f: (_: vscode.Position) => vscode.Position) {
+export function mapActive<T extends PS>(
+  x: T,
+  f: (_: vscode.Position) => vscode.Position,
+) {
   if (isSelection(x)) {
     return new vscode.Selection(x.anchor, f(x.active)) as T;
   }
@@ -190,7 +199,7 @@ export function mapActive<T extends PS>(x: T, f: (_: vscode.Position) => vscode.
  * Returns a `PRS` whose start and end positions are mapped using the given
  * function.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const p1 = new vscode.Position(0, 0),
@@ -218,7 +227,10 @@ export function mapActive<T extends PS>(x: T, f: (_: vscode.Position) => vscode.
  * );
  * ```
  */
-export function mapBoth<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.Position) {
+export function mapBoth<T extends PRS>(
+  x: T,
+  f: (_: vscode.Position) => vscode.Position,
+) {
   if (isSelection(x)) {
     return new vscode.Selection(f(x.anchor), f(x.active)) as T;
   }
@@ -235,7 +247,9 @@ export function mapBoth<T extends PRS>(x: T, f: (_: vscode.Position) => vscode.P
  * argument types except the last one, and then the last argument type.
  */
 export type SplitParameters<F> = F extends (...args: infer AllArgs) => any
-  ? AllArgs extends [...infer Args, infer LastArg] ? [Args, LastArg] : never
+  ? AllArgs extends [...infer Args, infer LastArg]
+    ? [Args, LastArg]
+    : never
   : never;
 
 /**
@@ -243,24 +257,28 @@ export type SplitParameters<F> = F extends (...args: infer AllArgs) => any
  * returns yet another function that takes the last parameter of `f`, and
  * returns `f(...args, lastArg)`.
  *
- * ### Example
+ * @example
  *
- * ```js
- * const add2 = (a, b) => a + b,
- *       add3 = (a, b, c) => a + b + c;
+ * ```ts
+ * const add2 = (a: number, b: number) => a + b,
+ *       add3 = (a: number, b: number, c: number) => a + b + c;
  *
- * expect(add2(1, 2)).to.be.equal(3);
- * expect(add3(1, 2, 3)).to.be.equal(6);
+ * expect(add2(1, 2), "to equal", 3);
+ * expect(add3(1, 2, 3), "to equal", 6);
  *
- * expect(curry(add2)(1)(2)).to.be.equal(3);
- * expect(curry(add3)(1, 2)(3)).to.be.equal(6);
+ * expect(curry(add2)(1)(2), "to equal", 3);
+ * expect(curry(add3)(1, 2)(3), "to equal", 6);
  * ```
  */
-export function curry<F extends (...allArgs: any) => any>(f: F, ...counts: number[]) {
+export function curry<F extends (...allArgs: any) => any>(
+  f: F,
+  ...counts: number[]
+) {
   if (counts.length === 0) {
-    return (...args: SplitParameters<F>[0]) => (lastArg: SplitParameters<F>[1]) => {
-      return f(...args, lastArg);
-    };
+    return (...args: SplitParameters<F>[0]) =>
+      (lastArg: SplitParameters<F>[1]) => {
+        return f(...args, lastArg);
+      };
   }
 
   // TODO: review this
@@ -268,22 +286,24 @@ export function curry<F extends (...allArgs: any) => any>(f: F, ...counts: numbe
 
   for (let i = counts.length - 1; i >= 0; i--) {
     const prev = curried,
-          len = counts[i];
+      len = counts[i];
 
-    curried = (...args: any[]) => (...newArgs: any[]) => {
-      const allArgs = args;
-      let i = 0;
+    curried =
+      (...args: any[]) =>
+      (...newArgs: any[]) => {
+        const allArgs = args;
+        let i = 0;
 
-      for (; i < newArgs.length && i < len; i++) {
-        allArgs.push(newArgs[i]);
-      }
+        for (; i < newArgs.length && i < len; i++) {
+          allArgs.push(newArgs[i]);
+        }
 
-      for (; i < len; i++) {
-        allArgs.push(undefined);
-      }
+        for (; i < len; i++) {
+          allArgs.push(undefined);
+        }
 
-      return prev(...allArgs);
-    };
+        return prev(...allArgs);
+      };
   }
 
   return curried;
@@ -313,13 +333,15 @@ export function curry<F extends (...allArgs: any) => any>(f: F, ...counts: numbe
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B>(a: (_: A) => B | undefined): (values: readonly A[]) => B[];
+export function pipe<A, B>(
+  a: (_: A) => B | undefined,
+): (values: readonly A[]) => B[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  *
- * ### Example
+ * @example
  *
  * ```js
  * const doubleNumbers = pipe((n) => typeof n === "number" ? n : undefined,
@@ -332,62 +354,125 @@ export function pipe<A, B>(a: (_: A) => B | undefined): (values: readonly A[]) =
  * );
  * ```
  */
-export function pipe<A, B, C>(a: (_: A) => B | undefined, b: (_: B) => C | undefined): (values: readonly A[]) => C[];
+export function pipe<A, B, C>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+): (values: readonly A[]) => C[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined): (values: readonly A[]) => D[];
+export function pipe<A, B, C, D>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+): (values: readonly A[]) => D[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D, E>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined, d: (_: D) => E | undefined): (values: readonly A[]) => E[];
+export function pipe<A, B, C, D, E>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+  d: (_: D) => E | undefined,
+): (values: readonly A[]) => E[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D, E, F>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined, d: (_: D) => E | undefined, e: (_: E) => F | undefined): (values: readonly A[]) => F[];
+export function pipe<A, B, C, D, E, F>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+  d: (_: D) => E | undefined,
+  e: (_: E) => F | undefined,
+): (values: readonly A[]) => F[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D, E, F, G>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined, d: (_: D) => E | undefined, e: (_: E) => F | undefined, f: (_: F) => G | undefined): (values: readonly A[]) => G[];
+export function pipe<A, B, C, D, E, F, G>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+  d: (_: D) => E | undefined,
+  e: (_: E) => F | undefined,
+  f: (_: F) => G | undefined,
+): (values: readonly A[]) => G[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D, E, F, G, H>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined, d: (_: D) => E | undefined, e: (_: E) => F | undefined, f: (_: F) => G | undefined, g: (_: G) => H | undefined): (values: readonly A[]) => H[];
+export function pipe<A, B, C, D, E, F, G, H>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+  d: (_: D) => E | undefined,
+  e: (_: E) => F | undefined,
+  f: (_: F) => G | undefined,
+  g: (_: G) => H | undefined,
+): (values: readonly A[]) => H[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D, E, F, G, H, I>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined, d: (_: D) => E | undefined, e: (_: E) => F | undefined, f: (_: F) => G | undefined, g: (_: G) => H | undefined, h: (_: H) => I | undefined): (values: readonly A[]) => I[];
+export function pipe<A, B, C, D, E, F, G, H, I>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+  d: (_: D) => E | undefined,
+  e: (_: E) => F | undefined,
+  f: (_: F) => G | undefined,
+  g: (_: G) => H | undefined,
+  h: (_: H) => I | undefined,
+): (values: readonly A[]) => I[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D, E, F, G, H, I, J>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined, d: (_: D) => E | undefined, e: (_: E) => F | undefined, f: (_: F) => G | undefined, g: (_: G) => H | undefined, h: (_: H) => I | undefined, i: (_: I) => J | undefined): (values: readonly A[]) => J[];
+export function pipe<A, B, C, D, E, F, G, H, I, J>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+  d: (_: D) => E | undefined,
+  e: (_: E) => F | undefined,
+  f: (_: F) => G | undefined,
+  g: (_: G) => H | undefined,
+  h: (_: H) => I | undefined,
+  i: (_: I) => J | undefined,
+): (values: readonly A[]) => J[];
 
 /**
  * Returns a function that maps all non-`undefined` values
  * through the given function and returns the remaining results.
  */
-export function pipe<A, B, C, D, E, F, G, H, I, J, K>(a: (_: A) => B | undefined, b: (_: B) => C | undefined, c: (_: C) => D | undefined, d: (_: D) => E | undefined, e: (_: E) => F | undefined, f: (_: F) => G | undefined, g: (_: G) => H | undefined, h: (_: H) => I | undefined, i: (_: I) => J | undefined, j: (_: J) => K | undefined): (values: readonly A[]) => K[];
+export function pipe<A, B, C, D, E, F, G, H, I, J, K>(
+  a: (_: A) => B | undefined,
+  b: (_: B) => C | undefined,
+  c: (_: C) => D | undefined,
+  d: (_: D) => E | undefined,
+  e: (_: E) => F | undefined,
+  f: (_: F) => G | undefined,
+  g: (_: G) => H | undefined,
+  h: (_: H) => I | undefined,
+  i: (_: I) => J | undefined,
+  j: (_: J) => K | undefined,
+): (values: readonly A[]) => K[];
 /* eslint-enable max-len */
 
 export function pipe(...functions: ((_: unknown) => unknown)[]) {
   return (values: readonly unknown[]) => {
     const results: unknown[] = [],
-          vlen = values.length,
-          flen = functions.length;
+      vlen = values.length,
+      flen = functions.length;
 
     for (let i = 0; i < vlen; i++) {
       let value = values[i];
@@ -411,8 +496,8 @@ export function pipe(...functions: ((_: unknown) => unknown)[]) {
 export function pipeAsync(...functions: ((_: unknown) => unknown)[]) {
   return async (values: readonly unknown[]) => {
     const results: unknown[] = [],
-          vlen = values.length,
-          flen = functions.length;
+      vlen = values.length,
+      flen = functions.length;
 
     for (let i = 0; i < vlen; i++) {
       let value = values[i];

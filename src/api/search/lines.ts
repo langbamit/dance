@@ -14,7 +14,7 @@ export function matchingLines(
   document = Context.current.document,
 ) {
   const start = matchingLinesBackward(re, origin, document),
-        end = matchingLinesForward(re, origin, document);
+    end = matchingLinesForward(re, origin, document);
 
   return new vscode.Range(start, end);
 }
@@ -28,11 +28,13 @@ export function matchingLinesBackward(
   origin: number | vscode.Position,
   document = Context.current.document,
 ) {
-  return lineByLineBackward(
-    (text, position) => re.test(text) ? position : undefined,
-    typeof origin === "number" ? Positions.lineStart(origin) : origin,
-    document,
-  ) ?? Positions.zero;
+  return (
+    lineByLineBackward(
+      (text, position) => (re.test(text) ? position : undefined),
+      typeof origin === "number" ? Positions.lineStart(origin) : origin,
+      document,
+    ) ?? Positions.zero
+  );
 }
 
 /**
@@ -44,9 +46,11 @@ export function matchingLinesForward(
   origin: number | vscode.Position,
   document = Context.current.document,
 ) {
-  return lineByLineForward(
-    (text, position) => re.test(text) ? position : undefined,
-    typeof origin === "number" ? Positions.lineStart(origin) : origin,
-    document,
-  ) ?? Positions.lineStart(document.lineCount - 1);
+  return (
+    lineByLineForward(
+      (text, position) => (re.test(text) ? position : undefined),
+      typeof origin === "number" ? Positions.lineStart(origin) : origin,
+      document,
+    ) ?? Positions.lineStart(document.lineCount - 1)
+  );
 }

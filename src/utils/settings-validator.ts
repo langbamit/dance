@@ -42,7 +42,9 @@ export class SettingsValidator {
       return;
     }
 
-    return vscode.window.showErrorMessage("Invalid settings: " + errors.join(" — "));
+    return vscode.window.showErrorMessage(
+      "Invalid settings: " + errors.join(" — "),
+    );
   }
 
   public throwErrorIfNeeded() {
@@ -55,16 +57,22 @@ export class SettingsValidator {
     throw new Error("Invalid settings: " + errors.join(" — "));
   }
 
-  public static displayErrorIfNeeded<T>(path: string, f: (validator: SettingsValidator) => T) {
+  public static displayErrorIfNeeded<T>(
+    path: string,
+    f: (validator: SettingsValidator) => T,
+  ) {
     const validator = new SettingsValidator(path),
-          result = f(validator);
+      result = f(validator);
     validator.displayErrorIfNeeded();
     return result;
   }
 
-  public static throwErrorIfNeeded<T>(path: string, f: (validator: SettingsValidator) => T) {
+  public static throwErrorIfNeeded<T>(
+    path: string,
+    f: (validator: SettingsValidator) => T,
+  ) {
     const validator = new SettingsValidator(path),
-          result = f(validator);
+      result = f(validator);
     validator.throwErrorIfNeeded();
     return result;
   }

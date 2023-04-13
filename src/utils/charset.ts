@@ -7,26 +7,28 @@ import * as vscode from "vscode";
 /**
  * A list containing all blank characters.
  */
-export const blankCharacters = "\r\n\t " + String.fromCharCode(
-  0xa0,
-  0x1680,
-  0x2000,
-  0x2001,
-  0x2002,
-  0x2003,
-  0x2004,
-  0x2005,
-  0x2006,
-  0x2007,
-  0x2008,
-  0x2009,
-  0x200a,
-  0x2028,
-  0x2029,
-  0x202f,
-  0x205f,
-  0x3000,
-);
+export const blankCharacters =
+  "\r\n\t " +
+  String.fromCharCode(
+    0xa0,
+    0x1680,
+    0x2000,
+    0x2001,
+    0x2002,
+    0x2003,
+    0x2004,
+    0x2005,
+    0x2006,
+    0x2007,
+    0x2008,
+    0x2009,
+    0x200a,
+    0x2028,
+    0x2029,
+    0x202f,
+    0x205f,
+    0x3000,
+  );
 
 /**
  * A character set.
@@ -75,7 +77,7 @@ export function getCharacters(charSet: CharSet, document: vscode.TextDocument) {
  */
 export function getCharCodes(charSet: CharSet, document: vscode.TextDocument) {
   const characters = getCharacters(charSet, document),
-        charCodes = new Uint32Array(characters.length);
+    charCodes = new Uint32Array(characters.length);
 
   for (let i = 0; i < characters.length; i++) {
     charCodes[i] = characters.charCodeAt(i);
@@ -88,7 +90,10 @@ export function getCharCodes(charSet: CharSet, document: vscode.TextDocument) {
  * Returns a function that tests whether a character belongs to the given
  * charset.
  */
-export function getCharSetFunction(charSet: CharSet, document: vscode.TextDocument) {
+export function getCharSetFunction(
+  charSet: CharSet,
+  document: vscode.TextDocument,
+) {
   const charCodes = getCharCodes(charSet, document);
 
   if (charSet & CharSet.Invert) {

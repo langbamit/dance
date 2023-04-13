@@ -30,12 +30,15 @@ export function validateMenu(menu: Menu) {
     return ["menu must be an object"];
   }
 
-  if (typeof menu.items !== "object" || Object.keys(menu.items ?? {}).length === 0) {
+  if (
+    typeof menu.items !== "object" ||
+    Object.keys(menu.items ?? {}).length === 0
+  ) {
     return ['menu must have an subobject "items" with at least two entries.'];
   }
 
   const seenKeyCodes = new Map<number, string>(),
-        errors = [] as string[];
+    errors = [] as string[];
 
   if (menu.title !== undefined && typeof menu.title !== "string") {
     errors.push("menu title must be a string");
@@ -43,7 +46,7 @@ export function validateMenu(menu: Menu) {
 
   for (const key in menu.items) {
     const item = menu.items[key],
-          itemDisplay = JSON.stringify(key);
+      itemDisplay = JSON.stringify(key);
 
     if (typeof item !== "object" || item === null) {
       errors.push(`item ${itemDisplay} must be an object.`);
@@ -56,7 +59,9 @@ export function validateMenu(menu: Menu) {
     }
 
     if (typeof item.command !== "string" || item.command.length === 0) {
-      errors.push(`item ${itemDisplay} must have a non-empty "command" property.`);
+      errors.push(
+        `item ${itemDisplay} must have a non-empty "command" property.`,
+      );
       continue;
     }
 
@@ -67,10 +72,12 @@ export function validateMenu(menu: Menu) {
 
     for (let i = 0; i < key.length; i++) {
       const keyCode = key.charCodeAt(i),
-            prevKey = seenKeyCodes.get(keyCode);
+        prevKey = seenKeyCodes.get(keyCode);
 
       if (prevKey) {
-        errors.push(`menu has duplicate key '${key[i]}' (specified by '${prevKey}' and '${key}').`);
+        errors.push(
+          `menu has duplicate key '${key[i]}' (specified by '${prevKey}' and '${key}').`,
+        );
         continue;
       }
 
@@ -85,7 +92,10 @@ export function validateMenu(menu: Menu) {
  * Returns the menu with the given name. If no such menu exists, an exception
  * will be thrown.
  */
-export function findMenu(menuName: string, context = Context.WithoutActiveEditor.current) {
+export function findMenu(
+  menuName: string,
+  context = Context.WithoutActiveEditor.current,
+) {
   const menu = context.extension.menus.get(menuName);
 
   if (menu === undefined) {
@@ -105,18 +115,23 @@ export async function showMenu(
 ) {
   const entries = Object.entries(menu.items);
   const items = entries.map((x) => [x[0], x[1].text] as const);
-  const choice = await promptOne(items, (quickPick) => quickPick.title = menu.title);
+  const choice = await promptOne(
+    items,
+    (quickPick) => (quickPick.title = menu.title),
+  );
 
   if (typeof choice === "string") {
     if (prefix !== undefined) {
-      await vscode.commands.executeCommand("default:type", { text: prefix + choice });
+      await vscode.commands.executeCommand("default:type", {
+        text: prefix + choice,
+      });
     }
 
     return;
   }
 
   const pickedItem = entries[choice][1],
-        args = mergeArgs(pickedItem.args, additionalArgs);
+    args = mergeArgs(pickedItem.args, additionalArgs);
 
   return Context.WithoutActiveEditor.wrap(
     vscode.commands.executeCommand(pickedItem.command, ...args),
@@ -144,13 +159,16 @@ export async function showMenuAfterDelay(
   prefix?: string,
 ) {
   const cancellationTokenSource = new vscode.CancellationTokenSource(),
-        currentContext = Context.current;
+    currentContext = Context.current;
 
   currentContext.cancellationToken.onCancellationRequested(() =>
-    cancellationTokenSource.cancel());
+    cancellationTokenSource.cancel(),
+  );
 
-  const keypressContext = currentContext.withCancellationToken(cancellationTokenSource.token),
-        timeout = setTimeout(() => cancellationTokenSource.cancel(), delayMs);
+  const keypressContext = currentContext.withCancellationToken(
+      cancellationTokenSource.token,
+    ),
+    timeout = setTimeout(() => cancellationTokenSource.cancel(), delayMs);
 
   try {
     const key = await keypress(keypressContext);
@@ -163,7 +181,7 @@ export async function showMenuAfterDelay(
       }
 
       const pickedItem = menu.items[itemKeys],
-            args = mergeArgs(pickedItem.args, additionalArgs);
+        args = mergeArgs(pickedItem.args, additionalArgs);
 
       return Context.WithoutActiveEditor.wrap(
         vscode.commands.executeCommand(pickedItem.command, ...args),
@@ -171,7 +189,9 @@ export async function showMenuAfterDelay(
     }
 
     if (prefix !== undefined) {
-      await vscode.commands.executeCommand("default:type", { text: prefix + key });
+      await vscode.commands.executeCommand("default:type", {
+        text: prefix + key,
+      });
     }
   } catch (e) {
     if (!currentContext.cancellationToken.isCancellationRequested) {
@@ -192,12 +212,20 @@ export async function showLockedMenu(
   additionalArgs: readonly any[] = [],
 ) {
   const entries = Object.entries(menu.items),
-        items = entries.map(([keys, item]) =>
-          [keys, item.text, () =>
+    items = entries.map(
+      ([keys, item]) =>
+        [
+          keys,
+          item.text,
+          () =>
             vscode.commands.executeCommand(
-              item.command, ...mergeArgs(item.args, additionalArgs))] as const);
+              item.command,
+              ...mergeArgs(item.args, additionalArgs),
+            ),
+        ] as const,
+    );
 
-  await promptLocked(items, (quickPick) => quickPick.title = menu.title);
+  await promptLocked(items, (quickPick) => (quickPick.title = menu.title));
 }
 
 /**
@@ -210,7 +238,10 @@ export function showLockedMenyByName(
   return showLockedMenu(findMenu(menuName), additionalArgs);
 }
 
-function mergeArgs(args: readonly any[] | undefined, additionalArgs: readonly any[]) {
+function mergeArgs(
+  args: readonly any[] | undefined,
+  additionalArgs: readonly any[],
+) {
   if (args == null) {
     return additionalArgs;
   }
@@ -222,11 +253,13 @@ function mergeArgs(args: readonly any[] | undefined, additionalArgs: readonly an
   if (additionalArgs.length > 0) {
     return args.length > additionalArgs.length
       ? args.map((arg, i) =>
-        i < additionalArgs.length && additionalArgs[i]
-          ? Object.assign({}, additionalArgs[i], arg)
-          : arg)
+          i < additionalArgs.length && additionalArgs[i]
+            ? Object.assign({}, additionalArgs[i], arg)
+            : arg,
+        )
       : additionalArgs.map((arg, i) =>
-        i < args!.length ? Object.assign({}, arg, args![i]) : arg);
+          i < args!.length ? Object.assign({}, arg, args![i]) : arg,
+        );
   } else {
     return args;
   }

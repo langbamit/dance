@@ -2,7 +2,12 @@ import * as vscode from "vscode";
 
 import type { Recording } from "./recorder";
 import { Context, prompt, SelectionBehavior, Selections } from "../api";
-import { ArgumentError, assert, EditNotAppliedError, EditorRequiredError } from "../utils/errors";
+import {
+  ArgumentError,
+  assert,
+  EditNotAppliedError,
+  EditorRequiredError,
+} from "../utils/errors";
 import { noUndoStops } from "../utils/misc";
 import type * as TrackedSelection from "../utils/tracked-selection";
 
@@ -10,12 +15,13 @@ import type * as TrackedSelection from "../utils/tracked-selection";
  * The base class for all registers.
  */
 export abstract class Register {
-  private readonly _onChangeEvent = new vscode.EventEmitter<Register.ChangeKind>();
+  private readonly _onChangeEvent =
+    new vscode.EventEmitter<Register.ChangeKind>();
 
   /**
    * The name of the register.
    */
-  public readonly abstract name: string;
+  public abstract readonly name: string;
 
   /**
    * The name of the icon of the register, as seen in the [VS Code product icon
@@ -23,12 +29,12 @@ export abstract class Register {
    *
    * `undefined` if the register shouldn't be displayed.
    */
-  public readonly abstract iconName: string | undefined;
+  public abstract readonly iconName: string | undefined;
 
   /**
    * The flags of the register, which define what a register can do.
    */
-  public readonly abstract flags: Register.Flags;
+  public abstract readonly flags: Register.Flags;
 
   /**
    * Event fired when the contents, selections or recording of the register
@@ -56,28 +62,40 @@ export abstract class Register {
    * Returns whether the register is selections-readeable.
    */
   public canReadSelections(): this is Register.ReadableSelections {
-    return (this.flags & Register.Flags.CanReadSelections) === Register.Flags.CanReadSelections;
+    return (
+      (this.flags & Register.Flags.CanReadSelections) ===
+      Register.Flags.CanReadSelections
+    );
   }
 
   /**
    * Returns whether the register is selections-writeable.
    */
   public canWriteSelections(): this is Register.WriteableSelections {
-    return (this.flags & Register.Flags.CanWriteSelections) === Register.Flags.CanWriteSelections;
+    return (
+      (this.flags & Register.Flags.CanWriteSelections) ===
+      Register.Flags.CanWriteSelections
+    );
   }
 
   /**
    * Returns whether the register can be used to replay recorded commands.
    */
   public canReadRecordedCommands(): this is Register.ReadableWriteableMacros {
-    return (this.flags & Register.Flags.CanReadWriteMacros) === Register.Flags.CanReadWriteMacros;
+    return (
+      (this.flags & Register.Flags.CanReadWriteMacros) ===
+      Register.Flags.CanReadWriteMacros
+    );
   }
 
   /**
    * Returns whether the register can be used to record commands.
    */
   public canWriteRecordedCommands(): this is Register.ReadableWriteableMacros {
-    return (this.flags & Register.Flags.CanReadWriteMacros) === Register.Flags.CanReadWriteMacros;
+    return (
+      (this.flags & Register.Flags.CanReadWriteMacros) ===
+      Register.Flags.CanReadWriteMacros
+    );
   }
 
   /**
@@ -125,7 +143,9 @@ export abstract class Register {
   /**
    * Returns whether the current register has the given flags.
    */
-  public hasFlags<F extends Register.Flags>(flags: F): this is Register.WithFlags<F> {
+  public hasFlags<F extends Register.Flags>(
+    flags: F,
+  ): this is Register.WithFlags<[F]> {
     return (this.flags & flags) === flags;
   }
 
@@ -135,20 +155,35 @@ export abstract class Register {
   public checkFlags(flags: Register.Flags) {
     const f = this.flags;
 
-    if ((flags & Register.Flags.CanRead) && !(f & Register.Flags.CanRead)) {
+    if (flags & Register.Flags.CanRead && !(f & Register.Flags.CanRead)) {
       throw new Error(`register "${this.name}" cannot be used to read text`);
     }
-    if ((flags & Register.Flags.CanReadSelections) && !(f & Register.Flags.CanReadSelections)) {
-      throw new Error(`register "${this.name}" cannot be used to read selections`);
+    if (
+      flags & Register.Flags.CanReadSelections &&
+      !(f & Register.Flags.CanReadSelections)
+    ) {
+      throw new Error(
+        `register "${this.name}" cannot be used to read selections`,
+      );
     }
-    if ((flags & Register.Flags.CanReadWriteMacros) && !(f & Register.Flags.CanReadWriteMacros)) {
-      throw new Error(`register "${this.name}" cannot be used to play or create recordings`);
+    if (
+      flags & Register.Flags.CanReadWriteMacros &&
+      !(f & Register.Flags.CanReadWriteMacros)
+    ) {
+      throw new Error(
+        `register "${this.name}" cannot be used to play or create recordings`,
+      );
     }
-    if ((flags & Register.Flags.CanWrite) && !(f & Register.Flags.CanWrite)) {
+    if (flags & Register.Flags.CanWrite && !(f & Register.Flags.CanWrite)) {
       throw new Error(`register "${this.name}" cannot be used to save text`);
     }
-    if ((flags & Register.Flags.CanWriteSelections) && !(f & Register.Flags.CanWriteSelections)) {
-      throw new Error(`register "${this.name}" cannot be used to save selections`);
+    if (
+      flags & Register.Flags.CanWriteSelections &&
+      !(f & Register.Flags.CanWriteSelections)
+    ) {
+      throw new Error(
+        `register "${this.name}" cannot be used to save selections`,
+      );
     }
   }
 
@@ -158,7 +193,7 @@ export abstract class Register {
    */
   public withFlags<F extends Register.Flags>(
     flags: F,
-  ): this extends Register.WithFlags<F> ? this : never {
+  ): this extends Register.WithFlags<[F]> ? this : never {
     // Note: using `ensureFlags` below throws an exception.
     this.checkFlags(flags);
 
@@ -199,20 +234,26 @@ export declare namespace Register {
    * Given an array of `Flags` types, returns what interfaces correspond to
    * these flags.
    */
-  export type InterfacesFromFlags<F extends readonly any[]> =
-    F extends [Flags.CanRead,            ...infer Rest] ? Readable                & InterfacesFromFlags<Rest> :
-    F extends [Flags.CanReadSelections,  ...infer Rest] ? ReadableSelections      & InterfacesFromFlags<Rest> :
-    F extends [Flags.CanReadWriteMacros, ...infer Rest] ? ReadableWriteableMacros & InterfacesFromFlags<Rest> :
-    F extends [Flags.CanWrite,           ...infer Rest] ? Writeable               & InterfacesFromFlags<Rest> :
-    F extends [Flags.CanWriteSelections, ...infer Rest] ? WriteableSelections     & InterfacesFromFlags<Rest> :
-    Register;
+  export type InterfacesFromFlags<F extends readonly any[]> = F extends [
+    Flags.CanRead,
+    ...infer Rest,
+  ]
+    ? Readable & InterfacesFromFlags<Rest>
+    : F extends [Flags.CanReadSelections, ...infer Rest]
+    ? ReadableSelections & InterfacesFromFlags<Rest>
+    : F extends [Flags.CanReadWriteMacros, ...infer Rest]
+    ? ReadableWriteableMacros & InterfacesFromFlags<Rest>
+    : F extends [Flags.CanWrite, ...infer Rest]
+    ? Writeable & InterfacesFromFlags<Rest>
+    : F extends [Flags.CanWriteSelections, ...infer Rest]
+    ? WriteableSelections & InterfacesFromFlags<Rest>
+    : Register;
 
   /**
    * Given a set of `Flags`, returns the `Register` type augmented with the
    * interfaces that correspond to these flags.
    */
-  export type WithFlags<F extends Flags | readonly Flags[]> =
-    InterfacesFromFlags<F extends Flags ? [F] : F>;
+  export type WithFlags<F extends readonly Flags[]> = InterfacesFromFlags<F>;
 
   export interface Readable {
     get(): Thenable<readonly string[] | undefined>;
@@ -228,7 +269,9 @@ export declare namespace Register {
   }
 
   export interface WriteableSelections {
-    replaceSelectionSet(selections?: TrackedSelection.Set): TrackedSelection.Set | undefined;
+    replaceSelectionSet(
+      selections?: TrackedSelection.Set,
+    ): TrackedSelection.Set | undefined;
   }
 
   export interface ReadableWriteableMacros {
@@ -246,16 +289,21 @@ export declare namespace Register {
 /**
  * A general-purpose register, which supports all operations on registers.
  */
-class GeneralPurposeRegister extends Register implements Register.Readable,
-                                                         Register.Writeable,
-                                                         Register.ReadableSelections,
-                                                         Register.WriteableSelections,
-                                                         Register.ReadableWriteableMacros {
-  public readonly flags = Register.Flags.CanRead
-                        | Register.Flags.CanReadSelections
-                        | Register.Flags.CanReadWriteMacros
-                        | Register.Flags.CanWrite
-                        | Register.Flags.CanWriteSelections;
+class GeneralPurposeRegister
+  extends Register
+  implements
+    Register.Readable,
+    Register.Writeable,
+    Register.ReadableSelections,
+    Register.WriteableSelections,
+    Register.ReadableWriteableMacros
+{
+  public readonly flags =
+    Register.Flags.CanRead |
+    Register.Flags.CanReadSelections |
+    Register.Flags.CanReadWriteMacros |
+    Register.Flags.CanWrite |
+    Register.Flags.CanWriteSelections;
 
   private _values?: readonly string[];
   private _recording?: Recording;
@@ -309,18 +357,22 @@ class GeneralPurposeRegister extends Register implements Register.Readable,
 /**
  * A special register whose behavior is defined by the functions given to it.
  */
-class SpecialRegister extends Register implements Register.Readable,
-                                                  Register.Writeable {
-  public readonly flags = this.setter === undefined
-    ? Register.Flags.CanRead
-    : Register.Flags.CanRead | Register.Flags.CanWrite;
+class SpecialRegister
+  extends Register
+  implements Register.Readable, Register.Writeable
+{
+  public readonly flags =
+    this.setter === undefined
+      ? Register.Flags.CanRead
+      : Register.Flags.CanRead | Register.Flags.CanWrite;
 
   public override get onChange(): vscode.Event<Register.ChangeKind> {
     if (this._listenToChanges === undefined) {
       return super.onChange;
     }
 
-    return (listener) => this._listenToChanges!(() => listener(Register.ChangeKind.Contents));
+    return (listener) =>
+      this._listenToChanges!(() => listener(Register.ChangeKind.Contents));
   }
 
   public constructor(
@@ -351,8 +403,10 @@ class SpecialRegister extends Register implements Register.Readable,
 /**
  * A special register that forwards operations to the system clipboard.
  */
-class ClipboardRegister extends Register implements Register.Readable,
-                                                    Register.Writeable {
+class ClipboardRegister
+  extends Register
+  implements Register.Readable, Register.Writeable
+{
   private _lastStrings?: readonly string[];
   private _lastRawText?: string;
 
@@ -393,24 +447,31 @@ function activeEditor() {
  * A set of registers.
  */
 export abstract class RegisterSet implements vscode.Disposable {
-  private readonly _onRegisterChange =
-    new vscode.EventEmitter<{ register: Register; kind: "added" | "removed"; }>();
+  private readonly _onRegisterChange = new vscode.EventEmitter<{
+    register: Register;
+    kind: "added" | "removed";
+  }>();
   private readonly _onLastMatchesChange = new vscode.EventEmitter<void>();
 
   private readonly _named = new Map<string, Register>();
   private readonly _letters = Array.from(
     { length: 26 },
-    (_, i) => new GeneralPurposeRegister(String.fromCharCode(97 + i), "symbol-text") as Register,
+    (_, i) =>
+      new GeneralPurposeRegister(
+        String.fromCharCode(97 + i),
+        "symbol-text",
+      ) as Register,
   );
   private readonly _digits = Array.from(
     { length: 9 },
-    (_, i) => new SpecialRegister(
-      (i + 1).toString(),
-      "regex",
-      () => Promise.resolve(this._lastMatches[i]),
-      undefined,
-      (fire) => this._onLastMatchesChange.event(fire),
-    ),
+    (_, i) =>
+      new SpecialRegister(
+        (i + 1).toString(),
+        "regex",
+        () => Promise.resolve(this._lastMatches[i]),
+        undefined,
+        (fire) => this._onLastMatchesChange.event(fire),
+      ),
   );
 
   private _lastMatches: readonly (readonly string[])[] = [];
@@ -481,11 +542,12 @@ export abstract class RegisterSet implements vscode.Disposable {
     "selection",
     () => {
       const editor = activeEditor(),
-            document = editor.document,
-            selectionBehavior = Context.currentOrUndefined?.mode?.selectionBehavior,
-            selections = selectionBehavior === SelectionBehavior.Character
-              ? Selections.fromCharacterMode(editor.selections, document)
-              : editor.selections;
+        document = editor.document,
+        selectionBehavior = Context.currentOrUndefined?.mode?.selectionBehavior,
+        selections =
+          selectionBehavior === SelectionBehavior.Character
+            ? Selections.fromCharacterMode(editor.selections, document)
+            : editor.selections;
 
       return Promise.resolve(selections.map(document.getText.bind(document)));
     },
@@ -498,10 +560,12 @@ export abstract class RegisterSet implements vscode.Disposable {
 
       const succeeded = await editor.edit((editBuilder) => {
         const document = editor.document,
-              selectionBehavior = Context.currentOrUndefined?.mode?.selectionBehavior,
-              selections = selectionBehavior === SelectionBehavior.Character
-                ? Selections.fromCharacterMode(editor.selections, document)
-                : editor.selections;
+          selectionBehavior =
+            Context.currentOrUndefined?.mode?.selectionBehavior,
+          selections =
+            selectionBehavior === SelectionBehavior.Character
+              ? Selections.fromCharacterMode(editor.selections, document)
+              : editor.selections;
 
         for (let i = 0; i < selections.length; i++) {
           editBuilder.replace(selections[i], values[i]);
@@ -520,7 +584,8 @@ export abstract class RegisterSet implements vscode.Disposable {
   public readonly hash = new SpecialRegister(
     "#",
     "symbol-numeric",
-    () => Promise.resolve(activeEditor().selections.map((_, i) => i.toString())),
+    () =>
+      Promise.resolve(activeEditor().selections.map((_, i) => i.toString())),
     undefined,
     (fire) => vscode.window.onDidChangeTextEditorSelection(fire),
   );
@@ -538,9 +603,9 @@ export abstract class RegisterSet implements vscode.Disposable {
    * In Kakoune it is mapped to the last entered command, but since we don't
    * have access to that information in Dance, we map it to a prompt.
    */
-  public readonly colon = new SpecialRegister(":", undefined, async () =>
-    [await prompt({ prompt: ":" })],
-  );
+  public readonly colon = new SpecialRegister(":", undefined, async () => [
+    await prompt({ prompt: ":" }),
+  ]);
 
   /**
    * The `null` register, which forgets selections written to it and always
@@ -598,32 +663,32 @@ export abstract class RegisterSet implements vscode.Disposable {
       const charCode = key.charCodeAt(0);
 
       switch (charCode) {
-      case 34:  // "
-        return this.dquote;
-      case 47:  // /
-        return this.slash;
-      case 64:  // @
-        return this.arobase;
-      case 94:  // ^
-        return this.caret;
-      case 124:  // |
-        return this.pipe;
+        case 34: // "
+          return this.dquote;
+        case 47: // /
+          return this.slash;
+        case 64: // @
+          return this.arobase;
+        case 94: // ^
+          return this.caret;
+        case 124: // |
+          return this.pipe;
 
-      case 37:  // %
-        return this.percent;
-      case 46:  // .
-        return this.dot;
-      case 35:  // #
-        return this.hash;
-      case 95:  // _
-        return this.underscore;
-      case 58:  // :
-        return this.colon;
+        case 37: // %
+          return this.percent;
+        case 46: // .
+          return this.dot;
+        case 35: // #
+          return this.hash;
+        case 95: // _
+          return this.underscore;
+        case 58: // :
+          return this.colon;
 
-      default:
-        if (charCode >= 49 /* 1 */ && charCode <= 57 /* 9 */) {
-          return this._digits[charCode - 49];
-        }
+        default:
+          if (charCode >= 49 /* 1 */ && charCode <= 57 /* 9 */) {
+            return this._digits[charCode - 49];
+          }
       }
     }
 
@@ -632,7 +697,10 @@ export abstract class RegisterSet implements vscode.Disposable {
     let register = this._named.get(key);
 
     if (register === undefined) {
-      this._named.set(key, register = new GeneralPurposeRegister(key, "symbol-text"));
+      this._named.set(
+        key,
+        (register = new GeneralPurposeRegister(key, "symbol-text")),
+      );
     }
 
     return register;
@@ -648,7 +716,7 @@ export abstract class RegisterSet implements vscode.Disposable {
     assert(matches.length > 0);
 
     const transposed = [] as string[][],
-          groupsCount = matches[0].length;
+      groupsCount = matches[0].length;
 
     for (let i = 1; i < groupsCount; i++) {
       const strings = [] as string[];
@@ -683,7 +751,10 @@ export class DocumentRegisters extends RegisterSet {
  * The set of all registers.
  */
 export class Registers extends RegisterSet {
-  private readonly _perDocument = new WeakMap<vscode.TextDocument, DocumentRegisters>();
+  private readonly _perDocument = new WeakMap<
+    vscode.TextDocument,
+    DocumentRegisters
+  >();
 
   /**
    * Returns the registers linked to the given document.
@@ -692,7 +763,10 @@ export class Registers extends RegisterSet {
     let registers = this._perDocument.get(document);
 
     if (registers === undefined) {
-      this._perDocument.set(document, registers = new DocumentRegisters(document));
+      this._perDocument.set(
+        document,
+        (registers = new DocumentRegisters(document)),
+      );
     }
 
     return registers;

@@ -1,8 +1,23 @@
-import * as vscode from "vscode";
-import type { Argument, InputOr, RegisterOr } from ".";
-import { run as apiRun, buildCommands, command, compileFunction, Context, findMenu, keypressForRegister, Menu, notifyPromptActionRequested, prompt, promptNumber, runIsEnabled, Selections, showLockedMenu, showMenu, showMenuAfterDelay, validateMenu } from "../api";
-import type { Extension } from "../state/extension";
-import type { Register } from "../state/registers";
+import type { CommandArguments } from ".";
+import {
+  run as apiRun,
+  buildCommands,
+  command,
+  compileFunction,
+  findMenu,
+  keypressForRegister,
+  Menu,
+  notifyPromptActionRequested,
+  prompt,
+  promptNumber,
+  runIsEnabled,
+  Selections,
+  showLockedMenu,
+  showMenu,
+  showMenuAfterDelay,
+  validateMenu,
+} from "../api";
+import { Register } from "../state/registers";
 import { ArgumentError, CancellationError, InputError } from "../utils/errors";
 
 /**
@@ -11,18 +26,19 @@ import { ArgumentError, CancellationError, InputError } from "../utils/errors";
  * By default, Dance also exports the following keybindings for existing
  * commands:
  *
- * | Keybinding           | Command                                      |
- * | -------------------- | -------------------------------------------- |
- * | `s-;` (core: normal) | `["workbench.action.showCommands", { ... }]` |
+ * | Keybinding                                   | Command                                      |
+ * | -------------------------------------------- | -------------------------------------------- |
+ * | `s-;` (helix: normal), `s-;` (helix: select) | `["workbench.action.showCommands", { ... }]` |
+ * | `c-c` (helix: normal), `c-c` (helix: select) | `["editor.action.commentLine", { ... }]`     |
  */
 declare module "./misc";
 
 /**
  * Cancel Dance operation.
  *
- * @keys `escape` (core: normal, !recording, "!markersNavigationVisible"), `escape` (core: input)
+ * @keys `escape` (core: normal, !recording, "!markersNavigationVisible"), `escape` (core: input, "!suggestWidgetVisible")
  */
-export function cancel(extension: Extension) {
+export function cancel({ extension }: CommandArguments) {
   // Calling a new command resets pending operations, so we don't need to do
   // anything special here.
   extension.cancelLastOperation(CancellationError.Reason.PressedEscape);
@@ -136,17 +152,20 @@ const runHistory: string[] = [];
  * If both `code` and `commands` are given, Dance will use `code` if arbitrary
  * code execution is enabled, or `commands` otherwise.
  */
-export async function run(
-  _: Context,
-  argument: { code?: string | readonly string[] },
-  codeOr: InputOr<"code", string | readonly string[]>,
-
-  count: number,
-  repetitions: number,
-  register: RegisterOr<"null">,
-
-  commands?: Argument<command.Any[]>,
-) {
+export async function run({
+  _,
+  count,
+  repetitions,
+  getInputOr,
+  getRegister,
+  commands,
+  argument,
+}: CommandArguments<{
+  code?: string | readonly string[];
+  commands?: command.Any[];
+}>) {
+  const register = getRegister("null");
+  const codeOr = getInputOr("code");
   if (Array.isArray(commands)) {
     if (typeof argument["code"] === "string" && runIsEnabled()) {
       // Prefer "code" to the "commands" array.
@@ -155,28 +174,35 @@ export async function run(
     }
   }
 
-  let code = await codeOr(() => prompt({
-    prompt: "Code to run",
-    validateInput(value) {
-      try {
-        compileFunction(value);
+  let code = await codeOr(() =>
+    prompt(
+      {
+        prompt: "Code to run",
+        validateInput(value) {
+          try {
+            compileFunction(value);
 
-        return;
-      } catch (e) {
-        if (e instanceof SyntaxError) {
-          return `invalid syntax: ${e.message}`;
-        }
+            return;
+          } catch (e) {
+            if (e instanceof SyntaxError) {
+              return `invalid syntax: ${e.message}`;
+            }
 
-        return (e as Error)?.message ?? `${e}`;
-      }
-    },
-    history: runHistory,
-  }, _));
+            return (e as Error)?.message ?? `${e}`;
+          }
+        },
+        history: runHistory,
+      },
+      _,
+    ),
+  );
 
   if (Array.isArray(code)) {
     code = code.join("\n");
   } else if (typeof code !== "string") {
-    return new InputError(`expected code to be a string or an array, but it was ${code}`);
+    return new InputError(
+      `expected code to be a string or an array, but it was ${code}`,
+    );
   }
 
   return _.run(() => apiRun(code as string, { count, repetitions, register }));
@@ -193,10 +219,11 @@ export async function run(
  * @keys `"` (kakoune: normal)
  * @noreplay
  */
-export async function selectRegister(
-  _: Context,
-  registerOr: InputOr<"register", string | Register>,
-) {
+export async function selectRegister({
+  _,
+  getInputOr,
+}: CommandArguments<{ register: string | Register }>) {
+  const registerOr = getInputOr("register");
   const register = await registerOr(() => keypressForRegister(_));
 
   if (typeof register === "string") {
@@ -204,7 +231,10 @@ export async function selectRegister(
       return;
     }
 
-    _.extension.currentRegister = _.extension.registers.getPossiblyScoped(register, _.document);
+    _.extension.currentRegister = _.extension.registers.getPossiblyScoped(
+      register,
+      _.document,
+    );
   } else {
     _.extension.currentRegister = register;
   }
@@ -217,17 +247,19 @@ let lastUpdateRegisterText: string | undefined;
  *
  * @noreplay
  */
-export async function updateRegister(
-  _: Context,
-
-  register: RegisterOr<"dquote", Register.Flags.CanWrite>,
-  copyFrom: Argument<Register | string | undefined>,
-  inputOr: InputOr<"input", string>,
-) {
+export async function updateRegister({
+  _,
+  getInputOr,
+  getRegister,
+  copyFrom,
+}: CommandArguments<{ copyFrom: Register | string | undefined }>) {
+  const register = getRegister("dquote", Register.Flags.CanWrite);
+  const inputOr = getInputOr("input");
   if (copyFrom !== undefined) {
-    const copyFromRegister: Register = typeof copyFrom === "string"
-      ? _.extension.registers.getPossiblyScoped(copyFrom, _.document)
-      : copyFrom;
+    const copyFromRegister: Register =
+      typeof copyFrom === "string"
+        ? _.extension.registers.getPossiblyScoped(copyFrom, _.document)
+        : copyFrom;
 
     copyFromRegister.ensureCanRead();
 
@@ -236,15 +268,17 @@ export async function updateRegister(
     return;
   }
 
-  const input = await inputOr(() => prompt({
-    prompt: "New register contents",
-    value: lastUpdateRegisterText,
-    validateInput(value) {
-      lastUpdateRegisterText = value;
+  const input = await inputOr(() =>
+    prompt({
+      prompt: "New register contents",
+      value: lastUpdateRegisterText,
+      validateInput(value) {
+        lastUpdateRegisterText = value;
 
-      return undefined;
-    },
-  }));
+        return undefined;
+      },
+    }),
+  );
 
   await register.set([input]);
 }
@@ -254,31 +288,31 @@ export async function updateRegister(
  *
  * Update the current counter used to repeat the next command.
  *
- * #### Additional keybindings
+ * @commands
  *
- * | Title                          | Keybinding                                   | Command                              |
- * | ------------------------------ | -------------------------------------------- | ------------------------------------ |
- * | Add the digit 0 to the counter | `0` (core: normal), `NumPad0` (core: normal) | `[".updateCount", { addDigits: 0 }]` |
- * | Add the digit 1 to the counter | `1` (core: normal), `NumPad1` (core: normal) | `[".updateCount", { addDigits: 1 }]` |
- * | Add the digit 2 to the counter | `2` (core: normal), `NumPad2` (core: normal) | `[".updateCount", { addDigits: 2 }]` |
- * | Add the digit 3 to the counter | `3` (core: normal), `NumPad3` (core: normal) | `[".updateCount", { addDigits: 3 }]` |
- * | Add the digit 4 to the counter | `4` (core: normal), `NumPad4` (core: normal) | `[".updateCount", { addDigits: 4 }]` |
- * | Add the digit 5 to the counter | `5` (core: normal), `NumPad5` (core: normal) | `[".updateCount", { addDigits: 5 }]` |
- * | Add the digit 6 to the counter | `6` (core: normal), `NumPad6` (core: normal) | `[".updateCount", { addDigits: 6 }]` |
- * | Add the digit 7 to the counter | `7` (core: normal), `NumPad7` (core: normal) | `[".updateCount", { addDigits: 7 }]` |
- * | Add the digit 8 to the counter | `8` (core: normal), `NumPad8` (core: normal) | `[".updateCount", { addDigits: 8 }]` |
- * | Add the digit 9 to the counter | `9` (core: normal), `NumPad9` (core: normal) | `[".updateCount", { addDigits: 9 }]` |
+ * | Title                          | Keybinding                                                                                 | Command                              |
+ * | ------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------ |
+ * | Add the digit 0 to the counter | `0` (helix: normal), `NumPad0` (helix: normal), `0` (helix: select), `NumPad0` (helix: select) | `[".updateCount", { addDigits: 0 }]` |
+ * | Add the digit 1 to the counter | `1` (helix: normal), `NumPad1` (helix: normal), `1` (helix: select), `NumPad1` (helix: select) | `[".updateCount", { addDigits: 1 }]` |
+ * | Add the digit 2 to the counter | `2` (helix: normal), `NumPad2` (helix: normal), `2` (helix: select), `NumPad2` (helix: select) | `[".updateCount", { addDigits: 2 }]` |
+ * | Add the digit 3 to the counter | `3` (helix: normal), `NumPad3` (helix: normal), `3` (helix: select), `NumPad3` (helix: select) | `[".updateCount", { addDigits: 3 }]` |
+ * | Add the digit 4 to the counter | `4` (helix: normal), `NumPad4` (helix: normal), `4` (helix: select), `NumPad4` (helix: select) | `[".updateCount", { addDigits: 4 }]` |
+ * | Add the digit 5 to the counter | `5` (helix: normal), `NumPad5` (helix: normal), `5` (helix: select), `NumPad5` (helix: select) | `[".updateCount", { addDigits: 5 }]` |
+ * | Add the digit 6 to the counter | `6` (helix: normal), `NumPad6` (helix: normal), `6` (helix: select), `NumPad6` (helix: select) | `[".updateCount", { addDigits: 6 }]` |
+ * | Add the digit 7 to the counter | `7` (helix: normal), `NumPad7` (helix: normal), `7` (helix: select), `NumPad7` (helix: select) | `[".updateCount", { addDigits: 7 }]` |
+ * | Add the digit 8 to the counter | `8` (helix: normal), `NumPad8` (helix: normal), `8` (helix: select), `NumPad8` (helix: select) | `[".updateCount", { addDigits: 8 }]` |
+ * | Add the digit 9 to the counter | `9` (helix: normal), `NumPad9` (helix: normal), `9` (helix: select), `NumPad9` (helix: select) | `[".updateCount", { addDigits: 9 }]` |
  *
  * @noreplay
  */
-export async function updateCount(
-  _: Context,
-  count: number,
-  extension: Extension,
-  countOr: InputOr<"count", number>,
-
-  addDigits?: Argument<number>,
-) {
+export async function updateCount({
+  _,
+  count,
+  extension,
+  getInputOr,
+  addDigits,
+}: CommandArguments<{ addDigits?: number }>) {
+  const countOr = getInputOr("count");
   if (typeof addDigits === "number") {
     let nextPowerOfTen = 1;
 
@@ -296,7 +330,9 @@ export async function updateCount(
     return;
   }
 
-  const input = +await countOr(() => promptNumber({ integer: true, range: [0, 1_000_000] }, _));
+  const input = +(await countOr(() =>
+    promptNumber({ integer: true, range: [0, 1_000_000] }, _),
+  ));
 
   InputError.validateInput(!isNaN(input), "value is not a number");
   InputError.validateInput(input >= 0, "value is negative");
@@ -319,30 +355,45 @@ const menuHistory: string[] = [];
  *
  * @noreplay
  */
-export async function openMenu(
-  _: Context.WithoutActiveEditor,
-
-  menuOr: InputOr<"menu", string | Menu>,
-  prefix?: Argument<string>,
-  pass: Argument<any[]> = [],
-  locked: Argument<boolean> = false,
-  delay: Argument<number> = 0,
-  title?: Argument<string>,
-) {
+export async function openMenu({
+  _,
+  prefix,
+  pass = [],
+  locked = false,
+  delay = 0,
+  title,
+  getInputOr,
+}: CommandArguments<
+  {
+    prefix?: string;
+    pass?: any[];
+    locked?: boolean;
+    delay?: number;
+    title?: string;
+    menu?: string | Menu;
+  },
+  false
+>) {
+  const menuOr = getInputOr("menu");
   const menus = _.extension.menus;
 
-  let menu = await menuOr(() => prompt({
-    prompt: "Menu name",
-    validateInput(value) {
-      if (menus.has(value)) {
-        return;
-      }
+  let menu = await menuOr(() =>
+    prompt(
+      {
+        prompt: "Menu name",
+        validateInput(value) {
+          if (menus.has(value)) {
+            return;
+          }
 
-      return `menu ${JSON.stringify(value)} does not exist`;
-    },
-    placeHolder: [...menus.keys()].sort().join(", ") || "no menu defined",
-    history: menuHistory,
-  }, _));
+          return `menu ${JSON.stringify(value)} does not exist`;
+        },
+        placeHolder: [...menus.keys()].sort().join(", ") || "no menu defined",
+        history: menuHistory,
+      },
+      _,
+    ),
+  );
 
   if (typeof menu === "string") {
     menu = findMenu(menu, _);
@@ -381,9 +432,11 @@ export async function openMenu(
  *
  * @noreplay
  */
-export function changeInput(
-  action: Argument<Parameters<typeof notifyPromptActionRequested>[0]>,
-) {
+export function changeInput({
+  action,
+}: CommandArguments<{
+  action: Parameters<typeof notifyPromptActionRequested>[0];
+}>) {
   ArgumentError.validate(
     "action",
     ["clear", "previous", "next"].includes(action),
@@ -397,20 +450,29 @@ export function changeInput(
  * Executes one of the specified commands depending on whether the current
  * selections are empty.
  */
-export async function ifEmpty(
-  _: Context,
-  argument: {},
-  selections: readonly vscode.Selection[],
-
-  then?: Argument<command.Any[]>,
-  otherwise?: Argument<command.Any[]>,
-) {
-  const selectionsAreEmpty =
-    selections.every((selection) => selection.isEmpty || Selections.isSingleCharacter(selection));
+export async function ifEmpty({
+  _,
+  selections,
+  then,
+  otherwise,
+  argument,
+}: CommandArguments<{
+  then?: command.Any[];
+  otherwise?: command.Any[];
+}>) {
+  const selectionsAreEmpty = selections.every(
+    (selection) => selection.isEmpty || Selections.isSingleCharacter(selection),
+  );
 
   if (selectionsAreEmpty) {
-    return then !== undefined && await buildCommands(then, _.extension)(argument, _);
+    return (
+      then !== undefined &&
+      (await buildCommands(then, _.extension)(argument, _))
+    );
   }
 
-  return otherwise !== undefined && await buildCommands(otherwise, _.extension)(argument, _);
+  return (
+    otherwise !== undefined &&
+    (await buildCommands(otherwise, _.extension)(argument, _))
+  );
 }

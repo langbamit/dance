@@ -20,21 +20,24 @@
       {
         "scope": "comment.block.documentation",
         "settings": {
-          "fontStyle": "",
-        },
-      },
-    ],
+          "fontStyle": ""
+        }
+      }
+    ]
   },
 
+  // "editor.codeActionsOnSave": {
+  //   "source.fixAll.eslint": true
+  // },
   "dance.menus": {
     "dancedev": {
       "items": {
         "b": {
           "text": "toggle character selection behavior",
           "command": "dance.dev.setSelectionBehavior",
-          "args": [{ "mode": "normal" }],
-        },
-      },
-    },
-  },
+          "args": [{ "mode": "normal" }]
+        }
+      }
+    }
+  }
 }

@@ -37,9 +37,9 @@ module.exports = {
       "process.platform": '"web"',
       "process.env.SHELL": "undefined",
     }),
-    new webpack.ProvidePlugin({
-      process: "process/browser",
-    }),
+    // new webpack.ProvidePlugin({
+    //   process: "process/browser",
+    // }),
   ],
   externals: {
     vscode: "commonjs vscode",

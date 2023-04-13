@@ -5,7 +5,9 @@ import { set as setSelections } from "./selections";
 import { ArgumentError, CancellationError } from "../utils/errors";
 import { newRegExp } from "../utils/regexp";
 
-const actionEvent = new vscode.EventEmitter<Parameters<typeof notifyPromptActionRequested>[0]>();
+const actionEvent = new vscode.EventEmitter<
+  Parameters<typeof notifyPromptActionRequested>[0]
+>();
 
 /**
  * Displays a prompt to the user.
@@ -14,7 +16,11 @@ export function prompt(
   options: prompt.Options,
   context = Context.WithoutActiveEditor.current,
 ) {
-  if (options.value === undefined && options.history !== undefined && options.history.length > 0) {
+  if (
+    options.value === undefined &&
+    options.history !== undefined &&
+    options.history.length > 0
+  ) {
     options.value = options.history[options.history.length - 1];
   }
 
@@ -29,16 +35,19 @@ export function prompt(
     const token = context.cancellationToken;
 
     if (token.isCancellationRequested) {
-      return reject(new CancellationError(CancellationError.Reason.CancellationToken));
+      return reject(
+        new CancellationError(CancellationError.Reason.CancellationToken),
+      );
     }
 
-    const validateInput = options.validateInput ?? (() => Promise.resolve(undefined));
+    const validateInput =
+      options.validateInput ?? (() => Promise.resolve(undefined));
 
     let validationValue = options.value ?? "",
-        validation = Promise.resolve(validateInput(validationValue));
+      validation = Promise.resolve(validateInput(validationValue));
 
     let historyIndex = options.history?.length,
-        lastHistoryValue = validationValue;
+      lastHistoryValue = validationValue;
 
     function updateAndValidateValue(value: string, setValue = false) {
       if (setValue) {
@@ -71,7 +80,7 @@ export function prompt(
         validation.then((result) => {
           if (result == null) {
             const history = options.history,
-                  historySize = options.historySize ?? 50;
+              historySize = options.historySize ?? 50;
 
             if (history !== undefined) {
               const existingIndex = history.indexOf(value);
@@ -109,40 +118,46 @@ export function prompt(
       }),
       actionEvent.event((action) => {
         switch (action) {
-        case "clear":
-          updateAndValidateValue("", /* setValue= */ true);
-          break;
+          case "clear":
+            updateAndValidateValue("", /* setValue= */ true);
+            break;
 
-        case "next":
-          if (historyIndex !== undefined) {
-            if (historyIndex === options.history!.length) {
-              return;
+          case "next":
+            if (historyIndex !== undefined) {
+              if (historyIndex === options.history!.length) {
+                return;
+              }
+
+              historyIndex++;
+
+              if (historyIndex === options.history!.length) {
+                updateAndValidateValue(lastHistoryValue, /* setValue= */ true);
+              } else {
+                updateAndValidateValue(
+                  options.history![historyIndex],
+                  /* setValue= */ true,
+                );
+              }
             }
+            break;
 
-            historyIndex++;
+          case "previous":
+            if (historyIndex !== undefined) {
+              if (historyIndex === 0) {
+                return;
+              }
 
-            if (historyIndex === options.history!.length) {
-              updateAndValidateValue(lastHistoryValue, /* setValue= */ true);
-            } else {
-              updateAndValidateValue(options.history![historyIndex], /* setValue= */ true);
+              if (historyIndex === options.history!.length) {
+                lastHistoryValue = inputBox.value;
+              }
+
+              historyIndex--;
+              updateAndValidateValue(
+                options.history![historyIndex],
+                /* setValue= */ true,
+              );
             }
-          }
-          break;
-
-        case "previous":
-          if (historyIndex !== undefined) {
-            if (historyIndex === 0) {
-              return;
-            }
-
-            if (historyIndex === options.history!.length) {
-              lastHistoryValue = inputBox.value;
-            }
-
-            historyIndex--;
-            updateAndValidateValue(options.history![historyIndex], /* setValue= */ true);
-          }
-          break;
+            break;
         }
       }),
     ];
@@ -158,7 +173,8 @@ export function prompt(
     // Hack to set the `valueSelection`, since it isn't supported when using
     // `createInputBox`.
     if (options.valueSelection !== undefined) {
-      (inputBox as vscode.InputBoxOptions).valueSelection = options.valueSelection;
+      (inputBox as vscode.InputBoxOptions).valueSelection =
+        options.valueSelection;
     }
 
     inputBox.show();
@@ -252,15 +268,18 @@ export function promptRegexp(
   flags: promptRegexp.Flags,
   context = Context.WithoutActiveEditor.current,
 ) {
-  return prompt(promptRegexpOpts(flags), context).then((x) => newRegExp(x, flags));
+  return prompt(promptRegexpOpts(flags), context).then((x) =>
+    newRegExp(x, flags),
+  );
 }
 
 export declare namespace promptRegexp {
   export type Flag = "m" | "u" | "s" | "y" | "i" | "g";
-  export type Flags = Flag
-                    | `${Flag}${Flag}`
-                    | `${Flag}${Flag}${Flag}`
-                    | `${Flag}${Flag}${Flag}${Flag}`;
+  export type Flags =
+    | Flag
+    | `${Flag}${Flag}`
+    | `${Flag}${Flag}${Flag}`
+    | `${Flag}${Flag}${Flag}${Flag}`;
 }
 
 /**
@@ -310,13 +329,19 @@ export function promptInteractively<T>(
  *
  * @internal
  */
-export async function manipulateSelectionsInteractively<R extends object, N extends keyof R>(
+export async function manipulateSelectionsInteractively<
+  R extends object,
+  N extends keyof R,
+>(
   _: Context,
   inputName: N,
   argument: R,
   interactive: boolean,
   options: prompt.Options,
-  f: (input: string | Exclude<R[N], undefined>, selections: readonly vscode.Selection[]) => Thenable<R[N]>,
+  f: (
+    input: string | Exclude<R[N], undefined>,
+    selections: readonly vscode.Selection[],
+  ) => Thenable<R[N]>,
 ) {
   const selections = _.selections;
 
@@ -329,7 +354,12 @@ export async function manipulateSelectionsInteractively<R extends object, N exte
   }
 
   if (argument[inputName] === undefined) {
-    argument[inputName] = await promptInteractively(execute, undo, options, interactive);
+    argument[inputName] = await promptInteractively(
+      execute,
+      undo,
+      options,
+      interactive,
+    );
   } else {
     await execute(argument[inputName] as Exclude<R[N], undefined>);
   }
@@ -344,24 +374,31 @@ export type ListPair = readonly [string, string];
 export function promptOne(
   items: readonly ListPair[],
   init?: (quickPick: vscode.QuickPick<vscode.QuickPickItem>) => void,
-  options?: Readonly<{ defaultPickName?: string, defaultPick?: string }>,
+  options?: Readonly<{ defaultPickName?: string; defaultPick?: string }>,
   context = Context.WithoutActiveEditor.current,
 ) {
   if (options?.defaultPick != null) {
     const defaultPick = options.defaultPick,
-          index = items.findIndex((pair) => pair[0] === defaultPick);
+      index = items.findIndex((pair) => pair[0] === defaultPick);
 
     if (index === -1) {
       const pickName = options.defaultPickName ?? "options.defaultPick",
-            choices = items.map((pair) => '"' + pair[0] + '"').join(", ");
+        choices = items.map((pair) => '"' + pair[0] + '"').join(", ");
 
-      return Promise.reject(new ArgumentError(`"${pickName}" must be one of ${choices}`));
+      return Promise.reject(
+        new ArgumentError(`"${pickName}" must be one of ${choices}`),
+      );
     }
 
     return Promise.resolve(index);
   }
 
-  return promptInList(false, items, init ?? (() => {}), context.cancellationToken);
+  return promptInList(
+    false,
+    items,
+    init ?? (() => {}),
+    context.cancellationToken,
+  );
 }
 
 /**
@@ -373,11 +410,13 @@ export function promptLocked(
   init?: (quickPick: vscode.QuickPick<vscode.QuickPickItem>) => void,
   cancellationToken = Context.WithoutActiveEditor.current.cancellationToken,
 ) {
-  const itemsKeys = items.map(([k, _]) => k.includes(", ") ? k.split(", ") : [...k]);
+  const itemsKeys = items.map(([k]) =>
+    k.includes(", ") ? k.split(", ") : [...k],
+  );
 
   return new Promise<void>((resolve, reject) => {
     const quickPick = vscode.window.createQuickPick(),
-          quickPickItems = [] as vscode.QuickPickItem[];
+      quickPickItems = [] as vscode.QuickPickItem[];
 
     let isCaseSignificant = false;
 
@@ -434,7 +473,9 @@ export function promptLocked(
       cancellationToken?.onCancellationRequested(() => {
         subscriptions.splice(0).forEach((s) => s.dispose());
 
-        reject(new CancellationError(CancellationError.Reason.CancellationToken));
+        reject(
+          new CancellationError(CancellationError.Reason.CancellationToken),
+        );
       }),
 
       quickPick,
@@ -455,13 +496,20 @@ export function promptMany(
   init?: (quickPick: vscode.QuickPick<vscode.QuickPickItem>) => void,
   context = Context.WithoutActiveEditor.current,
 ) {
-  return promptInList(true, items, init ?? (() => {}), context.cancellationToken);
+  return promptInList(
+    true,
+    items,
+    init ?? (() => {}),
+    context.cancellationToken,
+  );
 }
 
 /**
  * Notifies an active prompt, if any, that an action has been requested.
  */
-export function notifyPromptActionRequested(action: "next" | "previous" | "clear") {
+export function notifyPromptActionRequested(
+  action: "next" | "previous" | "clear",
+) {
   actionEvent.fire(action);
 }
 
@@ -470,7 +518,9 @@ export function notifyPromptActionRequested(action: "next" | "previous" | "clear
  */
 export async function keypress(context = Context.current): Promise<string> {
   if (context.cancellationToken.isCancellationRequested) {
-    return Promise.reject(new CancellationError(CancellationError.Reason.CancellationToken));
+    return Promise.reject(
+      new CancellationError(CancellationError.Reason.CancellationToken),
+    );
   }
 
   const previousMode = context.mode;
@@ -480,29 +530,42 @@ export async function keypress(context = Context.current): Promise<string> {
   return await new Promise<string>((resolve, reject) => {
     try {
       const subscriptions = [
-        vscode.commands.registerCommand("type", ({ text }: { text: string; }) => {
-          if (subscriptions.length > 0) {
-            subscriptions.splice(0).forEach((s) => s.dispose());
+        vscode.commands.registerCommand(
+          "type",
+          ({ text }: { text: string }) => {
+            if (subscriptions.length > 0) {
+              subscriptions.splice(0).forEach((s) => s.dispose());
 
-            context.switchToMode(previousMode).then(() => resolve(text));
-          }
-        }),
+              context.switchToMode(previousMode).then(() => resolve(text));
+            }
+          },
+        ),
 
         context.cancellationToken.onCancellationRequested(() => {
           if (subscriptions.length > 0) {
             subscriptions.splice(0).forEach((s) => s.dispose());
 
-            context.switchToMode(previousMode)
-              .then(() => reject(
-                new CancellationError(
-                  context.extension.cancellationReasonFor(context.cancellationToken)
-                  ?? CancellationError.Reason.CancellationToken)));
+            context
+              .switchToMode(previousMode)
+              .then(() =>
+                reject(
+                  new CancellationError(
+                    context.extension.cancellationReasonFor(
+                      context.cancellationToken,
+                    ) ?? CancellationError.Reason.CancellationToken,
+                  ),
+                ),
+              );
           }
         }),
       ];
     } catch {
-      reject(new Error("unable to listen to keyboard events; is an extension "
-        + 'overriding the "type" command (e.g VSCodeVim)?'));
+      reject(
+        new Error(
+          "unable to listen to keyboard events; is an extension " +
+            'overriding the "type" command (e.g VSCodeVim)?',
+        ),
+      );
     }
   });
 }
@@ -519,7 +582,9 @@ export async function keypressForRegister(context = Context.current) {
 
   const secondKey = await keypress(context);
 
-  return context.extension.registers.forDocument(context.document).get(secondKey);
+  return context.extension.registers
+    .forDocument(context.document)
+    .get(secondKey);
 }
 
 function promptInList(
@@ -541,11 +606,13 @@ function promptInList(
   init: (quickPick: vscode.QuickPick<vscode.QuickPickItem>) => void,
   cancellationToken: vscode.CancellationToken,
 ): Thenable<string | number | number[]> {
-  const itemsKeys = items.map(([k, _]) => k.includes(", ") ? k.split(", ") : [...k]);
+  const itemsKeys = items.map(([k, _]) =>
+    k.includes(", ") ? k.split(", ") : [...k],
+  );
 
   return new Promise<string | number | number[]>((resolve, reject) => {
     const quickPick = vscode.window.createQuickPick(),
-          quickPickItems = [] as vscode.QuickPickItem[];
+      quickPickItems = [] as vscode.QuickPickItem[];
 
     let isCaseSignificant = false;
 
@@ -601,11 +668,17 @@ function promptInList(
         subscriptions.splice(0).forEach((s) => s.dispose());
 
         if (picked === undefined) {
-          return reject(new CancellationError(CancellationError.Reason.PressedEscape));
+          return reject(
+            new CancellationError(CancellationError.Reason.PressedEscape),
+          );
         }
 
         if (canPickMany) {
-          resolve(picked.map((x) => items.findIndex((item) => item[1] === x.description)));
+          resolve(
+            picked.map((x) =>
+              items.findIndex((item) => item[1] === x.description),
+            ),
+          );
         } else {
           resolve(items.findIndex((x) => x[1] === picked[0].description));
         }
@@ -628,7 +701,9 @@ function promptInList(
 
         subscriptions.splice(0).forEach((s) => s.dispose());
 
-        reject(new CancellationError(CancellationError.Reason.CancellationToken));
+        reject(
+          new CancellationError(CancellationError.Reason.CancellationToken),
+        );
       }),
 
       quickPick,

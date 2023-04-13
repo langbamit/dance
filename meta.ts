@@ -1,39 +1,10 @@
 import * as assert from "assert";
-import * as fs     from "fs/promises";
-import * as G      from "glob";
-import * as path   from "path";
+import * as fs from "fs/promises";
+import * as G from "glob";
+import * as path from "path";
+import { Project, SourceFile, ts } from "ts-morph";
 
 const verbose = process.argv.includes("--verbose");
-
-const moduleCommentRe =
-  new RegExp(String.raw`\/\*\*\n`                   //     start of doc comment
-           + String.raw`((?: \*(?:\n| .+\n))+?)`    // #1: doc comment
-           + String.raw` \*\/\n`                    //     end of doc comment
-           + String.raw`declare module \"(.+?)\"`,  // #2: module name
-             "m");
-
-const docCommentRe =
-  new RegExp(String.raw`^( *)`                                  // #1: indentation
-           + String.raw`\/\*\*\n`                               //     start of doc comment
-           + String.raw`((?:\1 \*(?:\n| .+\n))+?)`              // #2: doc comment
-           + String.raw`\1 \*\/\n`                              //     end of doc comment
-           + String.raw`\1export (?:async )?function (\w+)`     // #3: function name
-           + String.raw`(?:<[^>)\n]+>)?`                        //     generic arguments
-           + String.raw`\((.*|\n[\s\S]+?^\1)\)`                 // #4: parameters
-           + String.raw`(?:: )?(.+)[;{]$`,                      // #5: return type (optional)
-             "gm");
-
-function countNewLines(text: string) {
-  let count = 0;
-
-  for (let i = 0; i < text.length; i++) {
-    if (text.charCodeAt(i) === 10 /* \n */) {
-      count++;
-    }
-  }
-
-  return count;
-}
 
 const keyMapping: Record<string, keyof Builder.AdditionalCommand> = {
   Command: "commands",
@@ -46,18 +17,34 @@ const keyMapping: Record<string, keyof Builder.AdditionalCommand> = {
   Title: "title",
 };
 
-const valueConverter: Record<keyof Builder.AdditionalCommand, (x: string) => string> = {
+const valueConverter: Record<
+  keyof Builder.AdditionalCommand,
+  (x: string) => string
+> = {
   commands(commands) {
     return commands
       .replace(/^`+|`+$/g, "")
       .replace(/ +/g, " ")
-      .replace(/\.{3}(?= })/g, () =>
-        "-" + [...commands.matchAll(/(?<=\+)([a-zA-Z,]+)/g)].map((x) => x[0]).join(","))
-      .replace(/-([a-zA-Z,]*)(?= })/g, (_, exclude) =>
-          `$exclude: ${exclude === "" ? "[]" : JSON.stringify(exclude.split(","))}`)
-      .replace(/\+([a-zA-Z,]+)(?= })/g, (_, include) =>
-          `$include: ${JSON.stringify(include.split(","))}`)
-      .replace(/MAX_INT/g, `${2 ** 31 - 1}`);  // Max integer supported in JSON.
+      .replace(
+        /\.{3}(?= })/g,
+        () =>
+          "-" +
+          [...commands.matchAll(/(?<=\+)([a-zA-Z,]+)/g)]
+            .map((x) => x[0])
+            .join(","),
+      )
+      .replace(
+        /-([a-zA-Z,]*)(?= })/g,
+        (_, exclude) =>
+          `$exclude: ${
+            exclude === "" ? "[]" : JSON.stringify(exclude.split(","))
+          }`,
+      )
+      .replace(
+        /\+([a-zA-Z,]+)(?= })/g,
+        (_, include) => `$include: ${JSON.stringify(include.split(","))}`,
+      )
+      .replace(/MAX_INT/g, `${2 ** 31 - 1}`); // Max integer supported in JSON.
   },
   identifier(identifier) {
     return identifier.replace(/^`+|`+$/g, "");
@@ -76,18 +63,22 @@ const valueConverter: Record<keyof Builder.AdditionalCommand, (x: string) => str
   },
 };
 
-function parseAdditional(qualificationPrefix: string, text: string, textStartLine: number) {
+function parseAdditional(
+  qualificationPrefix: string,
+  text: string,
+  textStartLine: number,
+) {
   const lines = text.split("\n"),
-        additional: Builder.AdditionalCommand[] = [];
+    additional: Builder.AdditionalCommand[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     if (line.length > 2 && line.startsWith("| ") && line.endsWith(" |")) {
       const keys = line
-        .slice(2, line.length - 2)          // Remove start and end |.
-        .split(" | ")                       // Split into keys.
-        .map((k) => keyMapping[k.trim()]);  // Normalize keys.
+        .slice(2, line.length - 2) // Remove start and end |.
+        .split(" | ") // Split into keys.
+        .map((k) => keyMapping[k.trim()]); // Normalize keys.
 
       i++;
 
@@ -105,11 +96,11 @@ function parseAdditional(qualificationPrefix: string, text: string, textStartLin
         i++;
 
         const obj: Builder.AdditionalCommand = { line: textStartLine + i },
-              values = line.slice(2, line.length - 2).split(" | ");
+          values = line.slice(2, line.length - 2).split(" | ");
 
         for (let j = 0; j < values.length; j++) {
           const key = keys[j],
-                value = valueConverter[key](values[j].trim());
+            value = valueConverter[key](values[j].trim());
 
           (obj as Record<string, any>)[key] = value;
         }
@@ -126,24 +117,57 @@ function parseAdditional(qualificationPrefix: string, text: string, textStartLin
   return additional;
 }
 
+export function trim(str: string, strip: string) {
+  let begin = 0;
+  while (begin < str.length && strip.includes(str[begin])) {
+    begin++;
+  }
+
+  let end = str.length;
+  while (end > 0 && strip.includes(str[end - 1])) {
+    end--;
+  }
+
+  return str.slice(begin, end);
+}
+export function trimLeft(str: string, strip: string) {
+  let begin = 0;
+  while (begin < str.length && strip.includes(str[begin])) {
+    begin++;
+  }
+  return str.slice(begin);
+}
+export function trimRight(str: string, strip: string) {
+  let end = str.length;
+  while (end > 0 && strip.includes(str[end - 1])) {
+    end--;
+  }
+  return str.slice(0, end);
+}
+
 /**
  * Parses all the doc comments of functions in the given string of TypeScript
  * code. Examples will be parsed using the given function.
  */
-function parseDocComments(code: string, modulePath: string) {
-  let moduleDoc: string,
-      moduleDocStartLine: number,
-      moduleName: string;
-  const moduleHeaderMatch = moduleCommentRe.exec(code);
-
-  if (moduleHeaderMatch !== null) {
-    moduleDoc = moduleHeaderMatch[1].split("\n").map((line) => line.slice(3)).join("\n");
-    moduleDocStartLine = code.slice(0, moduleHeaderMatch.index).split("\n").length + 2;
-    moduleName = moduleHeaderMatch[2].replace(/^\.\//, "");
-  } else {
-    moduleDoc = "";
-    moduleDocStartLine = 0;
+function parseDocComments(rootDir: string, sourceFile: SourceFile) {
+  const modulePath = sourceFile.getFilePath();
+  let moduleDoc = "",
+    moduleDocStartLine = 0,
     moduleName = path.basename(modulePath, ".ts");
+
+  // Module doc comment.
+  const modules = sourceFile.getModules();
+  if (modules.length > 0) {
+    const mod = modules[0];
+    const doc = mod.getJsDocs()[0];
+    if (doc) {
+      moduleName = mod
+        .getName()
+        .replace(/^["']|["']$/g, "")
+        .replace(/^\.\//, "");
+      moduleDoc = doc.getInnerText() + "\n";
+      moduleDocStartLine = doc.getStartLineNumber();
+    }
   }
 
   if (verbose) {
@@ -151,112 +175,131 @@ function parseDocComments(code: string, modulePath: string) {
   }
 
   const modulePrefix = moduleName === "misc" ? "" : moduleName + ".",
-        functions: Builder.ParsedFunction[] = [];
+    functions: Builder.ParsedFunction[] = [];
 
-  for (let match = docCommentRe.exec(code); match !== null; match = docCommentRe.exec(code)) {
-    const indentationString = match[1],
-          docCommentString = match[2],
-          functionName = match[3],
-          parametersString = match[4],
-          returnTypeString = match[5],
-          startLine = countNewLines(code.slice(0, match.index)),
-          endLine = startLine + countNewLines(match[0]);
-
-    const indentation = indentationString.length,
-          returnType = returnTypeString.trim(),
-          parameters = parametersString
-            .split(/,(?![^:]+?[}>])/g)
-            .map((p) => p.trim())
-            .filter((p) => p.length > 0)
-            .map((p) => {
-              let match: RegExpExecArray | null;
-
-              if (match = /^(\w+\??|.+[}\]]): *(.+)$/s.exec(p)) {
-                return match.slice(1) as [string, string];
-              }
-              if (match = /^(\w+) *= *(\d+|true|false)$/.exec(p)) {
-                const type = match[2] === "true" || match[2] === "false"
-                  ? "Argument<boolean>"
-                  : "number";
-
-                return [match[1], `${type} = ${match[2]}`] as [string, string];
-              }
-              if (match = /^(\w+) *= *(\w+)\.([\w.]+)$/.exec(p)) {
-                return [match[1], `${match[2]} = ${match[2]}.${match[3]}`] as [string, string];
-              }
-              if (match = /^(\.\.\.\w+): *(.+)$/.exec(p)) {
-                return [match[1], match[2]] as [string, string];
-              }
-
-              throw new Error(`unrecognized parameter pattern ${p}`);
-            }),
-          docComment = docCommentString
-            .split("\n")
-            .map((line) => line.slice(indentation).replace(/^ \* ?/g, ""))
-            .join("\n");
-
-    for (const parameter of parameters) {
-      if (parameter[0].endsWith("?")) {
-        // Optional parameters.
-        parameter[0] = parameter[0].slice(0, parameter[0].length - 1);
-        parameter[1] += " | undefined";
-      } else {
-        const match = /^(.+?)\s+=\s+(.+)$/.exec(parameter[1]);
-
-        if (match !== null) {
-          // Optional parameters with default values.
-          parameter[1] = match[1] + " | undefined";
-        }
+  for (const f of sourceFile.getFunctions()) {
+    const jsDoc = f.getJsDocs()[0];
+    if (f.isNamedExport() && jsDoc) {
+      if (jsDoc.getTags().some((t) => t.getTagName() === "internal")) {
+        continue;
       }
+
+      const name = f.getName()!,
+        nameWithDot = name.replace(/_/g, ".");
+
+      let qualifiedName = modulePrefix;
+
+      if (nameWithDot === moduleName) {
+        qualifiedName = qualifiedName.replace(/\.$/, "");
+      } else {
+        qualifiedName += nameWithDot;
+      }
+
+      const doc = trim(jsDoc.getDescription(), "\n");
+
+      const endFirstGraph = doc.indexOf("\n\n");
+      const summary = trimRight(
+        endFirstGraph === -1 ? doc : doc.slice(0, endFirstGraph),
+        ".",
+      );
+
+      const properties: Record<string, string[]> = {};
+      const examples: string[] = [];
+      const hasArgs = f.getParameters().length > 0;
+      const firstParamNames: string[] = [];
+      const parameters: [name: string, type: string][] = f
+        .getParameters()
+        .map((p, i) => {
+          const obp =
+            i === 0 &&
+            p.getFirstChildByKind(ts.SyntaxKind.ObjectBindingPattern);
+          if (obp) {
+            const bindingProps = obp.getChildrenOfKind(
+              ts.SyntaxKind.BindingElement,
+            );
+            const names: string[] = [];
+            bindingProps.forEach((node) => {
+              const name = node
+                .getFirstChildByKind(ts.SyntaxKind.Identifier)
+                ?.getText();
+              if (name) {
+                names.push(name);
+              }
+            });
+            firstParamNames.push(...names);
+          }
+          // const type = p.getType();
+          // const defaultTypeStr =
+          //   type.getSymbol()?.getName() ||
+          //   type.getAliasSymbol()?.getName() ||
+          //   type.getText();
+          let typeStr = "";
+          const typeNode = p.getTypeNode();
+          if (typeNode) {
+            typeStr = typeNode.getText();
+          }
+          if (p.isOptional()) {
+            typeStr += " | undefined";
+          }
+          if (typeStr.startsWith("import(")) {
+            console.error(
+              `${moduleName} function ${name}, parameter ${i} has import type: ${typeStr}`,
+            );
+          }
+          if (!typeStr) {
+            console.error(
+              `typeStr is empty for ${moduleName} function ${name}, parameter ${i}`,
+            );
+          }
+          return [p.getName(), typeStr.replace(/\n */g, "")];
+        });
+      const additional: Builder.AdditionalCommand[] = [];
+      jsDoc
+        .getTags()
+        .reverse()
+        .forEach((tag) => {
+          const name = tag.getTagName();
+          if (!(name in properties)) {
+            properties[name] = [];
+          }
+          let text = tag.getCommentText() ?? "";
+
+          if (name === "keys") {
+            text = trim(text, " \n");
+          }
+
+          if (name === "commands" && text) {
+            additional.push(
+              ...parseAdditional(modulePrefix, text, tag.getStartLineNumber()),
+            );
+          } else if (name === "example") {
+            examples.push(trim(text, " \n") + "\n");
+          } else {
+            properties[name].push(text);
+          }
+        });
+
+      functions.push({
+        name,
+        nameWithDot,
+        qualifiedName,
+        line: f.getStartLineNumber(),
+        hasArgs,
+        parameters,
+        firstParamNames,
+        summary,
+        examples,
+        properties,
+        doc,
+        additional,
+      });
     }
-
-    const splitDocComment = docComment.split(/\n### Example\n/gm),
-          properties: Record<string, string> = {},
-          doc = splitDocComment[0].replace(/^@(param \w+|\w+)(?:\n| ((?:.+\n)(?: {2}.+\n)*))/gm,
-                                           (_, k: string, v?: string) => {
-                                             properties[k] = v?.replace(/\n {2}/g, " ").trim() ?? "";
-
-                                             return "";
-                                           }),
-          summary = /((?:.+(?:\n|$))+)/.exec(doc)![0].trim().replace(/\.$/, ""),
-          examplesStrings = splitDocComment.slice(1),
-          nameWithDot = functionName.replace(/_/g, ".");
-
-    if ("internal" in properties) {
-      continue;
-    }
-
-    let qualifiedName = modulePrefix;
-
-    if (nameWithDot === moduleName) {
-      qualifiedName = qualifiedName.replace(/\.$/, "");
-    } else {
-      qualifiedName += nameWithDot;
-    }
-
-    functions.push({
-      name: functionName,
-      nameWithDot,
-      qualifiedName,
-
-      startLine,
-      endLine,
-
-      doc,
-      properties,
-      summary,
-      examples: examplesStrings,
-      additional: parseAdditional(modulePrefix, splitDocComment[0], startLine),
-
-      parameters,
-      returnType: returnType.length === 0 ? undefined : returnType,
-    });
   }
 
-  docCommentRe.lastIndex = 0;
-
   return {
-    path: path.relative(path.dirname(__dirname), modulePath).replace(/\\/g, "/"),
+    path: path
+      .relative(path.dirname(__dirname), modulePath)
+      .replace(/\\/g, "/"),
     name: moduleName,
     doc: moduleDoc,
 
@@ -273,7 +316,6 @@ function parseDocComments(code: string, modulePath: string) {
     },
   } as Builder.ParsedModule;
 }
-
 /**
  * Mapping from character to corresponding VS Code keybinding.
  */
@@ -282,14 +324,14 @@ export const specialCharacterMapping = {
   "!": "s-1",
   "@": "s-2",
   "#": "s-3",
-  "$": "s-4",
+  $: "s-4",
   "%": "s-5",
   "^": "s-6",
   "&": "s-7",
   "*": "s-8",
   "(": "s-9",
   ")": "s-0",
-  "_": "s--",
+  _: "s--",
   "+": "s-=",
   "{": "s-[",
   "}": "s-]",
@@ -309,9 +351,14 @@ export const specialCharacterRegExp = /[~!@#$%^&*()+{}|:"<>?]|(?<!NumPad)_/g;
 /**
  * Async wrapper around the `glob` package.
  */
-export function glob(pattern: string, options: { ignore?: string, cwd: string }) {
+export function glob(
+  pattern: string,
+  options: { ignore?: string; cwd: string },
+) {
   return new Promise<string[]>((resolve, reject) => {
-    G(pattern, options, (err, matches) => err ? reject(err) : resolve(matches));
+    G(pattern, options, (err, matches) =>
+      err ? reject(err) : resolve(matches),
+    );
   });
 }
 
@@ -322,39 +369,50 @@ export class Builder {
   private _apiModules?: Builder.ParsedModule[];
   private _commandModules?: Builder.ParsedModule[];
   private _beingBuilt = new Map<string, Promise<void>>();
+  private rootDir = __dirname;
+  private _project = new Project({
+    tsConfigFilePath: path.join(__dirname, "tsconfig.json"),
+    // skipFileDependencyResolution: true,
+  });
 
   /**
    * Returns all modules for API files.
    */
-  public async getApiModules() {
+  public getApiModules() {
     if (this._apiModules !== undefined) {
       return this._apiModules;
     }
 
-    const apiFiles = await glob("src/api/**/*.ts", { cwd: __dirname, ignore: "**/*.build.ts" }),
-          apiModules = await Promise.all(
-            apiFiles.map(async (filepath) =>
-              parseDocComments(await fs.readFile(filepath, "utf-8"), filepath)));
+    const sourceFiles = this._project.getSourceFiles([
+        "src/api/**/*.ts",
+        "!src/api/**/*.build.ts",
+      ]),
+      apiModules = sourceFiles.map((s) => parseDocComments(this.rootDir, s));
 
-    return this._apiModules = apiModules.sort((a, b) => a.name.localeCompare(b.name));
+    return (this._apiModules = apiModules.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    ));
   }
 
   /**
    * Returns all modules for command files.
    */
-  public async getCommandModules() {
+  public getCommandModules() {
     if (this._commandModules !== undefined) {
       return this._commandModules;
     }
+    const commandsGlobs = [
+        `src/commands/**/*.ts`,
+        `!src/commands/**/*.build.ts`,
+      ],
+      commandModules = this._project
+        .getSourceFiles(commandsGlobs)
+        .map((s) => parseDocComments(this.rootDir, s))
+        .filter((m) => m.doc.length > 0);
 
-    const commandsGlob = `src/commands/**/*.ts`,
-          commandFiles = await glob(commandsGlob, { cwd: __dirname, ignore: "**/*.build.ts" }),
-          allCommandModules = await Promise.all(
-            commandFiles.map(async (filepath) =>
-              parseDocComments(await fs.readFile(filepath, "utf-8"), filepath))),
-          commandModules = allCommandModules.filter((m) => m.doc.length > 0);
-
-    return this._commandModules = commandModules.sort((a, b) => a.name.localeCompare(b.name));
+    return (this._commandModules = commandModules.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    ));
   }
 
   /**
@@ -371,12 +429,16 @@ export class Builder {
   /**
    * Updates all the given .build.ts files in parallel.
    */
-  public async buildFiles(filesToBuild: readonly string[], onError: (e: unknown) => void) {
+  public async buildFiles(
+    filesToBuild: readonly string[],
+    onError: (e: unknown) => void,
+  ) {
     await Promise.all(
       filesToBuild.map(async (fileToBuild) => {
         const absolutePath = path.resolve(fileToBuild),
-              promise = this._buildFile(fileToBuild)
-                .finally(() => this._beingBuilt.delete(absolutePath));
+          promise = this._buildFile(fileToBuild).finally(() =>
+            this._beingBuilt.delete(absolutePath),
+          );
         this._beingBuilt.set(absolutePath, promise);
 
         await promise.catch(onError);
@@ -389,27 +451,36 @@ export class Builder {
    */
   private async _buildFile(fileName: string) {
     const relativeName = path.relative(__dirname, fileName),
-          relativeNameWithoutBuild = relativeName.replace(/build\.ts$/, ""),
-          modulePath = `./${relativeNameWithoutBuild}build`;
+      relativeNameWithoutBuild = relativeName.replace(/build\.ts$/, ""),
+      modulePath = `./${relativeNameWithoutBuild}build`;
 
     // Clear module cache if any.
     delete require.cache[require.resolve(modulePath)];
 
-    const module: { build(builder: Builder): Promise<string> } = require(modulePath),
-          generatedContent = await module.build(this);
+    const module: {
+        build(builder: Builder): Promise<string> | string;
+      } = require(modulePath),
+      generatedContent = await module.build(this);
 
     if (typeof generatedContent === "string") {
       // Write result of `build` to the first file we find that has the same name
       // as the build.ts file, but with any extension.
       const prefix = path.basename(relativeNameWithoutBuild),
-            outputName = (await fs.readdir(path.dirname(fileName)))
-              .find((path) => path.startsWith(prefix) && !path.endsWith(".build.ts"))!,
-            outputPath = path.join(path.dirname(fileName), outputName),
-            outputContent = await fs.readFile(outputPath, "utf-8"),
-            outputContentHeader =
-              /^(?:[\s\S]+?\n)?.+Content below this line was auto-generated.+\n/m.exec(outputContent)![0];
+        outputName = (await fs.readdir(path.dirname(fileName))).find(
+          (path) => path.startsWith(prefix) && !path.endsWith(".build.ts"),
+        )!,
+        outputPath = path.join(path.dirname(fileName), outputName),
+        outputContent = await fs.readFile(outputPath, "utf-8"),
+        outputContentHeader =
+          /^(?:[\s\S]+?\n)?.+Content below this line was auto-generated.+\n/m.exec(
+            outputContent,
+          )![0];
 
-      await fs.writeFile(outputPath, outputContentHeader + generatedContent, "utf-8");
+      await fs.writeFile(
+        outputPath,
+        outputContentHeader + generatedContent,
+        "utf-8",
+      );
     }
   }
 }
@@ -420,17 +491,17 @@ export declare namespace Builder {
     readonly nameWithDot: string;
     readonly qualifiedName: string;
 
-    readonly startLine: number;
-    readonly endLine: number;
+    readonly line: number;
 
     readonly doc: string;
-    readonly properties: Record<string, string>;
+    readonly properties: Record<string, string[]>;
     readonly summary: string;
     readonly examples: string[];
     readonly additional: AdditionalCommand[];
 
+    readonly hasArgs: boolean;
     readonly parameters: readonly [name: string, type: string][];
-    readonly returnType: string | undefined;
+    readonly firstParamNames: readonly string[];
   }
 
   export interface AdditionalCommand {
@@ -475,74 +546,87 @@ export function parseKeys(keys: string) {
   if (keys.length === 0) {
     return [];
   }
+  if (verbose) {
+    console.log(`Parsing keys: ${keys}`);
+  }
+  return keys
+    .replace(/[\n]/g, ", ")
+    .split(/ *, (?=`)/g)
+    .map((keyString) => {
+      const [, , rawKeybinding, rawMetadata] = /^(`+)(.+?)\1 \((.+?)\)$/.exec(
+          keyString,
+        )!,
+        keybinding = rawKeybinding
+          .trim()
+          .replace(
+            specialCharacterRegExp,
+            (m) => (specialCharacterMapping as Record<string, string>)[m],
+          ),
+        [, category, tags] = /(\w+): (.+)/.exec(rawMetadata)!;
 
-  return keys.replace("\n", ", ").split(/ *, (?=`)/g).map((keyString) => {
-    const [,, rawKeybinding, rawMetadata] = /^(`+)(.+?)\1 \((.+?)\)$/.exec(keyString)!,
-          keybinding = rawKeybinding.trim().replace(
-            specialCharacterRegExp, (m) => (specialCharacterMapping as Record<string, string>)[m]),
-          [, category, tags] = /(\w+): (.+)/.exec(rawMetadata)!;
+      // Reorder to match Ctrl+Shift+Alt+_
+      let key = "";
 
-    // Reorder to match Ctrl+Shift+Alt+_
-    let key = "";
-
-    if (keybinding.includes("c-")) {
-      key += "Ctrl+";
-    }
-
-    if (keybinding.includes("s-")) {
-      key += "Shift+";
-    }
-
-    if (keybinding.includes("a-")) {
-      key += "Alt+";
-    }
-
-    const remainingKeybinding = keybinding.replace(/[csa]-/g, ""),
-          whenClauses = ["editorTextFocus"];
-
-    for (let tag of tags.split(", ")) {
-      const negate = tag.startsWith("!");
-      if (negate) {
-        tag = tag.slice(1);
+      if (keybinding.includes("c-")) {
+        key += "Ctrl+";
       }
-      switch (tag) {
-      case "normal":
-      case "insert":
-      case "input":
-        whenClauses.push(`dance.mode ${negate ? "!=" : "=="} '${tag}'`);
-        break;
 
-      case "recording":
-        whenClauses.push(`${negate ? "!" : ""}dance.isRecording`);
-        break;
+      if (keybinding.includes("s-")) {
+        key += "Shift+";
+      }
 
-      case "prompt":
-        assert(!negate);
-        whenClauses.splice(whenClauses.indexOf("editorTextFocus"), 1);
-        whenClauses.push("inputFocus && !textInputFocus");
-        break;
+      if (keybinding.includes("a-")) {
+        key += "Alt+";
+      }
 
-      default: {
-        const match = /^"(!?\w+)"$/.exec(tag);
+      const remainingKeybinding = keybinding.replace(/[csa]-/g, ""),
+        whenClauses = ["editorTextFocus"];
 
-        if (match === null) {
-          throw new Error("unknown keybinding tag " + tag);
+      for (let tag of tags.split(", ")) {
+        const negate = tag.startsWith("!");
+        if (negate) {
+          tag = tag.slice(1);
         }
+        switch (tag) {
+          case "normal":
+          case "insert":
+          case "select":
+          case "input":
+            whenClauses.push(`dance.mode ${negate ? "!=" : "=="} '${tag}'`);
+            break;
 
-        whenClauses.push((negate ? "!" : "") + match[1]);
-        break;
+          case "recording":
+            whenClauses.push(`${negate ? "!" : ""}dance.isRecording`);
+            break;
+
+          case "prompt":
+            assert(!negate);
+            whenClauses.splice(whenClauses.indexOf("editorTextFocus"), 1);
+            whenClauses.push("inputFocus && !textInputFocus");
+            break;
+
+          default: {
+            const match = /^"(!?\w+)"$/.exec(tag);
+
+            if (match === null) {
+              throw new Error("unknown keybinding tag " + tag);
+            }
+
+            whenClauses.push((negate ? "!" : "") + match[1]);
+            break;
+          }
+        }
       }
-      }
-    }
 
-    key += remainingKeybinding[0].toUpperCase() + remainingKeybinding.slice(1);
+      key +=
+        remainingKeybinding[0].toUpperCase() + remainingKeybinding.slice(1);
 
-    return {
-      category,
-      key,
-      when: whenClauses.join(" && "),
-    };
-  });
+      return {
+        category,
+        key,
+        when: whenClauses.join(" && "),
+      };
+    });
 }
 
 /**
@@ -572,12 +656,16 @@ function getCommands(module: Omit<Builder.ParsedModule, "commands">) {
  */
 function getKeybindings(module: Omit<Builder.ParsedModule, "keybindings">) {
   return [
-    ...module.functions.flatMap((f) => parseKeys(f.properties["keys"] ?? "").map((key) => ({
-      key: key.key,
-      when: key.when,
-      title: f.summary,
-      command: `dance.${f.qualifiedName}`,
-    }))),
+    ...module.functions.flatMap((f) =>
+      (f.properties["keys"] ?? []).flatMap((keys) =>
+        parseKeys(keys).map((key) => ({
+          key: key.key,
+          when: key.when,
+          title: f.summary,
+          command: `dance.${f.qualifiedName}`,
+        })),
+      ),
+    ),
 
     ...module.additional
       .concat(...module.functions.flatMap((f) => f.additional))
@@ -593,8 +681,9 @@ function getKeybindings(module: Omit<Builder.ParsedModule, "keybindings">) {
           }));
         }
 
-        const parsedCommands =
-          JSON.parse("[" + commands!.replace(/([$\w]+):/g, "\"$1\":") + "]") as any[];
+        const parsedCommands = JSON.parse(
+          "[" + commands!.replace(/([$\w]+):/g, '"$1":') + "]",
+        ) as any[];
 
         if (parsedCommands.length === 1) {
           let [command]: [string] = parsedCommands[0];
@@ -629,14 +718,18 @@ function getKeybindings(module: Omit<Builder.ParsedModule, "keybindings">) {
  * Given a multiline string, returns the same string with all lines starting
  * with an indentation `>= by` reduced by `by` spaces.
  */
-export function unindent(by: number): { (strings: TemplateStringsArray, ...args: any[]): string } {
+export function unindent(by: number): {
+  (strings: TemplateStringsArray, ...args: any[]): string;
+} {
   const re = new RegExp(`^ {${by}}`, "gm");
 
   return (strings: TemplateStringsArray, ...args: any[]) => {
     const unindented = strings.map((s) => s.replace(re, ""));
 
-    return String.raw(Object.assign(unindented, { raw: unindented }), ...args)
-      .replace(/^ +$/gm, "");
+    return String.raw(
+      Object.assign(unindented, { raw: unindented }),
+      ...args,
+    ).replace(/^ +$/gm, "");
   };
 }
 
@@ -647,24 +740,28 @@ async function main() {
   let success = true;
 
   const ensureUpToDate = process.argv.includes("--ensure-up-to-date"),
-        check = process.argv.includes("--check"),
-        buildIndex = process.argv.indexOf("--build"),
-        build = buildIndex === -1 ? "**/*.build.ts" : process.argv[buildIndex + 1];
+    check = process.argv.includes("--check"),
+    buildIndex = process.argv.indexOf("--build"),
+    build = buildIndex === -1 ? "**/*.build.ts" : process.argv[buildIndex + 1];
 
   const contentsBefore: string[] = [],
-        fileNames = [
-          `${__dirname}/package.json`,
-          `${__dirname}/src/commands/README.md`,
-          `${__dirname}/src/commands/index.ts`,
-        ];
+    fileNames = [
+      `${__dirname}/package.json`,
+      `${__dirname}/src/commands/README.md`,
+      `${__dirname}/src/commands/index.ts`,
+    ];
 
   if (ensureUpToDate) {
-    contentsBefore.push(...await Promise.all(fileNames.map((name) => fs.readFile(name, "utf-8"))));
+    contentsBefore.push(
+      ...(await Promise.all(
+        fileNames.map((name) => fs.readFile(name, "utf-8")),
+      )),
+    );
   }
 
   const filesToBuild = await glob(build, { cwd: __dirname }),
-        builder = new Builder(),
-        buildErrors: unknown[] = [];
+    builder = new Builder(),
+    buildErrors: unknown[] = [];
 
   await builder.buildFiles(filesToBuild, (e) => buildErrors.push(e));
 
@@ -673,7 +770,9 @@ async function main() {
   }
 
   if (ensureUpToDate) {
-    const contentsAfter = await Promise.all(fileNames.map((name) => fs.readFile(name, "utf-8")));
+    const contentsAfter = await Promise.all(
+      fileNames.map((name) => fs.readFile(name, "utf-8")),
+    );
 
     for (let i = 0; i < fileNames.length; i++) {
       if (verbose) {
@@ -687,21 +786,33 @@ async function main() {
   }
 
   if (check) {
-    const filesToCheck = await glob("src/commands/**/*.ts",
-                                    { cwd: __dirname, ignore: "**/*.build.ts" }),
-          contentsToCheck = await Promise.all(filesToCheck.map((f) => fs.readFile(f, "utf-8")));
+    const filesToCheck = await glob("src/commands/**/*.ts", {
+        cwd: __dirname,
+        ignore: "**/*.build.ts",
+      }),
+      contentsToCheck = await Promise.all(
+        filesToCheck.map((f) => fs.readFile(f, "utf-8")),
+      );
 
     for (let i = 0; i < filesToCheck.length; i++) {
       const fileToCheck = filesToCheck[i],
-            contentToCheck = contentsToCheck[i];
+        contentToCheck = contentsToCheck[i];
 
       if (contentToCheck.includes("editor.selections")) {
-        console.error("File", fileToCheck, "includes forbidden access to editor.selections.");
+        console.error(
+          "File",
+          fileToCheck,
+          "includes forbidden access to editor.selections.",
+        );
         success = false;
       }
 
       if (/^(export )?namespace/m.test(contentToCheck)) {
-        console.error("File", fileToCheck, "includes a non-`declare` namespace.");
+        console.error(
+          "File",
+          fileToCheck,
+          "includes a non-`declare` namespace.",
+        );
         success = false;
       }
     }
@@ -717,14 +828,17 @@ if (require.main === module) {
     }
 
     const chokidar = await import("chokidar");
-    const watcher = chokidar.watch([
-      "**/*.build.ts",
-      "src/api/*.ts",
-      "src/commands/*.ts",
-      "test/suite/commands/*.md",
-    ], {
-      ignored: "src/commands/load-all.ts",
-    });
+    const watcher = chokidar.watch(
+      [
+        "**/*.build.ts",
+        "src/api/*.ts",
+        "src/commands/*.ts",
+        "test/suite/commands/*.md",
+      ],
+      {
+        ignored: "src/commands/load-all.ts",
+      },
+    );
 
     let isGenerating = false;
 
@@ -733,7 +847,9 @@ if (require.main === module) {
         return;
       }
 
-      console.log("Change detected at " + path + ", updating generated files...");
+      console.log(
+        "Change detected at " + path + ", updating generated files...",
+      );
       isGenerating = true;
 
       try {

@@ -1,22 +1,32 @@
+bracket.openLeftBracket:
+  title:
+    en: Open window menu
+
+  doc:
+    en: |-
+      Open window menu.
+
 cancel:
   title:
-    en: Cancel Dance operation
+    en: |-
+      Cancel Dance operation
+
+  doc:
+    en: |-
+      Cancel Dance operation.
 
   keys:
     qwerty: |-
       `escape` (core: normal, !recording, "!markersNavigationVisible")
-      `escape` (core: input)
-
-  doc:
-    en: |+
-      Cancel Dance operation.
+      `escape` (core: input, "!suggestWidgetVisible")
 
 changeInput:
   title:
-    en: Change current input
+    en: |-
+      Change current input
 
   doc:
-    en: |+
+    en: |-
       Change current input.
 
       When showing some menus, Dance can navigate their history:
@@ -28,109 +38,147 @@ changeInput:
 
 dev.copyLastErrorMessage:
   title:
-    en: Copies the last encountered error message
+    en: |-
+      Copies the last encountered error message
 
   doc:
-    en: |
+    en: |-
       Copies the last encountered error message.
 
 dev.setSelectionBehavior:
   title:
-    en: Set the selection behavior of the specified mode
+    en: |-
+      Set the selection behavior of the specified mode
 
   doc:
-    en: |
+    en: |-
       Set the selection behavior of the specified mode.
 
 edit.align:
   title:
-    en: Align selections
-
-  keys:
-    qwerty: |-
-      `&` (kakoune: normal)
+    en: |-
+      Align selections
 
   doc:
-    en: |+
+    en: |-
       Align selections.
 
       Align selections, aligning the cursor of each selection by inserting spaces
       before the first character of each selection.
 
-edit.case.swap:
+  keys:
+    qwerty: |-
+      `&` (helix: normal)
+      `&` (helix: select)
+
+edit.alignByOffet:
   title:
-    en: Swap case
+    en: |-
+      Align selections by offset from start character (negative offset)
+
+  doc:
+    en: |-
+      Align selections by offset from start character (negative offset).
+
+      What is negative offset?
+      E.g.
+      0 offset is the start character of the selection.
+      1 offset is the character before the start character of the selection.
+
+      Align selections, aligning the cursor of each selection by inserting negative offset character
+      before the first character of each selection.
 
   keys:
     qwerty: |-
-      `` a-` `` (kakoune: normal)
+      `c-&` (helix: normal)
+      `c-&` (helix: select)
+
+edit.case.swap:
+  title:
+    en: |-
+      Swap case
 
   doc:
-    en: |+
+    en: |-
       Swap case.
+
+  keys:
+    qwerty: |-
+      `` s-` `` (helix: normal)
+      `` s-` `` (helix: select)
 
 edit.case.toLower:
   title:
-    en: Transform to lower case
+    en: |-
+      Transform to lower case
+
+  doc:
+    en: |-
+      Transform to lower case.
 
   keys:
     qwerty: |-
-      `` ` `` (kakoune: normal)
-
-  doc:
-    en: |+
-      Transform to lower case.
+      `` ` `` (helix: normal)
+      `` ` `` (helix: select)
 
 edit.case.toUpper:
   title:
-    en: Transform to upper case
+    en: |-
+      Transform to upper case
+
+  doc:
+    en: |-
+      Transform to upper case.
 
   keys:
     qwerty: |-
-      `` s-` `` (kakoune: normal)
-
-  doc:
-    en: |+
-      Transform to upper case.
+      `` a-` `` (helix: normal)
+      `` a-` `` (helix: select)
 
 edit.copyIndentation:
   title:
-    en: Copy indentation
-
-  keys:
-    qwerty: |-
-      `a-&` (kakoune: normal)
+    en: |-
+      Copy indentation
 
   doc:
-    en: |+
+    en: |-
       Copy indentation.
 
       Copy the indentation of the main selection (or the count one if a count is
       given) to all other ones.
 
+  keys:
+    qwerty: |-
+      `a-&` (kakoune: normal)
+      `a-&` (kakoune: select)
+
 edit.deindent:
   title:
-    en: Deindent selected lines
+    en: |-
+      Deindent selected lines
+
+  doc:
+    en: |-
+      Deindent selected lines.
 
   keys:
     qwerty: |-
       `a-<` (kakoune: normal)
-
-  doc:
-    en: |+
-      Deindent selected lines.
+      `a-<` (kakoune: select)
 
 edit.deindent.withIncomplete:
   title:
-    en: Deindent selected lines (including incomplete indent)
+    en: |-
+      Deindent selected lines (including incomplete indent)
+
+  doc:
+    en: |-
+      Deindent selected lines (including incomplete indent).
 
   keys:
     qwerty: |-
-      `<` (kakoune: normal)
-
-  doc:
-    en: |+
-      Deindent selected lines (including incomplete indent).
+      `<` (helix: normal)
+      `<` (helix: normal)
 
 edit.delete:
   title:
@@ -141,7 +189,8 @@ edit.delete:
 
   keys:
     qwerty: |-
-      `a-d` (kakoune: normal)
+      `a-d` (helix: normal)
+      `a-d` (helix: select)
 
 edit.delete-insert:
   title:
@@ -152,42 +201,49 @@ edit.delete-insert:
 
   keys:
     qwerty: |-
-      `a-c` (kakoune: normal)
+      `a-c` (helix: normal)
+      `a-c` (helix: select)
 
 edit.indent:
   title:
-    en: Indent selected lines
+    en: |-
+      Indent selected lines
+
+  doc:
+    en: |-
+      Indent selected lines.
 
   keys:
     qwerty: |-
-      `>` (kakoune: normal)
-
-  doc:
-    en: |+
-      Indent selected lines.
+      `>` (helix: normal)
+      `>` (helix: select)
 
 edit.indent.withEmpty:
   title:
-    en: Indent selected lines (including empty lines)
+    en: |-
+      Indent selected lines (including empty lines)
+
+  doc:
+    en: |-
+      Indent selected lines (including empty lines).
 
   keys:
     qwerty: |-
       `a->` (kakoune: normal)
-
-  doc:
-    en: |+
-      Indent selected lines (including empty lines).
+      `a->` (kakoune: select)
 
 edit.insert:
   title:
-    en: Insert contents of register
+    en: |-
+      Insert contents of register
 
   keys:
     qwerty: |-
-      `s-a-r` (kakoune: normal)
+      `s-r` (helix: normal)
+      `s-r` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Insert contents of register.
 
       A `where` argument may be specified to state where the text should be
@@ -200,71 +256,50 @@ edit.insert:
 
       Specify `all` to paste all contents next to each selection.
 
-
-      #### Additional commands
-
-      | Title                              | Identifier               | Keybinding                                       | Commands                                                                                                                       |
-      | ---------------------------------- | ------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-      | Pick register and replace          | `selectRegister-insert`  | `c-r` (kakoune: normal), `c-r` (kakoune: insert) | `[".selectRegister", { +register }], [".edit.insert", { ... }]`                                                                |
-      | Paste before                       | `paste.before`           |                                                  | `[".edit.insert", { handleNewLine: true, where: "start", ... }]`                                                               |
-      | Paste after                        | `paste.after`            |                                                  | `[".edit.insert", { handleNewLine: true, where: "end"  , ... }]`                                                               |
-      | Paste before and select            | `paste.before.select`    | `s-p` (kakoune: normal)                          | `[".edit.insert", { handleNewLine: true, where: "start", shift: "select", ... }]`                                              |
-      | Paste after and select             | `paste.after.select`     | `p` (kakoune: normal)                            | `[".edit.insert", { handleNewLine: true, where: "end"  , shift: "select", ... }]`                                              |
-      | Paste all before                   | `pasteAll.before`        |                                                  | `[".edit.insert", { handleNewLine: true, where: "start", all: true, ... }]`                                                    |
-      | Paste all after                    | `pasteAll.after`         |                                                  | `[".edit.insert", { handleNewLine: true, where: "end"  , all: true, ... }]`                                                    |
-      | Paste all before and select        | `pasteAll.before.select` | `s-a-p` (kakoune: normal)                        | `[".edit.insert", { handleNewLine: true, where: "start", all: true, shift: "select", ... }]`                                   |
-      | Paste all after and select         | `pasteAll.after.select`  | `a-p` (kakoune: normal)                          | `[".edit.insert", { handleNewLine: true, where: "end"  , all: true, shift: "select", ... }]`                                   |
-      | Delete                             | `delete`                 | `a-d` (kakoune: normal)                          | `[".edit.insert", { register: "_", ... }]`                                                                                     |
-      | Delete and switch to Insert        | `delete-insert`          | `a-c` (kakoune: normal)                          | `[".modes.set", { mode: "insert", +mode }], [".edit.insert", { register: "_", ... }]`                                          |
-      | Copy and delete                    | `yank-delete`            | `d` (kakoune: normal)                            | `[".selections.saveText", { +register }],                                            [".edit.insert", { register: "_", ... }]` |
-      | Copy, delete and switch to Insert  | `yank-delete-insert`     | `c` (kakoune: normal)                            | `[".selections.saveText", { +register }], [".modes.set", { mode: "insert", +mode }], [".edit.insert", { register: "_", ... }]` |
-      | Copy and replace                   | `yank-replace`           | `s-r` (kakoune: normal)                          | `[".selections.saveText", { register: "tmp" }], [".edit.insert"], [".updateRegister", { copyFrom: "tmp", ... }]`               |
-
 edit.join:
   title:
-    en: Join lines
+    en: |-
+      Join lines
+
+  doc:
+    en: |-
+      Join lines.
 
   keys:
     qwerty: |-
-      `a-j` (kakoune: normal)
-
-  doc:
-    en: |+
-      Join lines.
+      `s-j` (helix: normal)
+      `s-j` (helix: select)
 
 edit.join.select:
   title:
-    en: Join lines and select inserted separators
+    en: |-
+      Join lines and select inserted separators
+
+  doc:
+    en: |-
+      Join lines and select inserted separators.
 
   keys:
     qwerty: |-
-      `s-a-j` (kakoune: normal)
-
-  doc:
-    en: |+
-      Join lines and select inserted separators.
+      `s-a-j` (helix: normal)
+      `s-a-j` (helix: select)
 
 edit.newLine.above:
   title:
-    en: Insert new line above each selection
+    en: |-
+      Insert new line above each selection
 
   keys:
     qwerty: |-
       `s-a-o` (kakoune: normal)
+      `s-a-o` (kakoune: select)
 
   doc:
-    en: |
+    en: |-
       Insert new line above each selection.
 
       Specify `"shift": "select"` to select the inserted selections, and nothing to
       keep the current selections.
-
-
-      #### Additional keybindings
-
-      | Title                                      | Identifier             | Keybinding              | Commands                                                                          |
-      | ------------------------------------------ | ---------------------- | ----------------------- | --------------------------------------------------------------------------------- |
-      | Insert new line above and switch to insert | `newLine.above.insert` | `s-o` (kakoune: normal) | `[".edit.newLine.above", { shift: "select" }], [".modes.insert.before", { ... }]` |
 
 edit.newLine.above.insert:
   title:
@@ -275,29 +310,25 @@ edit.newLine.above.insert:
 
   keys:
     qwerty: |-
-      `s-o` (kakoune: normal)
+      `s-o` (helix: normal)
+      `s-o` (helix: normal)
 
 edit.newLine.below:
   title:
-    en: Insert new line below each selection
+    en: |-
+      Insert new line below each selection
 
   keys:
     qwerty: |-
       `a-o` (kakoune: normal)
+      `a-o` (kakoune: select)
 
   doc:
-    en: |
+    en: |-
       Insert new line below each selection.
 
       Specify `"shift": "select"` to select the inserted selections, and nothing to
       keep the current selections.
-
-
-      #### Additional keybindings
-
-      | Title                                      | Identifier             | Keybinding            | Commands                                                                          |
-      | ------------------------------------------ | ---------------------- | --------------------- | --------------------------------------------------------------------------------- |
-      | Insert new line below and switch to insert | `newLine.below.insert` | `o` (kakoune: normal) | `[".edit.newLine.below", { shift: "select" }], [".modes.insert.before", { ... }]` |
 
 edit.newLine.below.insert:
   title:
@@ -308,7 +339,8 @@ edit.newLine.below.insert:
 
   keys:
     qwerty: |-
-      `o` (kakoune: normal)
+      `o` (helix: normal)
+      `o` (helix: normal)
 
 edit.paste.after:
   title:
@@ -318,7 +350,8 @@ edit.paste.after:
     [".edit.insert", { handleNewLine: true, where: "end" , $exclude: [] }]
 
   keys:
-    qwerty: ""
+    qwerty: |-
+      `p` (helix: select)
 
 edit.paste.after.select:
   title:
@@ -329,7 +362,7 @@ edit.paste.after.select:
 
   keys:
     qwerty: |-
-      `p` (kakoune: normal)
+      `p` (helix: normal)
 
 edit.paste.before:
   title:
@@ -339,7 +372,8 @@ edit.paste.before:
     [".edit.insert", { handleNewLine: true, where: "start", $exclude: [] }]
 
   keys:
-    qwerty: ""
+    qwerty: |-
+      `s-p` (helix: select)
 
 edit.paste.before.select:
   title:
@@ -350,7 +384,7 @@ edit.paste.before.select:
 
   keys:
     qwerty: |-
-      `s-p` (kakoune: normal)
+      `s-p` (helix: normal)
 
 edit.pasteAll.after:
   title:
@@ -370,8 +404,7 @@ edit.pasteAll.after.select:
     [".edit.insert", { handleNewLine: true, where: "end" , all: true, shift: "select", $exclude: [] }]
 
   keys:
-    qwerty: |-
-      `a-p` (kakoune: normal)
+    qwerty: ""
 
 edit.pasteAll.before:
   title:
@@ -391,20 +424,21 @@ edit.pasteAll.before.select:
     [".edit.insert", { handleNewLine: true, where: "start", all: true, shift: "select", $exclude: [] }]
 
   keys:
-    qwerty: |-
-      `s-a-p` (kakoune: normal)
+    qwerty: ""
 
 edit.replaceCharacters:
   title:
-    en: Replace characters
+    en: |-
+      Replace characters
+
+  doc:
+    en: |-
+      Replace characters.
 
   keys:
     qwerty: |-
-      `r` (kakoune: normal)
-
-  doc:
-    en: |+
-      Replace characters.
+      `r` (helix: normal)
+      `r` (helix: select)
 
 edit.selectRegister-insert:
   title:
@@ -415,8 +449,7 @@ edit.selectRegister-insert:
 
   keys:
     qwerty: |-
-      `c-r` (kakoune: normal)
-      `c-r` (kakoune: insert)
+      `c-r` (helix: insert)
 
 edit.yank-delete:
   title:
@@ -427,7 +460,8 @@ edit.yank-delete:
 
   keys:
     qwerty: |-
-      `d` (kakoune: normal)
+      `d` (helix: normal)
+      `d` (helix: select)
 
 edit.yank-delete-insert:
   title:
@@ -438,7 +472,8 @@ edit.yank-delete-insert:
 
   keys:
     qwerty: |-
-      `c` (kakoune: normal)
+      `c` (helix: normal)
+      `c` (helix: select)
 
 edit.yank-replace:
   title:
@@ -448,95 +483,101 @@ edit.yank-replace:
     [".selections.saveText", { register: "tmp" }], [".edit.insert"], [".updateRegister", { copyFrom: "tmp", $exclude: [] }]
 
   keys:
-    qwerty: |-
-      `s-r` (kakoune: normal)
+    qwerty: ""
 
 history.recording.play:
   title:
-    en: Replay recording
+    en: |-
+      Replay recording
 
   keys:
     qwerty: |-
-      `q` (kakoune: normal)
+      `q` (helix: normal)
+      `q` (helix: select)
 
   doc:
-    en: |+
+    en: |-
       Replay recording.
 
 history.recording.start:
   title:
-    en: Start recording
+    en: |-
+      Start recording
 
   keys:
     qwerty: |-
-      `s-q` (kakoune: normal, !recording)
+      `s-q` (helix: normal, !recording)
+      `s-q` (helix: select, !recording)
 
   doc:
-    en: |+
+    en: |-
       Start recording.
 
 history.recording.stop:
   title:
-    en: Stop recording
+    en: |-
+      Stop recording
 
   keys:
     qwerty: |-
-      `escape` (kakoune: normal, recording)
-      `s-q` (kakoune: normal, recording)
+      `escape` (helix: normal, recording)
+      `s-q` (helix: normal, recording)
+      `escape` (helix: select, recording)
+      `s-q` (helix: select, recording)
 
   doc:
-    en: |+
+    en: |-
       Stop recording.
 
 history.redo:
   title:
-    en: Redo
+    en: |-
+      Redo
+
+  doc:
+    en: |-
+      Redo.
 
   keys:
     qwerty: |-
-      `s-u` (kakoune: normal)
-
-  doc:
-    en: |+
-      Redo.
+      `s-u` (helix: normal)
+      `s-u` (helix: select)
 
 history.redo.selections:
   title:
-    en: Redo a change of selections
+    en: |-
+      Redo a change of selections
+
+  doc:
+    en: |-
+      Redo a change of selections.
 
   keys:
     qwerty: |-
-      `s-a-u` (kakoune: normal)
-
-  doc:
-    en: |+
-      Redo a change of selections.
+      `s-a-u` (helix: normal)
+      `s-a-u` (helix: select)
 
 history.repeat:
   title:
-    en: Repeat last change
+    en: |-
+      Repeat last change
 
   doc:
-    en: |
+    en: |-
       Repeat last change.
-
-
-      | Title                        | Identifier         | Keybinding              | Commands                                                                      |
-      | ---------------------------- | ------------------ | ----------------------- | ----------------------------------------------------------------------------- |
-      | Repeat last selection change | `repeat.selection` |                         | `[".history.repeat", { filter: "dance\\.(seek|select|selections)", +count }]` |
-      | Repeat last seek             | `repeat.seek`      | `a-.` (kakoune: normal) | `[".history.repeat", { filter: "dance\\.seek", +count }]`                     |
 
 history.repeat.edit:
   title:
-    en: Repeat last edit without a command
+    en: |-
+      Repeat last edit without a command
 
   keys:
     qwerty: |-
-      `.` (kakoune: normal)
-      `NumPad_Decimal` (kakoune: normal)
+      `.` (helix: normal)
+      `.` (helix: select)
 
   doc:
-    en: |+
+    en: |-
       Repeat last edit without a command.
 
 history.repeat.seek:
@@ -562,27 +603,31 @@ history.repeat.selection:
 
 history.undo:
   title:
-    en: Undo
+    en: |-
+      Undo
+
+  doc:
+    en: |-
+      Undo.
 
   keys:
     qwerty: |-
-      `u` (kakoune: normal)
-
-  doc:
-    en: |+
-      Undo.
+      `u` (helix: normal)
+      `u` (helix: select)
 
 history.undo.selections:
   title:
-    en: Undo a change of selections
+    en: |-
+      Undo a change of selections
+
+  doc:
+    en: |-
+      Undo a change of selections.
 
   keys:
     qwerty: |-
-      `a-u` (kakoune: normal)
-
-  doc:
-    en: |+
-      Undo a change of selections.
+      `a-u` (helix: normal)
+      `a-u` (helix: select)
 
 ifEmpty:
   title:
@@ -591,24 +636,26 @@ ifEmpty:
       selections are empty
 
   doc:
-    en: |
+    en: |-
       Executes one of the specified commands depending on whether the current
       selections are empty.
 
 ignore:
   title:
-    en: Ignore key
+    en: |-
+      Ignore key
 
   doc:
-    en: |
+    en: |-
       Ignore key.
 
 keybindings.setup:
   title:
-    en: Set up Dance keybindings
+    en: |-
+      Set up Dance keybindings
 
   doc:
-    en: |
+    en: |-
       Set up Dance keybindings.
 
 modes.insert.after:
@@ -620,7 +667,7 @@ modes.insert.after:
 
   keys:
     qwerty: |-
-      `a` (kakoune: normal)
+      `a` (helix: normal)
 
 modes.insert.before:
   title:
@@ -631,7 +678,7 @@ modes.insert.before:
 
   keys:
     qwerty: |-
-      `i` (kakoune: normal)
+      `i` (helix: normal)
 
 modes.insert.lineEnd:
   title:
@@ -642,7 +689,7 @@ modes.insert.lineEnd:
 
   keys:
     qwerty: |-
-      `s-a` (kakoune: normal)
+      `s-a` (helix: normal)
 
 modes.insert.lineStart:
   title:
@@ -653,31 +700,16 @@ modes.insert.lineStart:
 
   keys:
     qwerty: |-
-      `s-i` (kakoune: normal)
+      `s-i` (helix: normal)
 
 modes.set:
   title:
-    en: Set Dance mode
+    en: >-
+      Set Dance mode
 
   doc:
-    en: |+
+    en: |-
       Set Dance mode.
-
-      #### Variants
-
-      | Title              | Identifier   | Keybinding                 | Command                                                     |
-      | ------------------ | ------------ | -------------------------- | ----------------------------------------------------------- |
-      | Set mode to Normal | `set.normal` | `escape` (kakoune: insert) | `[".modes.set", { mode: "normal" }], ["hideSuggestWidget"]` |
-      | Set mode to Insert | `set.insert` |                            | `[".modes.set", { mode: "insert" }]`                        |
-
-      Other variants are provided to switch to insert mode:
-
-      | Title                | Identifier         | Keybinding              | Commands                                                                                                                                                                            |
-      | -------------------- | ------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-      | Insert before        | `insert.before`    | `i` (kakoune: normal)   | `[".selections.faceBackward", { record: false }],           [".modes.set", { mode: "insert", +mode }], [".selections.reduce", { where: "start", record: false, empty: true, ... }]` |
-      | Insert after         | `insert.after`     | `a` (kakoune: normal)   | `[".selections.faceForward" , { record: false }],           [".modes.set", { mode: "insert", +mode }], [".selections.reduce", { where: "end"  , record: false, empty: true, ... }]` |
-      | Insert at line start | `insert.lineStart` | `s-i` (kakoune: normal) | `[".select.lineStart", { shift: "jump", skipBlank: true }], [".modes.set", { mode: "insert", +mode }], [".selections.reduce", { where: "start", record: false, empty: true, ... }]` |
-      | Insert at line end   | `insert.lineEnd`   | `s-a` (kakoune: normal) | `[".select.lineEnd"  , { shift: "jump"                  }], [".modes.set", { mode: "insert", +mode }], [".selections.reduce", { where: "end"  , record: false, empty: true, ... }]` |
 
 modes.set.insert:
   title:
@@ -698,22 +730,29 @@ modes.set.normal:
 
   keys:
     qwerty: |-
-      `escape` (kakoune: insert)
+      `escape` (helix: insert, "!suggestWidgetVisible")
+      `escape` (helix: select)
+      `v` (helix: select)
+
+modes.set.select:
+  title:
+    en: Set mode to Select
+
+  commands: |-
+    [".modes.set", { mode: "select" }]
+
+  keys:
+    qwerty: |-
+      `v` (helix: normal)
 
 modes.set.temporarily:
   title:
-    en: Set Dance mode temporarily
+    en: >-
+      Set Dance mode temporarily
 
   doc:
-    en: |+
+    en: |-
       Set Dance mode temporarily.
-
-      #### Variants
-
-      | Title                 | Identifier               | Keybindings             | Commands                                         |
-      | --------------------- | ------------------------ | ----------------------- | ------------------------------------------------ |
-      | Temporary Normal mode | `set.temporarily.normal` | `c-v` (kakoune: insert) | `[".modes.set.temporarily", { mode: "normal" }]` |
-      | Temporary Insert mode | `set.temporarily.insert` | `c-v` (kakoune: normal) | `[".modes.set.temporarily", { mode: "insert" }]` |
 
 modes.set.temporarily.insert:
   title:
@@ -724,7 +763,7 @@ modes.set.temporarily.insert:
 
   keys:
     qwerty: |-
-      `c-v` (kakoune: normal)
+      `c-v` (helix: normal)
 
 modes.set.temporarily.normal:
   title:
@@ -735,14 +774,15 @@ modes.set.temporarily.normal:
 
   keys:
     qwerty: |-
-      `c-v` (kakoune: insert)
+      `c-v` (helix: insert)
 
 openMenu:
   title:
-    en: Open menu
+    en: |-
+      Open menu
 
   doc:
-    en: |+
+    en: |-
       Open menu.
 
       If no menu is specified, a prompt will ask for the name of the menu to open.
@@ -755,10 +795,11 @@ openMenu:
 
 run:
   title:
-    en: Run code
+    en: |-
+      Run code
 
   doc:
-    en: |
+    en: |-
       Run code.
 
       There are two ways to invoke this command. The first one is to provide an
@@ -859,23 +900,19 @@ run:
 
 search:
   title:
-    en: Search
+    en: |-
+      Search
 
   keys:
     qwerty: |-
-      `/` (kakoune: normal)
-      `NumPad_Divide` (kakoune: normal)
+      `/` (helix: normal)
+      `NumPad_Divide` (helix: normal)
+      `/` (helix: select)
+      `NumPad_Divide` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Search.
-
-
-      | Title                    | Identifier        | Keybinding              | Command                                                |
-      | ------------------------ | ----------------- | ----------------------- | ------------------------------------------------------ |
-      | Search (extend)          | `extend`          | `?` (kakoune: normal)   | `[".search", {                shift: "extend", ... }]` |
-      | Search backward          | `backward`        | `a-/` (kakoune: normal) | `[".search", { direction: -1                 , ... }]` |
-      | Search backward (extend) | `backward.extend` | `a-?` (kakoune: normal) | `[".search", { direction: -1, shift: "extend", ... }]` |
 
 search.backward:
   title:
@@ -886,7 +923,8 @@ search.backward:
 
   keys:
     qwerty: |-
-      `a-/` (kakoune: normal)
+      `a-/` (helix: normal)
+      `a-/` (helix: select)
 
 search.backward.extend:
   title:
@@ -897,7 +935,7 @@ search.backward.extend:
 
   keys:
     qwerty: |-
-      `a-?` (kakoune: normal)
+      `a-?` (helix: normal)
 
 search.extend:
   title:
@@ -908,37 +946,22 @@ search.extend:
 
   keys:
     qwerty: |-
-      `?` (kakoune: normal)
+      `?` (helix: normal)
+      `?` (helix: select)
 
 search.next:
   title:
-    en: Select next match
+    en: |-
+      Select next match
 
   keys:
     qwerty: |-
-      `n` (kakoune: normal)
+      `n` (helix: normal)
+      `n` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Select next match.
-
-
-      | Title                 | Identifier     | Keybinding                | Command                                               |
-      | --------------------- | -------------- | ------------------------- | ----------------------------------------------------- |
-      | Add next match        | `next.add`     | `s-n` (kakoune: normal)   | `[".search.next", {                add: true, ... }]` |
-      | Select previous match | `previous`     | `a-n` (kakoune: normal)   | `[".search.next", { direction: -1           , ... }]` |
-      | Add previous match    | `previous.add` | `s-a-n` (kakoune: normal) | `[".search.next", { direction: -1, add: true, ... }]` |
-
-search.next.add:
-  title:
-    en: Add next match
-
-  commands: |-
-    [".search.next", { add: true, $exclude: [] }]
-
-  keys:
-    qwerty: |-
-      `s-n` (kakoune: normal)
 
 search.previous:
   title:
@@ -949,36 +972,24 @@ search.previous:
 
   keys:
     qwerty: |-
-      `a-n` (kakoune: normal)
-
-search.previous.add:
-  title:
-    en: Add previous match
-
-  commands: |-
-    [".search.next", { direction: -1, add: true, $exclude: [] }]
-
-  keys:
-    qwerty: |-
-      `s-a-n` (kakoune: normal)
+      `s-n` (helix: normal)
+      `s-n` (helix: select)
 
 search.selection:
   title:
-    en: Search current selection
+    en: |-
+      Search current selection
 
   keys:
     qwerty: |-
       `a-*` (kakoune: normal)
       `a-NumPad_Multiply` (kakoune: normal)
+      `a-*` (kakoune: select)
+      `a-NumPad_Multiply` (kakoune: select)
 
   doc:
-    en: |
+    en: |-
       Search current selection.
-
-
-      | Title                            | Identifier        | Keybinding                                                 | Command                                             |
-      | -------------------------------- | ----------------- | ---------------------------------------------------------- | --------------------------------------------------- |
-      | Search current selection (smart) | `selection.smart` | `*` (kakoune: normal), `NumPad_Multiply` (kakoune: normal) | `[".search.selection", { smart: true, +register }]` |
 
 search.selection.smart:
   title:
@@ -989,33 +1000,23 @@ search.selection.smart:
 
   keys:
     qwerty: |-
-      `*` (kakoune: normal)
-      `NumPad_Multiply` (kakoune: normal)
+      `*` (helix: normal)
+      `NumPad_Multiply` (helix: normal)
+      `*` (helix: select)
+      `NumPad_Multiply` (helix: select)
 
 seek:
   title:
-    en: Select to character (excluded)
+    en: |-
+      Select to character (excluded)
 
   keys:
     qwerty: |-
-      `t` (kakoune: normal)
+      `t` (helix: normal)
 
   doc:
-    en: |
+    en: |-
       Select to character (excluded).
-
-
-      #### Variants
-
-      | Title                                    | Identifier                 | Keybinding                | Command                                                             |
-      | ---------------------------------------- | -------------------------- | ------------------------- | ------------------------------------------------------------------- |
-      | Extend to character (excluded)           | `extend`                   | `s-t` (kakoune: normal)   | `[".seek", {                shift: "extend"               , ... }]` |
-      | Select to character (excluded, backward) | `backward`                 | `a-t` (kakoune: normal)   | `[".seek", {                                 direction: -1, ... }]` |
-      | Extend to character (excluded, backward) | `extend.backward`          | `s-a-t` (kakoune: normal) | `[".seek", {                shift: "extend", direction: -1, ... }]` |
-      | Select to character (included)           | `included`                 | `f` (kakoune: normal)     | `[".seek", { include: true                                , ... }]` |
-      | Extend to character (included)           | `included.extend`          | `s-f` (kakoune: normal)   | `[".seek", { include: true, shift: "extend"               , ... }]` |
-      | Select to character (included, backward) | `included.backward`        | `a-f` (kakoune: normal)   | `[".seek", { include: true,                  direction: -1, ... }]` |
-      | Extend to character (included, backward) | `included.extend.backward` | `s-a-f` (kakoune: normal) | `[".seek", { include: true, shift: "extend", direction: -1, ... }]` |
 
 seek.askObject:
   title:
@@ -1025,9 +1026,7 @@ seek.askObject:
     [".openMenu", { menu: "object", title: "Select whole object..." }]
 
   keys:
-    qwerty: |-
-      `a-a` (kakoune: normal)
-      `a-a` (kakoune: insert)
+    qwerty: ""
 
 seek.askObject.end:
   title:
@@ -1037,8 +1036,7 @@ seek.askObject.end:
     [".openMenu", { menu: "object", pass: [{ where: "end" }] }]
 
   keys:
-    qwerty: |-
-      `]` (kakoune: normal)
+    qwerty: ""
 
 seek.askObject.end.extend:
   title:
@@ -1048,8 +1046,7 @@ seek.askObject.end.extend:
     [".openMenu", { menu: "object", pass: [{ where: "end" , shift: "extend" }] }]
 
   keys:
-    qwerty: |-
-      `}` (kakoune: normal)
+    qwerty: ""
 
 seek.askObject.inner:
   title:
@@ -1059,9 +1056,7 @@ seek.askObject.inner:
     [".openMenu", { menu: "object", pass: [{ inner: true }], title: "Select inner object..." }]
 
   keys:
-    qwerty: |-
-      `a-i` (kakoune: normal)
-      `a-i` (kakoune: insert)
+    qwerty: ""
 
 seek.askObject.inner.end:
   title:
@@ -1071,8 +1066,7 @@ seek.askObject.inner.end:
     [".openMenu", { menu: "object", pass: [{ inner: true, where: "end" }] }]
 
   keys:
-    qwerty: |-
-      `a-]` (kakoune: normal)
+    qwerty: ""
 
 seek.askObject.inner.end.extend:
   title:
@@ -1082,8 +1076,7 @@ seek.askObject.inner.end.extend:
     [".openMenu", { menu: "object", pass: [{ inner: true, where: "end" , shift: "extend" }] }]
 
   keys:
-    qwerty: |-
-      `a-}` (kakoune: normal)
+    qwerty: ""
 
 seek.askObject.inner.start:
   title:
@@ -1093,8 +1086,7 @@ seek.askObject.inner.start:
     [".openMenu", { menu: "object", pass: [{ inner: true, where: "start" }] }]
 
   keys:
-    qwerty: |-
-      `a-[` (kakoune: normal)
+    qwerty: ""
 
 seek.askObject.inner.start.extend:
   title:
@@ -1104,8 +1096,7 @@ seek.askObject.inner.start.extend:
     [".openMenu", { menu: "object", pass: [{ inner: true, where: "start", shift: "extend" }] }]
 
   keys:
-    qwerty: |-
-      `a-{` (kakoune: normal)
+    qwerty: ""
 
 seek.askObject.start:
   title:
@@ -1115,8 +1106,7 @@ seek.askObject.start:
     [".openMenu", { menu: "object", pass: [{ where: "start" }] }]
 
   keys:
-    qwerty: |-
-      `[` (kakoune: normal)
+    qwerty: ""
 
 seek.askObject.start.extend:
   title:
@@ -1126,8 +1116,7 @@ seek.askObject.start.extend:
     [".openMenu", { menu: "object", pass: [{ where: "start", shift: "extend" }] }]
 
   keys:
-    qwerty: |-
-      `{` (kakoune: normal)
+    qwerty: ""
 
 seek.backward:
   title:
@@ -1138,28 +1127,16 @@ seek.backward:
 
   keys:
     qwerty: |-
-      `a-t` (kakoune: normal)
+      `s-t` (helix: normal)
 
 seek.enclosing:
   title:
-    en: Select to next enclosing character
-
-  keys:
-    qwerty: |-
-      `m` (kakoune: normal)
+    en: |-
+      Select to next enclosing character
 
   doc:
-    en: |
+    en: |-
       Select to next enclosing character.
-
-
-      #### Variants
-
-      | Title                                  | Identifier                  | Keybinding                | Command                                                        |
-      | -------------------------------------- | --------------------------- | ------------------------- | -------------------------------------------------------------- |
-      | Extend to next enclosing character     | `enclosing.extend`          | `s-m` (kakoune: normal)   | `[".seek.enclosing", { shift: "extend"               , ... }]` |
-      | Select to previous enclosing character | `enclosing.backward`        | `a-m` (kakoune: normal)   | `[".seek.enclosing", {                  direction: -1, ... }]` |
-      | Extend to previous enclosing character | `enclosing.extend.backward` | `s-a-m` (kakoune: normal) | `[".seek.enclosing", { shift: "extend", direction: -1, ... }]` |
 
 seek.enclosing.backward:
   title:
@@ -1169,8 +1146,7 @@ seek.enclosing.backward:
     [".seek.enclosing", { direction: -1, $exclude: [] }]
 
   keys:
-    qwerty: |-
-      `a-m` (kakoune: normal)
+    qwerty: ""
 
 seek.enclosing.extend:
   title:
@@ -1180,8 +1156,7 @@ seek.enclosing.extend:
     [".seek.enclosing", { shift: "extend" , $exclude: [] }]
 
   keys:
-    qwerty: |-
-      `s-m` (kakoune: normal)
+    qwerty: ""
 
 seek.enclosing.extend.backward:
   title:
@@ -1191,8 +1166,7 @@ seek.enclosing.extend.backward:
     [".seek.enclosing", { shift: "extend", direction: -1, $exclude: [] }]
 
   keys:
-    qwerty: |-
-      `s-a-m` (kakoune: normal)
+    qwerty: ""
 
 seek.extend:
   title:
@@ -1203,7 +1177,7 @@ seek.extend:
 
   keys:
     qwerty: |-
-      `s-t` (kakoune: normal)
+      `t` (helix: select)
 
 seek.extend.backward:
   title:
@@ -1214,7 +1188,7 @@ seek.extend.backward:
 
   keys:
     qwerty: |-
-      `s-a-t` (kakoune: normal)
+      `s-t` (helix: select)
 
 seek.included:
   title:
@@ -1225,7 +1199,7 @@ seek.included:
 
   keys:
     qwerty: |-
-      `f` (kakoune: normal)
+      `f` (helix: normal)
 
 seek.included.backward:
   title:
@@ -1236,7 +1210,7 @@ seek.included.backward:
 
   keys:
     qwerty: |-
-      `a-f` (kakoune: normal)
+      `s-f` (helix: normal)
 
 seek.included.extend:
   title:
@@ -1247,7 +1221,7 @@ seek.included.extend:
 
   keys:
     qwerty: |-
-      `s-f` (kakoune: normal)
+      `f` (helix: select)
 
 seek.included.extend.backward:
   title:
@@ -1258,23 +1232,18 @@ seek.included.extend.backward:
 
   keys:
     qwerty: |-
-      `s-a-f` (kakoune: normal)
+      `s-f` (helix: select)
 
 seek.leap:
   title:
-    en: Leap forward
+    en: |-
+      Leap forward
 
   doc:
-    en: |
+    en: |-
       Leap forward.
 
       Inspired by [`leap.nvim`](https://github.com/ggandor/leap.nvim).
-
-      #### Variants
-
-      | Title         | Identifier      | Command                                  |
-      | ------------- | --------------- | ---------------------------------------- |
-      | Leap backward | `leap.backward` | `[".seek.leap", { direction: -1, ... }]` |
 
 seek.leap.backward:
   title:
@@ -1285,71 +1254,27 @@ seek.leap.backward:
 
 seek.object:
   title:
-    en: Select object
+    en: |-
+      Select object
 
   doc:
-    en: |
+    en: |-
       Select object.
-
-
-      #### Object patterns
-
-      - Pairs: `<regexp>(?#inner)<regexp>`.
-
-      - Character sets: `[<characters>]+`.
-
-        - Can be preceded by `(?<before>[<characters>]+)` and followed by
-          `(?<after>[<character>]+)` for whole objects.
-
-      - Matches that may only span a single line: `(?#singleline)<regexp>`.
-
-      - Predefined: `(?#predefined=<argument | paragraph | sentence>)`.
-
-      #### Variants
-
-      | Title                        | Identifier                     | Keybinding                                       | Command                                                                                       |
-      | ---------------------------- | ------------------------------ | ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-      | Select whole object          | `askObject`                    | `a-a` (kakoune: normal), `a-a` (kakoune: insert) | `[".openMenu", { menu: "object",                          title: "Select whole object..." }]` |
-      | Select inner object          | `askObject.inner`              | `a-i` (kakoune: normal), `a-i` (kakoune: insert) | `[".openMenu", { menu: "object", pass: [{ inner: true }], title: "Select inner object..." }]` |
-      | Select to whole object start | `askObject.start`              | `[` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "start"                  }] }]` |
-      | Extend to whole object start | `askObject.start.extend`       | `{` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "start", shift: "extend" }] }]` |
-      | Select to inner object start | `askObject.inner.start`        | `a-[` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "start"                  }] }]` |
-      | Extend to inner object start | `askObject.inner.start.extend` | `a-{` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "start", shift: "extend" }] }]` |
-      | Select to whole object end   | `askObject.end`                | `]` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "end"                    }] }]` |
-      | Extend to whole object end   | `askObject.end.extend`         | `}` (kakoune: normal)                            | `[".openMenu", { menu: "object", pass: [{              where: "end"  , shift: "extend" }] }]` |
-      | Select to inner object end   | `askObject.inner.end`          | `a-]` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "end"                    }] }]` |
-      | Extend to inner object end   | `askObject.inner.end.extend`   | `a-}` (kakoune: normal)                          | `[".openMenu", { menu: "object", pass: [{ inner: true, where: "end"  , shift: "extend" }] }]` |
 
 seek.word:
   title:
-    en: Select to next word start
+    en: |-
+      Select to next word start
 
   keys:
     qwerty: |-
-      `w` (kakoune: normal)
+      `w` (helix: normal)
 
   doc:
-    en: |
+    en: |-
       Select to next word start.
 
       Select the word and following whitespaces on the right of the end of each selection.
-
-
-      #### Variants
-
-      | Title                                        | Identifier                | Keybinding                | Command                                                                               |
-      | -------------------------------------------- | ------------------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-      | Extend to next word start                    | `word.extend`             | `s-w` (kakoune: normal)   | `[".seek.word", {                             shift: "extend"               , ... }]` |
-      | Select to previous word start                | `word.backward`           | `b` (kakoune: normal)     | `[".seek.word", {                                              direction: -1, ... }]` |
-      | Extend to previous word start                | `word.extend.backward`    | `s-b` (kakoune: normal)   | `[".seek.word", {                             shift: "extend", direction: -1, ... }]` |
-      | Select to next non-whitespace word start     | `word.ws`                 | `a-w` (kakoune: normal)   | `[".seek.word", {                   ws: true                                , ... }]` |
-      | Extend to next non-whitespace word start     | `word.ws.extend`          | `s-a-w` (kakoune: normal) | `[".seek.word", {                   ws: true, shift: "extend"               , ... }]` |
-      | Select to previous non-whitespace word start | `word.ws.backward`        | `a-b` (kakoune: normal)   | `[".seek.word", {                   ws: true,                  direction: -1, ... }]` |
-      | Extend to previous non-whitespace word start | `word.ws.extend.backward` | `s-a-b` (kakoune: normal) | `[".seek.word", {                   ws: true, shift: "extend", direction: -1, ... }]` |
-      | Select to next word end                      | `wordEnd`                 | `e` (kakoune: normal)     | `[".seek.word", { stopAtEnd: true                                           , ... }]` |
-      | Extend to next word end                      | `wordEnd.extend`          | `s-e` (kakoune: normal)   | `[".seek.word", { stopAtEnd: true ,           shift: "extend"               , ... }]` |
-      | Select to next non-whitespace word end       | `wordEnd.ws`              | `a-e` (kakoune: normal)   | `[".seek.word", { stopAtEnd: true , ws: true                                , ... }]` |
-      | Extend to next non-whitespace word end       | `wordEnd.ws.extend`       | `s-a-e` (kakoune: normal) | `[".seek.word", { stopAtEnd: true , ws: true, shift: "extend"               , ... }]` |
 
 seek.word.backward:
   title:
@@ -1360,7 +1285,7 @@ seek.word.backward:
 
   keys:
     qwerty: |-
-      `b` (kakoune: normal)
+      `b` (helix: normal)
 
 seek.word.extend:
   title:
@@ -1371,7 +1296,7 @@ seek.word.extend:
 
   keys:
     qwerty: |-
-      `s-w` (kakoune: normal)
+      `w` (helix: select)
 
 seek.word.extend.backward:
   title:
@@ -1382,7 +1307,7 @@ seek.word.extend.backward:
 
   keys:
     qwerty: |-
-      `s-b` (kakoune: normal)
+      `b` (helix: select)
 
 seek.word.ws:
   title:
@@ -1393,7 +1318,7 @@ seek.word.ws:
 
   keys:
     qwerty: |-
-      `a-w` (kakoune: normal)
+      `s-w` (helix: normal)
 
 seek.word.ws.backward:
   title:
@@ -1404,7 +1329,7 @@ seek.word.ws.backward:
 
   keys:
     qwerty: |-
-      `a-b` (kakoune: normal)
+      `s-b` (helix: normal)
 
 seek.word.ws.extend:
   title:
@@ -1415,7 +1340,7 @@ seek.word.ws.extend:
 
   keys:
     qwerty: |-
-      `s-a-w` (kakoune: normal)
+      `s-w` (helix: select)
 
 seek.word.ws.extend.backward:
   title:
@@ -1426,7 +1351,7 @@ seek.word.ws.extend.backward:
 
   keys:
     qwerty: |-
-      `s-a-b` (kakoune: normal)
+      `s-b` (helix: select)
 
 seek.wordEnd:
   title:
@@ -1437,7 +1362,7 @@ seek.wordEnd:
 
   keys:
     qwerty: |-
-      `e` (kakoune: normal)
+      `e` (helix: normal)
 
 seek.wordEnd.extend:
   title:
@@ -1448,7 +1373,7 @@ seek.wordEnd.extend:
 
   keys:
     qwerty: |-
-      `s-e` (kakoune: normal)
+      `e` (helix: select)
 
 seek.wordEnd.ws:
   title:
@@ -1459,7 +1384,7 @@ seek.wordEnd.ws:
 
   keys:
     qwerty: |-
-      `a-e` (kakoune: normal)
+      `s-e` (helix: normal)
 
 seek.wordEnd.ws.extend:
   title:
@@ -1470,19 +1395,21 @@ seek.wordEnd.ws.extend:
 
   keys:
     qwerty: |-
-      `s-a-e` (kakoune: normal)
+      `s-e` (helix: select)
 
 select.buffer:
   title:
-    en: Select whole buffer
+    en: |-
+      Select whole buffer
+
+  doc:
+    en: |-
+      Select whole buffer.
 
   keys:
     qwerty: |-
-      `%` (kakoune: normal)
-
-  doc:
-    en: |+
-      Select whole buffer.
+      `%` (helix: normal)
+      `%` (helix: select)
 
 select.documentEnd.extend:
   title:
@@ -1513,8 +1440,8 @@ select.down.extend:
 
   keys:
     qwerty: |-
-      `s-j` (kakoune: normal)
-      `s-down` (kakoune: normal)
+      `j` (helix: select)
+      `down` (helix: select)
 
 select.down.jump:
   title:
@@ -1525,7 +1452,7 @@ select.down.jump:
 
   keys:
     qwerty: |-
-      `j` (kakoune: normal)  , `down` (kakoune: normal)
+      `j` (helix: normal)  , `down` (helix: normal)
 
 select.firstLine.extend:
   title:
@@ -1549,18 +1476,12 @@ select.firstLine.jump:
 
 select.firstVisibleLine:
   title:
-    en: Select to first visible line
+    en: >-
+      Select to first visible line
 
   doc:
-    en: |
+    en: |-
       Select to first visible line.
-
-      #### Variants
-
-      | Title                        | Identifier                | Command                                             |
-      | ---------------------------- | ------------------------- | --------------------------------------------------- |
-      | Jump to first visible line   | `firstVisibleLine.jump`   | `[".select.firstVisibleLine", { shift: "jump"   }]` |
-      | Extend to first visible line | `firstVisibleLine.extend` | `[".select.firstVisibleLine", { shift: "extend" }]` |
 
 select.firstVisibleLine.extend:
   title:
@@ -1578,36 +1499,21 @@ select.firstVisibleLine.jump:
 
 select.horizontally:
   title:
-    en: Select horizontally
+    en: |-
+      Select horizontally
 
   doc:
-    en: |
+    en: |-
       Select horizontally.
-
-
-      #### Variants
-
-      | Title        | Identifier     | Keybinding                                           | Command                                                             |
-      | ------------ | -------------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
-      | Jump right   | `right.jump`   | `l` (kakoune: normal)  , `right` (kakoune: normal)   | `[".select.horizontally", { direction:  1, shift: "jump"  , ... }]` |
-      | Extend right | `right.extend` | `s-l` (kakoune: normal), `s-right` (kakoune: normal) | `[".select.horizontally", { direction:  1, shift: "extend", ... }]` |
-      | Jump left    | `left.jump`    | `h` (kakoune: normal)  , `left` (kakoune: normal)    | `[".select.horizontally", { direction: -1, shift: "jump"  , ... }]` |
-      | Extend left  | `left.extend`  | `s-h` (kakoune: normal), `s-left` (kakoune: normal)  | `[".select.horizontally", { direction: -1, shift: "extend", ... }]` |
 
 select.lastLine:
   title:
-    en: Select to last line
+    en: |-
+      Select to last line
 
   doc:
-    en: |
+    en: |-
       Select to last line.
-
-      #### Variants
-
-      | Title               | Identifier        | Command                                     |
-      | ------------------- | ----------------- | ------------------------------------------- |
-      | Jump to last line   | `lastLine.jump`   | `[".select.lastLine", { shift: "jump"   }]` |
-      | Extend to last line | `lastLine.extend` | `[".select.lastLine", { shift: "extend" }]` |
 
 select.lastLine.extend:
   title:
@@ -1625,18 +1531,12 @@ select.lastLine.jump:
 
 select.lastVisibleLine:
   title:
-    en: Select to last visible line
+    en: >-
+      Select to last visible line
 
   doc:
-    en: |
+    en: |-
       Select to last visible line.
-
-      #### Variants
-
-      | Title                       | Identifier               | Command                                            |
-      | --------------------------- | ------------------------ | -------------------------------------------------- |
-      | Jump to last visible line   | `lastVisibleLine.jump`   | `[".select.lastVisibleLine", { shift: "jump"   }]` |
-      | Extend to last visible line | `lastVisibleLine.extend` | `[".select.lastVisibleLine", { shift: "extend" }]` |
 
 select.lastVisibleLine.extend:
   title:
@@ -1661,8 +1561,8 @@ select.left.extend:
 
   keys:
     qwerty: |-
-      `s-h` (kakoune: normal)
-      `s-left` (kakoune: normal)
+      `h` (helix: select)
+      `left` (helix: select)
 
 select.left.jump:
   title:
@@ -1673,43 +1573,48 @@ select.left.jump:
 
   keys:
     qwerty: |-
-      `h` (kakoune: normal)  , `left` (kakoune: normal)
+      `h` (helix: normal)  , `left` (helix: normal)
 
 select.line.above:
   title:
-    en: Select line above
+    en: |-
+      Select line above
 
   doc:
-    en: |
+    en: |-
       Select line above.
 
 select.line.above.extend:
   title:
-    en: Extend to line above
+    en: |-
+      Extend to line above
 
   doc:
-    en: |
+    en: |-
       Extend to line above.
 
 select.line.below:
   title:
-    en: Select line below
+    en: |-
+      Select line below
 
   doc:
-    en: |
+    en: |-
       Select line below.
 
 select.line.below.extend:
   title:
-    en: Extend to line below
+    en: |-
+      Extend to line below
 
   doc:
-    en: |
+    en: |-
       Extend to line below.
 
 select.lineEnd:
   title:
-    en: Select to line end
+    en: |-
+      Select to line end
 
   keys:
     qwerty: |-
@@ -1717,18 +1622,8 @@ select.lineEnd:
       `end` (kakoune: normal)
 
   doc:
-    en: |
+    en: |-
       Select to line end.
-
-
-
-      #### Variants
-
-      | Title                    | Identifier           | Keybinding                                           | Command                                                         |
-      | ------------------------ | -------------------- | ---------------------------------------------------- | --------------------------------------------------------------- |
-      | Extend to line end       | `lineEnd.extend`     | `s-a-l` (kakoune: normal), `s-end` (kakoune: normal) | `[".select.lineEnd", {                 shift: "extend", ... }]` |
-      | Jump to last character   | `documentEnd.jump`   |                                                      | `[".select.lineEnd", { count: MAX_INT, shift: "jump"  , ... }]` |
-      | Extend to last character | `documentEnd.extend` |                                                      | `[".select.lineEnd", { count: MAX_INT, shift: "extend", ... }]` |
 
 select.lineEnd.extend:
   title:
@@ -1744,28 +1639,12 @@ select.lineEnd.extend:
 
 select.lineStart:
   title:
-    en: Select to line start
-
-  keys:
-    qwerty: |-
-      `a-h` (kakoune: normal)
-      `home` (kakoune: normal)
+    en: >-
+      Select to line start
 
   doc:
-    en: |
+    en: |-
       Select to line start.
-
-
-      #### Variants
-
-      | Title                             | Identifier                   | Keybinding                                            | Command                                                            |
-      | --------------------              | ------------------           | ----------------------------------------------------- | ------------------------------------------------------------------ |
-      | Jump to line start                | `lineStart.jump`             |                                                       | `[".select.lineStart", {                  shift: "jump"  , ... }]` |
-      | Extend to line start              | `lineStart.extend`           | `s-a-h` (kakoune: normal), `s-home` (kakoune: normal) | `[".select.lineStart", {                  shift: "extend", ... }]` |
-      | Jump to line start (skip blank)   | `lineStart.skipBlank.jump`   |                                                       | `[".select.lineStart", { skipBlank: true, shift: "jump"  , ... }]` |
-      | Extend to line start (skip blank) | `lineStart.skipBlank.extend` |                                                       | `[".select.lineStart", { skipBlank: true, shift: "extend", ... }]` |
-      | Jump to first line                | `firstLine.jump`             |                                                       | `[".select.lineStart", { count: 0,        shift: "jump"  , ... }]` |
-      | Extend to first line              | `firstLine.extend`           |                                                       | `[".select.lineStart", { count: 0,        shift: "extend", ... }]` |
 
 select.lineStart.extend:
   title:
@@ -1787,7 +1666,9 @@ select.lineStart.jump:
     [".select.lineStart", { shift: "jump" , $exclude: [] }]
 
   keys:
-    qwerty: ""
+    qwerty: |-
+      `a-h` (kakoune: normal)
+      `s-g` (kakoune: normal)
 
 select.lineStart.skipBlank.extend:
   title:
@@ -1811,18 +1692,12 @@ select.lineStart.skipBlank.jump:
 
 select.middleVisibleLine:
   title:
-    en: Select to middle visible line
+    en: >-
+      Select to middle visible line
 
   doc:
-    en: |
+    en: |-
       Select to middle visible line.
-
-      #### Variants
-
-      | Title                         | Identifier                 | Command                                              |
-      | ----------------------------- | -------------------------- | ---------------------------------------------------- |
-      | Jump to middle visible line   | `middleVisibleLine.jump`   | `[".select.middleVisibleLine", { shift: "jump"   }]` |
-      | Extend to middle visible line | `middleVisibleLine.extend` | `[".select.middleVisibleLine", { shift: "extend" }]` |
 
 select.middleVisibleLine.extend:
   title:
@@ -1847,8 +1722,8 @@ select.right.extend:
 
   keys:
     qwerty: |-
-      `s-l` (kakoune: normal)
-      `s-right` (kakoune: normal)
+      `l` (helix: select)
+      `right` (helix: select)
 
 select.right.jump:
   title:
@@ -1859,47 +1734,41 @@ select.right.jump:
 
   keys:
     qwerty: |-
-      `l` (kakoune: normal)  , `right` (kakoune: normal)
+      `l` (helix: normal)  , `right` (helix: normal)
 
 select.to:
   title:
-    en: Select to
+    en: >-
+      Select to
 
   doc:
-    en: |
+    en: |-
       Select to.
 
       If a count is specified, this command will shift to the start of the given
       line. If no count is specified, this command will shift open the `goto` menu.
-
-      #### Variants
-
-      | Title     | Identifier  | Keybinding              | Command                                    |
-      | --------- | ----------- | ----------------------- | ------------------------------------------ |
-      | Go to     | `to.jump`   | `g` (kakoune: normal)   | `[".select.to", { shift: "jump"  , ... }]` |
-      | Extend to | `to.extend` | `s-g` (kakoune: normal) | `[".select.to", { shift: "extend", ... }]` |
 
 select.to.extend:
   title:
     en: Extend to
 
   commands: |-
-    [".select.to", { shift: "extend", $exclude: [] }]
+    [".select.to", { $exclude: [] }]
 
   keys:
     qwerty: |-
-      `s-g` (kakoune: normal)
+      `g` (helix: select)
 
 select.to.jump:
   title:
     en: Go to
 
   commands: |-
-    [".select.to", { shift: "jump" , $exclude: [] }]
+    [".select.to", { $exclude: [] }]
 
   keys:
     qwerty: |-
-      `g` (kakoune: normal)
+      `g` (helix: normal)
 
 select.up.extend:
   title:
@@ -1910,8 +1779,8 @@ select.up.extend:
 
   keys:
     qwerty: |-
-      `s-k` (kakoune: normal)
-      `s-up` (kakoune: normal)
+      `k` (helix: select)
+      `up` (helix: select)
 
 select.up.jump:
   title:
@@ -1922,71 +1791,39 @@ select.up.jump:
 
   keys:
     qwerty: |-
-      `k` (kakoune: normal)  , `up` (kakoune: normal)
+      `k` (helix: normal)  , `up` (helix: normal)
 
 select.vertically:
   title:
-    en: Select vertically
+    en: |-
+      Select vertically
 
   doc:
-    en: |
+    en: |-
       Select vertically.
-
-
-      #### Variants
-
-      | Title       | Identifier    | Keybinding                                          | Command                                                           |
-      | ----------- | ------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
-      | Jump down   | `down.jump`   | `j` (kakoune: normal)  , `down` (kakoune: normal)   | `[".select.vertically", { direction:  1, shift: "jump"  , ... }]` |
-      | Extend down | `down.extend` | `s-j` (kakoune: normal), `s-down` (kakoune: normal) | `[".select.vertically", { direction:  1, shift: "extend", ... }]` |
-      | Jump up     | `up.jump`     | `k` (kakoune: normal)  , `up` (kakoune: normal)     | `[".select.vertically", { direction: -1, shift: "jump"  , ... }]` |
-      | Extend up   | `up.extend`   | `s-k` (kakoune: normal), `s-up` (kakoune: normal)   | `[".select.vertically", { direction: -1, shift: "extend", ... }]` |
-
-      The following keybindings are also defined:
-
-      | Keybinding                                       | Command                                                                    |
-      | ------------------------------------------------ | -------------------------------------------------------------------------- |
-      | `c-f` (kakoune: normal), `c-f` (kakoune: insert) | `[".select.vertically", { direction:  1, by: "page"    , shift: "jump" }]` |
-      | `c-d` (kakoune: normal), `c-d` (kakoune: insert) | `[".select.vertically", { direction:  1, by: "halfPage", shift: "jump" }]` |
-      | `c-b` (kakoune: normal), `c-b` (kakoune: insert) | `[".select.vertically", { direction: -1, by: "page"    , shift: "jump" }]` |
-      | `c-u` (kakoune: normal), `c-u` (kakoune: insert) | `[".select.vertically", { direction: -1, by: "halfPage", shift: "jump" }]` |
 
 selections.changeDirection:
   title:
-    en: Change direction of selections
+    en: |-
+      Change direction of selections
 
   keys:
     qwerty: |-
-      `a-;` (kakoune: normal)
+      `a-;` (helix: normal)
+      `a-;` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Change direction of selections.
-
-
-
-      #### Variants
-
-      | Title               | Identifier     | Keybinding              | Command                                              |
-      | ------------------- | -------------- | ----------------------- | ---------------------------------------------------- |
-      | Forward selections  | `faceForward`  | `a-:` (kakoune: normal) | `[".selections.changeDirection", { direction:  1 }]` |
-      | Backward selections | `faceBackward` |                         | `[".selections.changeDirection", { direction: -1 }]` |
 
 selections.changeOrder:
   title:
-    en: Reverse selections
+    en: |-
+      Reverse selections
 
   doc:
-    en: |
+    en: |-
       Reverse selections.
-
-
-      #### Variants
-
-      | Title                       | Identifier        | Command                                          |
-      | --------------------------- | ----------------- | ------------------------------------------------ |
-      | Order selections descending | `orderDescending` | `[".selections.changeOrder", { direction:  1 }]` |
-      | Order selections ascending  | `orderAscending`  | `[".selections.changeOrder", { direction: -1 }]` |
 
 selections.clear.main:
   title:
@@ -1997,7 +1834,8 @@ selections.clear.main:
 
   keys:
     qwerty: |-
-      `a-,` (kakoune: normal)
+      `a-,` (helix: normal)
+      `a-,` (helix: select)
 
 selections.clear.secondary:
   title:
@@ -2008,26 +1846,22 @@ selections.clear.secondary:
 
   keys:
     qwerty: |-
-      `,` (kakoune: normal)
+      `,` (helix: normal)
+      `,` (helix: select)
 
 selections.copy:
   title:
-    en: Copy selections below
+    en: |-
+      Copy selections below
 
   keys:
     qwerty: |-
-      `s-c` (kakoune: normal)
+      `s-c` (helix: normal)
+      `s-c` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Copy selections below.
-
-
-      #### Variant
-
-      | Title                 | Identifier   | Keybinding                | Command                                   |
-      | --------------------- | ------------ | ------------------------- | ----------------------------------------- |
-      | Copy selections above | `copy.above` | `s-a-c` (kakoune: normal) | `[".selections.copy", { direction: -1 }]` |
 
 selections.copy.above:
   title:
@@ -2038,21 +1872,24 @@ selections.copy.above:
 
   keys:
     qwerty: |-
-      `s-a-c` (kakoune: normal)
+      `s-a-c` (helix: normal)
+      `s-a-c` (helix: select)
 
 selections.expandToLines:
   title:
-    en: Expand to lines
-
-  keys:
-    qwerty: |-
-      `x` (kakoune: normal)
+    en: |-
+      Expand to lines
 
   doc:
-    en: |+
+    en: |-
       Expand to lines.
 
       Expand selections to contain full lines (including end-of-line characters).
+
+  keys:
+    qwerty: |-
+      `x` (helix: normal)
+      `x` (helix: select)
 
 selections.faceBackward:
   title:
@@ -2073,29 +1910,21 @@ selections.faceForward:
 
   keys:
     qwerty: |-
-      `a-:` (kakoune: normal)
+      `a-:` (helix: normal)
+      `a-:` (helix: select)
 
 selections.filter:
   title:
-    en: Filter selections
+    en: |-
+      Filter selections
 
   keys:
     qwerty: |-
       `$` (kakoune: normal)
 
   doc:
-    en: |
+    en: |-
       Filter selections.
-
-
-      #### Variants
-
-      | Title                      | Identifier              | Keybinding                | Commands                                                                 |
-      | -------------------------- | ----------------------- | --------------------------| ------------------------------------------------------------------------ |
-      | Keep matching selections   | `filter.regexp`         | `a-k` (kakoune: normal)   | `[".selections.filter", { defaultExpression: "/"               , ... }]` |
-      | Clear matching selections  | `filter.regexp.inverse` | `s-a-k` (kakoune: normal) | `[".selections.filter", { defaultExpression: "/", inverse: true, ... }]` |
-      | Clear secondary selections | `clear.secondary`       | `,` (kakoune: normal)     | `[".selections.filter", { expression: "i === count"            , ... }]` |
-      | Clear main selections      | `clear.main`            | `a-,` (kakoune: normal)   | `[".selections.filter", { expression: "i !== count"            , ... }]` |
 
 selections.filter.regexp:
   title:
@@ -2106,7 +1935,8 @@ selections.filter.regexp:
 
   keys:
     qwerty: |-
-      `a-k` (kakoune: normal)
+      `s-k` (helix: normal)
+      `s-k` (helix: select)
 
 selections.filter.regexp.inverse:
   title:
@@ -2117,7 +1947,8 @@ selections.filter.regexp.inverse:
 
   keys:
     qwerty: |-
-      `s-a-k` (kakoune: normal)
+      `s-a-k` (helix: normal)
+      `s-a-k` (helix: select)
 
 selections.hideIndices:
   title:
@@ -2128,22 +1959,25 @@ selections.hideIndices:
 
 selections.merge:
   title:
-    en: Merge contiguous selections
+    en: |-
+      Merge contiguous selections
+
+  doc:
+    en: |-
+      Merge contiguous selections.
 
   keys:
     qwerty: |-
-      `a-_` (kakoune: normal)
-
-  doc:
-    en: |+
-      Merge contiguous selections.
+      `a-_` (helix: normal)
+      `a-_` (helix: select)
 
 selections.open:
   title:
-    en: Open selected file
+    en: |-
+      Open selected file
 
   doc:
-    en: |
+    en: |-
       Open selected file.
 
 selections.orderAscending:
@@ -2162,29 +1996,19 @@ selections.orderDescending:
 
 selections.pipe:
   title:
-    en: Pipe selections
+    en: |-
+      Pipe selections
 
   keys:
     qwerty: |-
       `a-|` (kakoune: normal)
 
   doc:
-    en: |
+    en: |-
       Pipe selections.
 
       Run the specified command or code with the contents of each selection, and
       save the result to a register.
-
-
-      See https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc#changes-through-external-programs
-
-      #### Additional commands
-
-      | Title               | Identifier     | Keybinding              | Commands                                                                                                                    |
-      | ------------------- | -------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-      | Pipe and replace    | `pipe.replace` | `|` (kakoune: normal)   | `[".selections.pipe", { +expression,register }], [".edit.insert", { register: "|",                                  ... }]` |
-      | Pipe and append     | `pipe.append`  | `!` (kakoune: normal)   | `[".selections.pipe", { +expression,register }], [".edit.insert", { register: "|", where: "end"  , shift: "select", ... }]` |
-      | Pipe and prepend    | `pipe.prepend` | `a-!` (kakoune: normal) | `[".selections.pipe", { +expression,register }], [".edit.insert", { register: "|", where: "start", shift: "select", ... }]` |
 
 selections.pipe.append:
   title:
@@ -2221,23 +2045,17 @@ selections.pipe.replace:
 
 selections.reduce:
   title:
-    en: Reduce selections to their cursor
+    en: |-
+      Reduce selections to their cursor
 
   keys:
     qwerty: |-
-      `;` (kakoune: normal)
+      `;` (helix: normal)
+      `;` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Reduce selections to their cursor.
-
-
-
-      #### Variant
-
-      | Title                           | Identifier     | Keybinding                | Command                                                        |
-      | ------------------------------- | -------------- | ------------------------- | -------------------------------------------------------------- |
-      | Reduce selections to their ends | `reduce.edges` | `s-a-s` (kakoune: normal) | `[".selections.reduce", { where: "both", empty: false, ... }]` |
 
 selections.reduce.edges:
   title:
@@ -2249,58 +2067,47 @@ selections.reduce.edges:
   keys:
     qwerty: |-
       `s-a-s` (kakoune: normal)
+      `s-a-s` (kakoune: select)
 
 selections.restore:
   title:
-    en: Restore selections
+    en: |-
+      Restore selections
+
+  doc:
+    en: |-
+      Restore selections.
 
   keys:
     qwerty: |-
       `z` (kakoune: normal)
 
-  doc:
-    en: |+
-      Restore selections.
-
 selections.restore.withCurrent:
   title:
-    en: Combine register selections with current ones
+    en: |-
+      Combine register selections with current ones
 
   keys:
     qwerty: |-
       `a-z` (kakoune: normal)
 
   doc:
-    en: |
+    en: |-
       Combine register selections with current ones.
-
-
-      The following keybinding is also available:
-
-      | Keybinding                | Command                                                       |
-      | ------------------------- | ------------------------------------------------------------- |
-      | `s-a-z` (kakoune: normal) | `[".selections.restore.withCurrent", { reverse: true, ... }]` |
-
-      See https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc#marks
 
 selections.rotate.both:
   title:
-    en: Rotate selections clockwise
+    en: |-
+      Rotate selections clockwise
 
   keys:
     qwerty: |-
-      `a-(` (kakoune: normal)
+      `a-(` (helix: normal)
+      `a-(` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Rotate selections clockwise.
-
-
-      The following keybinding is also available:
-
-      | Title                               | Identifier     | Keybinding              | Command                                          |
-      | ----------------------------------- | -------------- | ----------------------- | ------------------------------------------------ |
-      | Rotate selections counter-clockwise | `both.reverse` | `a-)` (kakoune: normal) | `[".selections.rotate.both", { reverse: true }]` |
 
 selections.rotate.both.reverse:
   title:
@@ -2311,21 +2118,17 @@ selections.rotate.both.reverse:
 
   keys:
     qwerty: |-
-      `a-)` (kakoune: normal)
+      `a-)` (helix: normal)
+      `a-)` (helix: select)
 
 selections.rotate.contents:
   title:
-    en: Rotate selections clockwise (contents only)
+    en: >-
+      Rotate selections clockwise (contents only)
 
   doc:
-    en: |
+    en: |-
       Rotate selections clockwise (contents only).
-
-      The following command is also available:
-
-      | Title                                               | Identifier         | Command                                              |
-      | --------------------------------------------------- | ------------------ | ---------------------------------------------------- |
-      | Rotate selections counter-clockwise (contents only) | `contents.reverse` | `[".selections.rotate.contents", { reverse: true }]` |
 
 selections.rotate.contents.reverse:
   title:
@@ -2336,22 +2139,17 @@ selections.rotate.contents.reverse:
 
 selections.rotate.selections:
   title:
-    en: Rotate selections clockwise (selections only)
+    en: |-
+      Rotate selections clockwise (selections only)
 
   keys:
     qwerty: |-
-      `(` (kakoune: normal)
+      `(` (helix: normal)
+      `(` (helix: select)
 
   doc:
-    en: |
+    en: |-
       Rotate selections clockwise (selections only).
-
-
-      The following keybinding is also available:
-
-      | Title                                                 | Identifier           | Keybinding            | Command                                                |
-      | ----------------------------------------------------- | -------------------- | --------------------- | ------------------------------------------------------ |
-      | Rotate selections counter-clockwise (selections only) | `selections.reverse` | `)` (kakoune: normal) | `[".selections.rotate.selections", { reverse: true }]` |
 
 selections.rotate.selections.reverse:
   title:
@@ -2362,45 +2160,44 @@ selections.rotate.selections.reverse:
 
   keys:
     qwerty: |-
-      `)` (kakoune: normal)
+      `)` (helix: normal)
+      `)` (helix: select)
 
 selections.save:
   title:
-    en: Save selections
+    en: |-
+      Save selections
+
+  doc:
+    en: |-
+      Save selections.
 
   keys:
     qwerty: |-
       `s-z` (kakoune: normal)
 
-  doc:
-    en: |+
-      Save selections.
-
 selections.saveText:
   title:
-    en: Copy selections text
+    en: |-
+      Copy selections text
+
+  doc:
+    en: |-
+      Copy selections text.
 
   keys:
     qwerty: |-
-      `y` (kakoune: normal)
-
-  doc:
-    en: |+
-      Copy selections text.
+      `y` (helix: normal)
+      `y` (helix: select)
 
 selections.select:
   title:
-    en: Select within selections
+    en: >-
+      Select within selections
 
   doc:
-    en: |
+    en: |-
       Select within selections.
-
-      #### Variants
-
-      | Title          | Identifier      | Keybinding            | Command                                                                                           |
-      | -------------- | --------------- | --------------------- | ------------------------------------------------------------------------------------------------- |
-      | Leap or select | `select.orLeap` | `s` (kakoune: normal) | `[".ifEmpty", { then: [[".seek.leap", { ... }]], otherwise: [[".selections.select", { ... }]] }]` |
 
 selections.select.orLeap:
   title:
@@ -2411,7 +2208,8 @@ selections.select.orLeap:
 
   keys:
     qwerty: |-
-      `s` (kakoune: normal)
+      `s` (helix: normal)
+      `s` (helix: select)
 
 selections.showIndices:
   title:
@@ -2422,38 +2220,35 @@ selections.showIndices:
 
 selections.sort:
   title:
-    en: Sort selections
+    en: |-
+      Sort selections
 
   doc:
-    en: |+
+    en: |-
       Sort selections.
-
 
 selections.split:
   title:
-    en: Split selections
+    en: |-
+      Split selections
+
+  doc:
+    en: |-
+      Split selections.
 
   keys:
     qwerty: |-
-      `s-s` (kakoune: normal)
-
-  doc:
-    en: |+
-      Split selections.
+      `s-s` (helix: normal)
+      `s-s` (helix: select)
 
 selections.splitLines:
   title:
-    en: Split selections at line boundaries
+    en: >-
+      Split selections at line boundaries
 
   doc:
-    en: |
+    en: |-
       Split selections at line boundaries.
-
-      #### Variants
-
-      | Title                   | Identifier                   | Keybinding              | Command                                                                                                              |
-      | ----------------------- | ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
-      | Leap or select backward | `splitLines.orLeap.backward` | `a-s` (kakoune: normal) | `[".ifEmpty", { then: [[".seek.leap", { direction: -1, ... }]], otherwise: [[".selections.splitLines", { ... }]] }]` |
 
 selections.splitLines.orLeap.backward:
   title:
@@ -2464,66 +2259,66 @@ selections.splitLines.orLeap.backward:
 
   keys:
     qwerty: |-
-      `a-s` (kakoune: normal)
+      `a-s` (helix: normal)
+      `a-s` (helix: select)
 
 selections.toggleIndices:
   title:
-    en: Toggle selection indices
+    en: |-
+      Toggle selection indices
 
   keys:
     qwerty: |-
       `enter` (dance: normal)
+      `enter` (dance: select)
 
   doc:
-    en: |
+    en: |-
       Toggle selection indices.
-
-
-      #### Variants
-
-      | Title                  | Identifier    | Command                                                  |
-      | ---------------------- | ------------- | -------------------------------------------------------- |
-      | Show selection indices | `showIndices` | `[".selections.toggleIndices", { display: true , ... }]` |
-      | Hide selection indices | `hideIndices` | `[".selections.toggleIndices", { display: false, ... }]` |
 
 selections.trimLines:
   title:
-    en: Trim lines
-
-  keys:
-    qwerty: |-
-      `a-x` (kakoune: normal)
+    en: |-
+      Trim lines
 
   doc:
-    en: |+
+    en: |-
       Trim lines.
 
       Trim selections to only contain full lines (from start to line break).
 
-selections.trimWhitespace:
-  title:
-    en: Trim whitespace
-
   keys:
     qwerty: |-
-      `_` (kakoune: normal)
+      `a-x` (helix: normal)
+      `a-x` (helix: select)
+
+selections.trimWhitespace:
+  title:
+    en: |-
+      Trim whitespace
 
   doc:
-    en: |+
+    en: |-
       Trim whitespace.
 
       Trim whitespace at beginning and end of selections.
 
+  keys:
+    qwerty: |-
+      `_` (helix: normal)
+      `_` (helix: select)
+
 selectRegister:
   title:
-    en: Select register for next command
+    en: |-
+      Select register for next command
 
   keys:
     qwerty: |-
       `"` (kakoune: normal)
 
   doc:
-    en: |+
+    en: |-
       Select register for next command.
 
       When selecting a register, the next key press is used to determine what
@@ -2531,265 +2326,385 @@ selectRegister:
       press is awaited again and the returned register will be specific to the
       current document.
 
-updateCount:
+space.open:
   title:
-    en: Update Dance count
+    en: |-
+      Open space menu
 
   doc:
-    en: |+
+    en: |-
+      Open space menu.
+
+updateCount:
+  title:
+    en: >-
+      Update Dance count
+
+  doc:
+    en: |-
       Update Dance count.
 
       Update the current counter used to repeat the next command.
 
-      #### Additional keybindings
-
-      | Title                          | Keybinding                                   | Command                              |
-      | ------------------------------ | -------------------------------------------- | ------------------------------------ |
-      | Add the digit 0 to the counter | `0` (core: normal), `NumPad0` (core: normal) | `[".updateCount", { addDigits: 0 }]` |
-      | Add the digit 1 to the counter | `1` (core: normal), `NumPad1` (core: normal) | `[".updateCount", { addDigits: 1 }]` |
-      | Add the digit 2 to the counter | `2` (core: normal), `NumPad2` (core: normal) | `[".updateCount", { addDigits: 2 }]` |
-      | Add the digit 3 to the counter | `3` (core: normal), `NumPad3` (core: normal) | `[".updateCount", { addDigits: 3 }]` |
-      | Add the digit 4 to the counter | `4` (core: normal), `NumPad4` (core: normal) | `[".updateCount", { addDigits: 4 }]` |
-      | Add the digit 5 to the counter | `5` (core: normal), `NumPad5` (core: normal) | `[".updateCount", { addDigits: 5 }]` |
-      | Add the digit 6 to the counter | `6` (core: normal), `NumPad6` (core: normal) | `[".updateCount", { addDigits: 6 }]` |
-      | Add the digit 7 to the counter | `7` (core: normal), `NumPad7` (core: normal) | `[".updateCount", { addDigits: 7 }]` |
-      | Add the digit 8 to the counter | `8` (core: normal), `NumPad8` (core: normal) | `[".updateCount", { addDigits: 8 }]` |
-      | Add the digit 9 to the counter | `9` (core: normal), `NumPad9` (core: normal) | `[".updateCount", { addDigits: 9 }]` |
-
 updateRegister:
   title:
-    en: Update the contents of a register
+    en: |-
+      Update the contents of a register
 
   doc:
-    en: |+
+    en: |-
       Update the contents of a register.
 
 view.line:
   title:
-    en: Reveals a position based on the main cursor
+    en: |-
+      Reveals a position based on the main cursor
 
   doc:
-    en: |
+    en: |-
       Reveals a position based on the main cursor.
 
+window.open:
+  title:
+    en: |-
+      Open window menu
+
+  doc:
+    en: |-
+      Open window menu.
+
 anonymous:
+  [
+    {
+        title: { en: Show left bracket menu },
 
-  - commands: |-
-      [".changeInput", { action: "next" }]
+        commands: '[".openMenu", { menu: "left-bracket", $exclude: [] }]',
 
-    keys:
-      qwerty: |-
-        `down` (core: prompt)
+        keys:
+          {
+            qwerty: "`[` (helix: normal)
 
-  - commands: |-
-      [".changeInput", { action: "previous" }]
+              `[` (helix: select)"
+          }
+      },
+    {
+        title: { en: Show match menu },
 
-    keys:
-      qwerty: |-
-        `up` (core: prompt)
+        commands: '[".openMenu", { menu: "match", $exclude: [] }]',
 
-  - title:
-      en: Show view menu
+        keys: { qwerty: "`m` (helix: normal)" }
+      },
+    {
+        title: { en: "Show match menu (backward, extend)" },
 
-    commands: |-
-      [".openMenu", { menu: "view", $exclude: [] }]
+        commands: '[".openMenu", { menu: "match", pass: [{direction: -1, shift: "extend"}], $exclude: [] }]',
 
-    keys:
-      qwerty: |-
-        `v` (kakoune: normal)
+        keys: { qwerty: "`s-m` (helix: select)" }
+      },
+    {
+        title: { en: Show match menu (backward ) },
 
-  - title:
-      en: Show view menu (locked)
+        commands: '[".openMenu", { menu: "match", pass: [{direction: -1}], $exclude: [] }]',
 
-    commands: |-
-      [".openMenu", { menu: "view", locked: true, $exclude: [] }]
+        keys: { qwerty: "`s-m` (helix: normal)" }
+      },
+    {
+        title: { en: Show match menu (extend) },
 
-    keys:
-      qwerty: |-
-        `s-v` (kakoune: normal)
+        commands: '[".openMenu", { menu: "match", pass: [{shift: "extend"}], $exclude: [] }]',
 
-  - commands: |-
-      [".select.vertically", { direction: -1, by: "halfPage", shift: "jump" }]
+        keys: { qwerty: "`m` (helix: select)" }
+      },
+    {
+        title: { en: Show right bracket  menu },
 
-    keys:
-      qwerty: |-
-        `c-u` (kakoune: normal)
-        `c-u` (kakoune: insert)
+        commands: '[".openMenu", { menu: "right-bracket", $exclude: [] }]',
 
-  - commands: |-
-      [".select.vertically", { direction: -1, by: "page" , shift: "jump" }]
+        keys:
+          {
+            qwerty: "`]` (helix: normal)
 
-    keys:
-      qwerty: |-
-        `c-b` (kakoune: normal)
-        `c-b` (kakoune: insert)
+              `]` (helix: select)"
+          }
+      },
+    {
+        title: { en: Show space menu },
 
-  - commands: |-
-      [".select.vertically", { direction: 1, by: "halfPage", shift: "jump" }]
+        commands: '[".openMenu", { menu: "space", $exclude: [] }]',
 
-    keys:
-      qwerty: |-
-        `c-d` (kakoune: normal)
-        `c-d` (kakoune: insert)
+        keys:
+          {
+            qwerty: "`space` (helix: normal)
 
-  - commands: |-
-      [".select.vertically", { direction: 1, by: "page" , shift: "jump" }]
+              `space` (helix: select)"
+          }
+      },
+    {
+        title: { en: Show view menu },
 
-    keys:
-      qwerty: |-
-        `c-f` (kakoune: normal)
-        `c-f` (kakoune: insert)
+        commands: '[".openMenu", { menu: "view", $exclude: [] }]',
 
-  - commands: |-
-      [".selections.restore.withCurrent", { reverse: true, $exclude: [] }]
+        keys:
+          {
+            qwerty: "`z` (helix: normal)
 
-    keys:
-      qwerty: |-
-        `s-a-z` (kakoune: normal)
+              `z` (helix: select)"
+          }
+      },
+    {
+        title: { en: Show view menu (locked) },
 
-  - title:
-      en: Add the digit 0 to the counter
+        commands: '[".openMenu", { menu: "view", locked: true, $exclude: [] }]',
 
-    commands: |-
-      [".updateCount", { addDigits: 0 }]
+        keys:
+          {
+            qwerty: "`s-z` (helix: normal)
 
-    keys:
-      azerty: |-
-        `s-0` (core: normal)
-        `NumPad0` (core: normal)
-      qwerty: |-
-        `0` (core: normal)
-        `NumPad0` (core: normal)
+              `s-z` (helix: select)"
+          }
+      },
+    {
+        title: { en: Show window menu },
 
-  - title:
-      en: Add the digit 1 to the counter
+        commands: '[".openMenu", { menu: "window", $exclude: [] }]',
 
-    commands: |-
-      [".updateCount", { addDigits: 1 }]
+        keys:
+          {
+            qwerty: "`c-w` (helix: normal)
 
-    keys:
-      azerty: |-
-        `s-1` (core: normal)
-        `NumPad1` (core: normal)
-      qwerty: |-
-        `1` (core: normal)
-        `NumPad1` (core: normal)
+              `c-w` (helix: select)"
+          }
+      },
+    {
 
-  - title:
-      en: Add the digit 2 to the counter
+        commands: '[".select.vertically", { direction: -1, by: "halfPage", shift: "jump" }]',
 
-    commands: |-
-      [".updateCount", { addDigits: 2 }]
+        keys:
+          {
+            qwerty: "`c-u` (kakoune: normal)
 
-    keys:
-      azerty: |-
-        `s-2` (core: normal)
-        `NumPad2` (core: normal)
-      qwerty: |-
-        `2` (core: normal)
-        `NumPad2` (core: normal)
+              `c-u` (kakoune: insert)"
+          }
+      },
+    {
 
-  - title:
-      en: Add the digit 3 to the counter
+        commands: '[".select.vertically", { direction: -1, by: "page" , shift: "jump" }]',
 
-    commands: |-
-      [".updateCount", { addDigits: 3 }]
+        keys:
+          {
+            qwerty: "`c-b` (kakoune: normal)
 
-    keys:
-      azerty: |-
-        `s-3` (core: normal)
-        `NumPad3` (core: normal)
-      qwerty: |-
-        `3` (core: normal)
-        `NumPad3` (core: normal)
+              `c-b` (kakoune: insert)"
+          }
+      },
+    {
 
-  - title:
-      en: Add the digit 4 to the counter
+        commands: '[".select.vertically", { direction: 1, by: "halfPage", shift: "jump" }]',
 
-    commands: |-
-      [".updateCount", { addDigits: 4 }]
+        keys:
+          {
+            qwerty: "`c-d` (kakoune: normal)
 
-    keys:
-      azerty: |-
-        `s-4` (core: normal)
-        `NumPad4` (core: normal)
-      qwerty: |-
-        `4` (core: normal)
-        `NumPad4` (core: normal)
+              `c-d` (kakoune: insert)"
+          }
+      },
+    {
 
-  - title:
-      en: Add the digit 5 to the counter
+        commands: '[".select.vertically", { direction: 1, by: "page" , shift: "jump" }]',
 
-    commands: |-
-      [".updateCount", { addDigits: 5 }]
+        keys:
+          {
+            qwerty: "`c-f` (kakoune: normal)
 
-    keys:
-      azerty: |-
-        `s-5` (core: normal)
-        `NumPad5` (core: normal)
-      qwerty: |-
-        `5` (core: normal)
-        `NumPad5` (core: normal)
+              `c-f` (kakoune: insert)"
+          }
+      },
+    {
 
-  - title:
-      en: Add the digit 6 to the counter
+        commands: '[".selections.restore.withCurrent", { reverse: true, $exclude: [] }]',
 
-    commands: |-
-      [".updateCount", { addDigits: 6 }]
+        keys: { qwerty: "`s-a-z` (kakoune: normal)" }
+      },
+    {
+        title: { en: Add the digit 0 to the counter },
 
-    keys:
-      azerty: |-
-        `s-6` (core: normal)
-        `NumPad6` (core: normal)
-      qwerty: |-
-        `6` (core: normal)
-        `NumPad6` (core: normal)
+        commands: '[".updateCount", { addDigits: 0 }]',
 
-  - title:
-      en: Add the digit 7 to the counter
+        keys:
+          {
+            qwerty: "`0` (helix: normal)
 
-    commands: |-
-      [".updateCount", { addDigits: 7 }]
+              `NumPad0` (helix: normal)
 
-    keys:
-      azerty: |-
-        `s-7` (core: normal)
-        `NumPad7` (core: normal)
-      qwerty: |-
-        `7` (core: normal)
-        `NumPad7` (core: normal)
+              `0` (helix: select)
 
-  - title:
-      en: Add the digit 8 to the counter
+              `NumPad0` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 1 to the counter },
 
-    commands: |-
-      [".updateCount", { addDigits: 8 }]
+        commands: '[".updateCount", { addDigits: 1 }]',
 
-    keys:
-      azerty: |-
-        `s-8` (core: normal)
-        `NumPad8` (core: normal)
-      qwerty: |-
-        `8` (core: normal)
-        `NumPad8` (core: normal)
+        keys:
+          {
+            qwerty: "`1` (helix: normal)
 
-  - title:
-      en: Add the digit 9 to the counter
+              `NumPad1` (helix: normal)
 
-    commands: |-
-      [".updateCount", { addDigits: 9 }]
+              `1` (helix: select)
 
-    keys:
-      azerty: |-
-        `s-9` (core: normal)
-        `NumPad9` (core: normal)
-      qwerty: |-
-        `9` (core: normal)
-        `NumPad9` (core: normal)
+              `NumPad1` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 2 to the counter },
 
-  - commands: |-
-      ["workbench.action.showCommands", { $exclude: [] }]
+        commands: '[".updateCount", { addDigits: 2 }]',
 
-    keys:
-      qwerty: |-
-        `s-;` (core: normal)
+        keys:
+          {
+            qwerty: "`2` (helix: normal)
+
+              `NumPad2` (helix: normal)
+
+              `2` (helix: select)
+
+              `NumPad2` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 3 to the counter },
+
+        commands: '[".updateCount", { addDigits: 3 }]',
+
+        keys:
+          {
+            qwerty: "`3` (helix: normal)
+
+              `NumPad3` (helix: normal)
+
+              `3` (helix: select)
+
+              `NumPad3` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 4 to the counter },
+
+        commands: '[".updateCount", { addDigits: 4 }]',
+
+        keys:
+          {
+            qwerty: "`4` (helix: normal)
+
+              `NumPad4` (helix: normal)
+
+              `4` (helix: select)
+
+              `NumPad4` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 5 to the counter },
+
+        commands: '[".updateCount", { addDigits: 5 }]',
+
+        keys:
+          {
+            qwerty: "`5` (helix: normal)
+
+              `NumPad5` (helix: normal)
+
+              `5` (helix: select)
+
+              `NumPad5` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 6 to the counter },
+
+        commands: '[".updateCount", { addDigits: 6 }]',
+
+        keys:
+          {
+            qwerty: "`6` (helix: normal)
+
+              `NumPad6` (helix: normal)
+
+              `6` (helix: select)
+
+              `NumPad6` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 7 to the counter },
+
+        commands: '[".updateCount", { addDigits: 7 }]',
+
+        keys:
+          {
+            qwerty: "`7` (helix: normal)
+
+              `NumPad7` (helix: normal)
+
+              `7` (helix: select)
+
+              `NumPad7` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 8 to the counter },
+
+        commands: '[".updateCount", { addDigits: 8 }]',
+
+        keys:
+          {
+            qwerty: "`8` (helix: normal)
+
+              `NumPad8` (helix: normal)
+
+              `8` (helix: select)
+
+              `NumPad8` (helix: select)"
+          }
+      },
+    {
+        title: { en: Add the digit 9 to the counter },
+
+        commands: '[".updateCount", { addDigits: 9 }]',
+
+        keys:
+          {
+            qwerty: "`9` (helix: normal)
+
+              `NumPad9` (helix: normal)
+
+              `9` (helix: select)
+
+              `NumPad9` (helix: select)"
+          }
+      },
+    {
+
+        commands: '["editor.action.commentLine", { $exclude: [] }]',
+
+        keys:
+          {
+            qwerty: "`c-c` (helix: normal)
+
+              `c-c` (helix: select)"
+          }
+      },
+    {
+
+        commands: '["workbench.action.showCommands", { $exclude: [] }]',
+
+        keys:
+          {
+            qwerty: "`s-;` (helix: normal)
+
+              `s-;` (helix: select)"
+          }
+      }
+  ]

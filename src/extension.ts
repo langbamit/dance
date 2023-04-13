@@ -18,15 +18,19 @@ export async function activate() {
   isActivated = true;
 
   const extensionData = vscode.extensions.getExtension(extensionId),
-        extensionPackageJSON = extensionData?.packageJSON;
+    extensionPackageJSON = extensionData?.packageJSON;
 
-  if (extensionPackageJSON?.[`${extensionName}.disableArbitraryCodeExecution`]) {
+  if (
+    extensionPackageJSON?.[`${extensionName}.disableArbitraryCodeExecution`]
+  ) {
     api.disableRunFunction();
   } else {
     api.setRunGlobals({ vscode, ...api });
   }
 
-  if (extensionPackageJSON?.[`${extensionName}.disableArbitraryCommandExecution`]) {
+  if (
+    extensionPackageJSON?.[`${extensionName}.disableArbitraryCommandExecution`]
+  ) {
     api.disableExecuteFunction();
   }
 

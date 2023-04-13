@@ -17,8 +17,9 @@ const enum Constants {
 }
 
 type IntArray<E extends BaseEntry<any>> = E extends BaseEntry<infer I>
-  ? { readonly [K in keyof I]: I[K] extends undefined ? never : number; }
-    & { readonly length: number; }
+  ? { readonly [K in keyof I]: I[K] extends undefined ? never : number } & {
+      readonly length: number;
+    }
   : never;
 
 /**
@@ -51,9 +52,7 @@ export class Recorder implements vscode.Disposable {
     return Entry;
   }
 
-  public constructor(
-    extension: Extension,
-  ) {
+  public constructor(extension: Extension) {
     const activeEditor = vscode.window.activeTextEditor;
 
     if (activeEditor !== undefined) {
@@ -62,10 +61,22 @@ export class Recorder implements vscode.Disposable {
     }
 
     this._subscriptions.push(
-      vscode.window.onDidChangeActiveTextEditor(this._recordActiveTextEditorChange, this),
-      vscode.window.onDidChangeTextEditorSelection(this._recordExternalSelectionChange, this),
-      vscode.workspace.onDidChangeTextDocument(this._recordExternalTextChange, this),
-      extension.editors.onModeDidChange(this._recordActiveTextEditorModeChange, this),
+      vscode.window.onDidChangeActiveTextEditor(
+        this._recordActiveTextEditorChange,
+        this,
+      ),
+      vscode.window.onDidChangeTextEditorSelection(
+        this._recordExternalSelectionChange,
+        this,
+      ),
+      vscode.workspace.onDidChangeTextDocument(
+        this._recordExternalTextChange,
+        this,
+      ),
+      extension.editors.onModeDidChange(
+        this._recordActiveTextEditorModeChange,
+        this,
+      ),
     );
 
     this._statusBar = extension.statusBar;
@@ -89,7 +100,7 @@ export class Recorder implements vscode.Disposable {
    */
   public lastEntries(n: number) {
     const entries: Entry.Any[] = [],
-          cursor = this.cursorFromEnd();
+      cursor = this.cursorFromEnd();
 
     for (let i = 0; i < n && cursor.previous(); i++) {
       entries.push(cursor.entry());
@@ -119,7 +130,10 @@ export class Recorder implements vscode.Disposable {
     ...args: IntArray<E>
   ) {
     this._buffer[this._buffer.length - 1] |= type.id;
-    this._buffer.push(...(args as unknown as number[]), type.id << Constants.PrevShift);
+    this._buffer.push(
+      ...(args as unknown as number[]),
+      type.id << Constants.PrevShift,
+    );
     this._archiveBufferIfNeeded();
 
     this._onDidAddEntry.fire(this.lastEntry()!);
@@ -142,7 +156,10 @@ export class Recorder implements vscode.Disposable {
     let i = this._storedObjectsMap.get(value);
 
     if (i === undefined) {
-      this._storedObjectsMap.set(value, i = this._storedObjects.push(value) - 1);
+      this._storedObjectsMap.set(
+        value,
+        (i = this._storedObjects.push(value) - 1),
+      );
     }
 
     return i;
@@ -159,7 +176,9 @@ export class Recorder implements vscode.Disposable {
    * Returns the buffer at the given index, if any.
    */
   public getBuffer(index: number) {
-    return index === this._previousBuffers.length ? this._buffer : this._previousBuffers[index];
+    return index === this._previousBuffers.length
+      ? this._buffer
+      : this._previousBuffers[index];
   }
 
   /**
@@ -204,7 +223,11 @@ export class Recorder implements vscode.Disposable {
    * call.
    */
   public cursorFromEnd() {
-    return new Cursor(this, this._previousBuffers.length, this._buffer.length - 1);
+    return new Cursor(
+      this,
+      this._previousBuffers.length,
+      this._buffer.length - 1,
+    );
   }
 
   /**
@@ -242,7 +265,9 @@ export class Recorder implements vscode.Disposable {
    */
   public startRecording() {
     const onRecordingCompleted = () => {
-      const index = this._activeRecordingTokens.indexOf(cancellationTokenSource);
+      const index = this._activeRecordingTokens.indexOf(
+        cancellationTokenSource,
+      );
 
       if (index === -1) {
         throw new Error("recording has already been marked as completed");
@@ -255,7 +280,11 @@ export class Recorder implements vscode.Disposable {
 
       if (activeRecordingsCount === 0) {
         this._statusBar.recordingSegment.setContent();
-        vscode.commands.executeCommand("setContext", "dance.isRecording", false);
+        vscode.commands.executeCommand(
+          "setContext",
+          "dance.isRecording",
+          false,
+        );
       } else {
         this._statusBar.recordingSegment.setContent("" + activeRecordingsCount);
       }
@@ -270,9 +299,14 @@ export class Recorder implements vscode.Disposable {
     this._recordBreak();
 
     const offset = this._buffer.length - 1,
-          cancellationTokenSource = new vscode.CancellationTokenSource(),
-          recording = new ActiveRecording(onRecordingCompleted, cancellationTokenSource.token),
-          activeRecordingsCount = this._activeRecordingTokens.push(cancellationTokenSource);
+      cancellationTokenSource = new vscode.CancellationTokenSource(),
+      recording = new ActiveRecording(
+        onRecordingCompleted,
+        cancellationTokenSource.token,
+      ),
+      activeRecordingsCount = this._activeRecordingTokens.push(
+        cancellationTokenSource,
+      );
 
     this._statusBar.recordingSegment.setContent("" + activeRecordingsCount);
 
@@ -331,9 +365,12 @@ export class Recorder implements vscode.Disposable {
   /**
    * Records the invocation of a command.
    */
-  public recordCommand(descriptor: CommandDescriptor, argument: Record<string, any>) {
+  public recordCommand(
+    descriptor: CommandDescriptor,
+    argument: Record<string, any>,
+  ) {
     const descriptorIndex = this._descriptors.indexOf(descriptor),
-          argumentIndex = this._storeObject(argument);
+      argumentIndex = this._storeObject(argument);
 
     this._record(Entry.ExecuteCommand, descriptorIndex, argumentIndex);
   }
@@ -341,9 +378,12 @@ export class Recorder implements vscode.Disposable {
   /**
    * Records the invocation of an external (non-Dance) command.
    */
-  public recordExternalCommand(identifier: string, argument: Record<string, any>) {
+  public recordExternalCommand(
+    identifier: string,
+    argument: Record<string, any>,
+  ) {
     const identifierIndex = this._storeObject(identifier),
-          argumentIndex = this._storeObject(argument);
+      argumentIndex = this._storeObject(argument);
 
     this._record(Entry.ExecuteExternalCommand, identifierIndex, argumentIndex);
   }
@@ -351,23 +391,29 @@ export class Recorder implements vscode.Disposable {
   /**
    * Records a change of a selection.
    */
-  private _recordExternalSelectionChange(e: vscode.TextEditorSelectionChangeEvent) {
+  private _recordExternalSelectionChange(
+    e: vscode.TextEditorSelectionChangeEvent,
+  ) {
     if (vscode.window.activeTextEditor !== e.textEditor) {
       return;
     }
 
     const lastSelections = this._lastActiveSelections,
-          selections = e.selections;
+      selections = e.selections;
     this._lastActiveSelections = selections;
 
-    if (Context.WithoutActiveEditor.currentOrUndefined !== undefined
-        || lastSelections === undefined) {
+    if (
+      Context.WithoutActiveEditor.currentOrUndefined !== undefined ||
+      lastSelections === undefined
+    ) {
       // Selection change is internal.
       return;
     }
 
-    if (lastSelections.length !== selections.length
-        || e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
+    if (
+      lastSelections.length !== selections.length ||
+      e.kind === vscode.TextEditorSelectionChangeKind.Mouse
+    ) {
       // Selection change is not supported.
       return this._recordBreak();
     }
@@ -375,19 +421,20 @@ export class Recorder implements vscode.Disposable {
     // Determine translations.
     const document = e.textEditor.document;
     let commonAnchorOffsetDiff = Number.MAX_SAFE_INTEGER,
-        commonActiveOffsetDiff = Number.MAX_SAFE_INTEGER;
+      commonActiveOffsetDiff = Number.MAX_SAFE_INTEGER;
 
     for (let i = 0, len = selections.length; i < len; i++) {
       const lastSelection = lastSelections[i],
-            selection = selections[i];
+        selection = selections[i];
 
       let anchorOffsetDiff: number;
 
       if (lastSelection.anchor.line === selection.anchor.line) {
-        anchorOffsetDiff = selection.anchor.character - lastSelection.anchor.character;
+        anchorOffsetDiff =
+          selection.anchor.character - lastSelection.anchor.character;
       } else {
         const lastAnchorOffset = document.offsetAt(lastSelection.anchor),
-              anchorOffset = document.offsetAt(selection.anchor);
+          anchorOffset = document.offsetAt(selection.anchor);
 
         anchorOffsetDiff = anchorOffset - lastAnchorOffset;
       }
@@ -401,10 +448,11 @@ export class Recorder implements vscode.Disposable {
       let activeOffsetDiff: number;
 
       if (lastSelection.active.line === selection.active.line) {
-        activeOffsetDiff = selection.active.character - lastSelection.active.character;
+        activeOffsetDiff =
+          selection.active.character - lastSelection.active.character;
       } else {
         const lastActiveOffset = document.offsetAt(lastSelection.active),
-              activeOffset = document.offsetAt(selection.active);
+          activeOffset = document.offsetAt(selection.active);
 
         activeOffsetDiff = activeOffset - lastActiveOffset;
       }
@@ -426,8 +474,10 @@ export class Recorder implements vscode.Disposable {
     if (expectedTranslation !== undefined) {
       this._expectedSelectionTranslation = undefined;
 
-      if (expectedTranslation === commonActiveOffsetDiff
-          && expectedTranslation === commonAnchorOffsetDiff) {
+      if (
+        expectedTranslation === commonActiveOffsetDiff &&
+        expectedTranslation === commonAnchorOffsetDiff
+      ) {
         return;
       }
     }
@@ -444,19 +494,20 @@ export class Recorder implements vscode.Disposable {
         if (deletionLength === commonActiveOffsetDiff) {
           // DeleteAfter -> Translate = DeleteBefore.
           const buffer = cursor.buffer as Recorder.MutableBuffer,
-                cursorOffset = cursor.offset;
+            cursorOffset = cursor.offset;
 
           if (cursor.previousIs(Entry.DeleteBefore)) {
             // DeleteBefore -> DeleteBefore = DeleteBefore.
             buffer.splice(cursorOffset + 1);
             buffer[cursor.offset + 1] += deletionLength;
             buffer[cursor.offset + Entry.DeleteBefore.size + 1] =
-              (Entry.DeleteBefore.id << Constants.PrevShift);
+              Entry.DeleteBefore.id << Constants.PrevShift;
           } else {
             buffer[cursorOffset] =
-              (buffer[cursorOffset] & ~Constants.NextMask) | Entry.DeleteBefore.id;
+              (buffer[cursorOffset] & ~Constants.NextMask) |
+              Entry.DeleteBefore.id;
             buffer[cursorOffset + Entry.DeleteBefore.size + 1] =
-              (Entry.DeleteBefore.id << Constants.PrevShift);
+              Entry.DeleteBefore.id << Constants.PrevShift;
           }
 
           return;
@@ -473,20 +524,22 @@ export class Recorder implements vscode.Disposable {
         if (insertedText.length === commonActiveOffsetDiff) {
           // InsertAfter -> Translate = InsertBefore.
           const buffer = cursor.buffer as Recorder.MutableBuffer,
-                cursorOffset = cursor.offset;
+            cursorOffset = cursor.offset;
 
           if (cursor.previousIs(Entry.InsertBefore)) {
             // InsertBefore -> InsertBefore = InsertBefore.
             buffer.splice(cursorOffset + 1);
-            buffer[cursor.offset + 1] =
-              this._storeObject(cursor.entry().insertedText() + insertedText);
+            buffer[cursor.offset + 1] = this._storeObject(
+              cursor.entry().insertedText() + insertedText,
+            );
             buffer[cursor.offset + Entry.InsertBefore.size + 1] =
-              (Entry.InsertBefore.id << Constants.PrevShift);
+              Entry.InsertBefore.id << Constants.PrevShift;
           } else {
             buffer[cursorOffset] =
-              (buffer[cursorOffset] & ~Constants.NextMask) | Entry.InsertBefore.id;
+              (buffer[cursorOffset] & ~Constants.NextMask) |
+              Entry.InsertBefore.id;
             buffer[cursorOffset + Entry.DeleteBefore.size + 1] =
-              (Entry.InsertBefore.id << Constants.PrevShift);
+              Entry.InsertBefore.id << Constants.PrevShift;
           }
 
           return;
@@ -495,7 +548,7 @@ export class Recorder implements vscode.Disposable {
     } else if (commonActiveOffsetDiff === 0 || commonAnchorOffsetDiff === 0) {
       const cursor = this.cursorFromEnd();
       let type: typeof Entry.DeleteAfter | typeof Entry.DeleteBefore,
-          translation: number;
+        translation: number;
 
       if (commonActiveOffsetDiff === 0) {
         type = Entry.DeleteAfter;
@@ -514,7 +567,11 @@ export class Recorder implements vscode.Disposable {
     }
 
     // Could not merge with previous events; just add an entry.
-    this._record(Entry.TranslateSelection, commonActiveOffsetDiff, commonAnchorOffsetDiff);
+    this._record(
+      Entry.TranslateSelection,
+      commonActiveOffsetDiff,
+      commonAnchorOffsetDiff,
+    );
   }
 
   /**
@@ -528,11 +585,14 @@ export class Recorder implements vscode.Disposable {
     }
 
     const lastSelections = this._lastActiveSelections,
-          selections = editor.selections;
+      selections = editor.selections;
     this._lastActiveSelections = selections;
 
-    if (Context.WithoutActiveEditor.currentOrUndefined !== undefined
-        || lastSelections === undefined || e.contentChanges.length === 0) {
+    if (
+      Context.WithoutActiveEditor.currentOrUndefined !== undefined ||
+      lastSelections === undefined ||
+      e.contentChanges.length === 0
+    ) {
       // Text change is internal.
       return;
     }
@@ -549,7 +609,7 @@ export class Recorder implements vscode.Disposable {
       selection: vscode.Selection,
     ) {
       const changeStart = change.range.start,
-            active = selection.active;
+        active = selection.active;
 
       if (changeStart.line === active.line) {
         return changeStart.character - active.character;
@@ -559,16 +619,22 @@ export class Recorder implements vscode.Disposable {
     }
 
     const document = e.document,
-          firstChange = e.contentChanges[0],
-          firstSelection = lastSelections[0],
-          commonInsertedText = firstChange.text,
-          commonDeletionLength = firstChange.rangeLength,
-          commonOffsetFromActive = computeOffsetFromActive(firstChange, firstSelection);
+      firstChange = e.contentChanges[0],
+      firstSelection = lastSelections[0],
+      commonInsertedText = firstChange.text,
+      commonDeletionLength = firstChange.rangeLength,
+      commonOffsetFromActive = computeOffsetFromActive(
+        firstChange,
+        firstSelection,
+      );
 
     for (let i = 1, len = lastSelections.length; i < len; i++) {
       const change = e.contentChanges[i];
 
-      if (change.text !== commonInsertedText || change.rangeLength !== commonDeletionLength) {
+      if (
+        change.text !== commonInsertedText ||
+        change.rangeLength !== commonDeletionLength
+      ) {
         return this._recordBreak();
       }
 
@@ -581,7 +647,10 @@ export class Recorder implements vscode.Disposable {
 
     // Merge consecutive events, if possible.
     if (commonDeletionLength > 0 && commonInsertedText.length > 0) {
-      if (commonInsertedText.length - commonDeletionLength === commonOffsetFromActive) {
+      if (
+        commonInsertedText.length - commonDeletionLength ===
+        commonOffsetFromActive
+      ) {
         this._record(Entry.ReplaceWith, this._storeObject(commonInsertedText));
         return;
       }
@@ -589,7 +658,8 @@ export class Recorder implements vscode.Disposable {
 
     if (commonDeletionLength > 0) {
       const cursor = this.cursorFromEnd(),
-            type = commonOffsetFromActive === 0 ? Entry.DeleteAfter : Entry.DeleteBefore;
+        type =
+          commonOffsetFromActive === 0 ? Entry.DeleteAfter : Entry.DeleteBefore;
 
       if (type === Entry.DeleteBefore) {
         this._expectedSelectionTranslation = commonOffsetFromActive;
@@ -597,14 +667,20 @@ export class Recorder implements vscode.Disposable {
 
       if (cursor.previousIs(type)) {
         // Delete -> Delete = Delete.
-        (cursor.buffer as Recorder.MutableBuffer)[cursor.offset + 1] += commonDeletionLength;
-      } else if (type === Entry.DeleteBefore && cursor.previousIs(Entry.InsertBefore)) {
+        (cursor.buffer as Recorder.MutableBuffer)[cursor.offset + 1] +=
+          commonDeletionLength;
+      } else if (
+        type === Entry.DeleteBefore &&
+        cursor.previousIs(Entry.InsertBefore)
+      ) {
         const insertedText = cursor.entry().insertedText();
 
         if (insertedText.length > commonDeletionLength) {
           // InsertBefore -> DeleteBefore = InsertBefore.
           (cursor.buffer as Recorder.MutableBuffer)[cursor.offset + 1] =
-            this._storeObject(insertedText.slice(0, insertedText.length - commonDeletionLength));
+            this._storeObject(
+              insertedText.slice(0, insertedText.length - commonDeletionLength),
+            );
         } else {
           const previousType = cursor.previousType();
 
@@ -612,7 +688,9 @@ export class Recorder implements vscode.Disposable {
 
           if (insertedText.length === commonDeletionLength) {
             // InsertBefore -> DeleteBefore = Nop.
-            (cursor.buffer as Recorder.MutableBuffer).push(previousType << Constants.PrevShift);
+            (cursor.buffer as Recorder.MutableBuffer).push(
+              previousType << Constants.PrevShift,
+            );
           } else {
             // InsertBefore -> DeleteBefore = DeleteBefore.
             (cursor.buffer as Recorder.MutableBuffer).push(
@@ -638,7 +716,10 @@ export class Recorder implements vscode.Disposable {
           (cursor.buffer as Recorder.MutableBuffer)[cursor.offset + 1] =
             this._storeObject(previousInsertedText + commonInsertedText);
         } else {
-          this._record(Entry.InsertAfter, this._storeObject(commonInsertedText));
+          this._record(
+            Entry.InsertAfter,
+            this._storeObject(commonInsertedText),
+          );
         }
       } else {
         // TODO: handle offset from active
@@ -652,7 +733,9 @@ export declare namespace Recorder {
   /**
    * A buffer of {@link Recorder} values.
    */
-  export type Buffer = { readonly [index: number]: number; } & { readonly length: number; };
+  export type Buffer = { readonly [index: number]: number } & {
+    readonly length: number;
+  };
 
   /**
    * The mutable version of {@link Buffer}.
@@ -720,8 +803,10 @@ export class Cursor<T extends Entry.Any = Entry.Any> {
    * cursor.
    */
   public isBeforeOrEqual(other: Cursor) {
-    return this._bufferIdx < other._bufferIdx
-        || (this._bufferIdx === other._bufferIdx && this._offset <= other._offset);
+    return (
+      this._bufferIdx < other._bufferIdx ||
+      (this._bufferIdx === other._bufferIdx && this._offset <= other._offset)
+    );
   }
 
   /**
@@ -729,8 +814,10 @@ export class Cursor<T extends Entry.Any = Entry.Any> {
    * cursor.
    */
   public isAfterOrEqual(other: Cursor) {
-    return this._bufferIdx > other._bufferIdx
-        || (this._bufferIdx === other._bufferIdx && this._offset >= other._offset);
+    return (
+      this._bufferIdx > other._bufferIdx ||
+      (this._bufferIdx === other._bufferIdx && this._offset >= other._offset)
+    );
   }
 
   /**
@@ -744,27 +831,36 @@ export class Cursor<T extends Entry.Any = Entry.Any> {
    * Returns the entry pointed at by the cursor.
    */
   public entry() {
-    return Entry.instantiate(this.type(), this.recorder, this._buffer, this._offset) as T;
+    return Entry.instantiate(
+      this.type(),
+      this.recorder,
+      this._buffer,
+      this._offset,
+    ) as T;
   }
 
   /**
    * Returns the type of the current record.
    */
   public type() {
-    return ((this._buffer[this._offset] as number) & Constants.NextMask) as Entry.Identifier;
+    return ((this._buffer[this._offset] as number) &
+      Constants.NextMask) as Entry.Identifier;
   }
 
   /**
    * Returns the type of the previous record.
    */
   public previousType() {
-    return (this._buffer[this._offset] as number >> Constants.PrevShift) as Entry.Identifier;
+    return ((this._buffer[this._offset] as number) >>
+      Constants.PrevShift) as Entry.Identifier;
   }
 
   /**
    * Returns whether the cursor points to a record of the given type.
    */
-  public is<T extends Entry.AnyClass>(type: T): this is Cursor<InstanceType<T>> {
+  public is<T extends Entry.AnyClass>(
+    type: T,
+  ): this is Cursor<InstanceType<T>> {
     return this.type() === type.id;
   }
 
@@ -772,7 +868,9 @@ export class Cursor<T extends Entry.Any = Entry.Any> {
    * Returns whether, when going backward, the type will be correspond to the
    * given type. If so, goes backward.
    */
-  public previousIs<T extends Entry.AnyClass>(type: T): this is Cursor<InstanceType<T>> {
+  public previousIs<T extends Entry.AnyClass>(
+    type: T,
+  ): this is Cursor<InstanceType<T>> {
     if (this.previousType() === type.id) {
       this.previous();
 
@@ -831,8 +929,11 @@ export class Cursor<T extends Entry.Any = Entry.Any> {
    * specified recording.
    */
   public isInRecording(recording: Recording) {
-    return recording.offset <= this._offset && this._offset < recording.offset + recording.length
-        && recording.buffer === this._buffer;
+    return (
+      recording.offset <= this._offset &&
+      this._offset < recording.offset + recording.length &&
+      recording.buffer === this._buffer
+    );
   }
 
   /**
@@ -892,8 +993,8 @@ export class Recording {
   public *entries(context = Context.WithoutActiveEditor.current) {
     let offset = this.offset;
     const buffer = this.buffer,
-          end = offset + this.length,
-          recorder = context.extension.recorder;
+      end = offset + this.length,
+      recorder = context.extension.recorder;
 
     while (offset < end) {
       const entry = recorder.entry(buffer, offset);
@@ -985,7 +1086,9 @@ export abstract class BaseEntry<Items extends readonly [...RecordValue[]]> {
    * Returns an abstract class that should be extended to implement a new
    * `Entry`.
    */
-  public static define<Items extends readonly [...RecordValue[]]>(size: Items["length"]) {
+  public static define<Items extends readonly [...RecordValue[]]>(
+    size: Items["length"],
+  ) {
     const id = this._entryIds++;
 
     abstract class EntryWithSize extends BaseEntry<Readonly<Items>> {
@@ -1000,8 +1103,12 @@ export abstract class BaseEntry<Items extends readonly [...RecordValue[]]> {
       readonly size: number;
       readonly id: number;
 
-      new(
-        ...args: typeof BaseEntry extends abstract new(...args: infer Args) => any ? Args : never
+      new (
+        ...args: typeof BaseEntry extends abstract new (
+          ...args: infer Args
+        ) => any
+          ? Args
+          : never
       ): BaseEntry<Readonly<Items>>;
     };
   }
@@ -1031,15 +1138,25 @@ export class TranslateSelectionEntry extends BaseEntry.define<
     Context.assert(context);
 
     const document = context.document,
-          activeTranslation = this.activeTranslation(),
-          anchorTranslation = this.anchorTranslation();
+      activeTranslation = this.activeTranslation(),
+      anchorTranslation = this.anchorTranslation();
 
-    context.run(() => Selections.updateByIndex((_, selection) => {
-      const newActive = Positions.offsetOrEdge(selection.active, activeTranslation, document),
-            newAnchor = Positions.offsetOrEdge(selection.anchor, anchorTranslation, document);
+    context.run(() =>
+      Selections.updateByIndex((_, selection) => {
+        const newActive = Positions.offsetOrEdge(
+            selection.active,
+            activeTranslation,
+            document,
+          ),
+          newAnchor = Positions.offsetOrEdge(
+            selection.anchor,
+            anchorTranslation,
+            document,
+          );
 
-      return new vscode.Selection(newAnchor, newActive);
-    }));
+        return new vscode.Selection(newAnchor, newActive);
+      }),
+    );
 
     return Promise.resolve();
   }
@@ -1060,7 +1177,9 @@ export class TranslateSelectionEntry extends BaseEntry.define<
 /**
  * An insertion before each selection (cursor moves forward).
  */
-export class InsertBeforeEntry extends BaseEntry.define<[insertedText: string]>(1) {
+export class InsertBeforeEntry extends BaseEntry.define<[insertedText: string]>(
+  1,
+) {
   public async replay(context: Context.WithoutActiveEditor) {
     Context.assert(context);
 
@@ -1087,7 +1206,9 @@ export class InsertBeforeEntry extends BaseEntry.define<[insertedText: string]>(
 /**
  * An insertion after each selection (cursor does not move).
  */
-export class InsertAfterEntry extends BaseEntry.define<[insertedText: string]>(1) {
+export class InsertAfterEntry extends BaseEntry.define<[insertedText: string]>(
+  1,
+) {
   public async replay(context: Context.WithoutActiveEditor) {
     Context.assert(context);
 
@@ -1114,7 +1235,9 @@ export class InsertAfterEntry extends BaseEntry.define<[insertedText: string]>(1
 /**
  * A deletion before each selection (cursor moves backward).
  */
-export class DeleteBeforeEntry extends BaseEntry.define<[deletionLength: number]>(1) {
+export class DeleteBeforeEntry extends BaseEntry.define<
+  [deletionLength: number]
+>(1) {
   public async replay(context: Context.WithoutActiveEditor) {
     Context.assert(context);
 
@@ -1122,11 +1245,15 @@ export class DeleteBeforeEntry extends BaseEntry.define<[deletionLength: number]
 
     await editor.edit((editBuilder) => {
       const deletionLength = this.deletionLength(),
-            document = editor.document;
+        document = editor.document;
 
       for (const selection of editor.selections) {
         const endPosition = selection.start,
-              startPosition = Positions.offsetOrEdge(endPosition, -deletionLength, document);
+          startPosition = Positions.offsetOrEdge(
+            endPosition,
+            -deletionLength,
+            document,
+          );
 
         editBuilder.delete(new vscode.Range(startPosition, endPosition));
       }
@@ -1145,7 +1272,9 @@ export class DeleteBeforeEntry extends BaseEntry.define<[deletionLength: number]
 /**
  * A deletion after each selection (cursor does not move).
  */
-export class DeleteAfterEntry extends BaseEntry.define<[deletionLength: number]>(1) {
+export class DeleteAfterEntry extends BaseEntry.define<
+  [deletionLength: number]
+>(1) {
   public async replay(context: Context.WithoutActiveEditor) {
     Context.assert(context);
 
@@ -1153,11 +1282,15 @@ export class DeleteAfterEntry extends BaseEntry.define<[deletionLength: number]>
 
     await editor.edit((editBuilder) => {
       const deletionLength = this.deletionLength(),
-            document = editor.document;
+        document = editor.document;
 
       for (const selection of editor.selections) {
         const startPosition = selection.end,
-              endPosition = Positions.offsetOrEdge(startPosition, deletionLength, document);
+          endPosition = Positions.offsetOrEdge(
+            startPosition,
+            deletionLength,
+            document,
+          );
 
         editBuilder.delete(new vscode.Range(startPosition, endPosition));
       }
@@ -1203,7 +1336,9 @@ export class ReplaceWithEntry extends BaseEntry.define<[text: string]>(1) {
 /**
  * An active text editor change.
  */
-export class ChangeTextEditorEntry extends BaseEntry.define<[uri: vscode.Uri]>(1) {
+export class ChangeTextEditorEntry extends BaseEntry.define<[uri: vscode.Uri]>(
+  1,
+) {
   public async replay() {
     await vscode.window.showTextDocument(this.uri());
   }
@@ -1220,7 +1355,9 @@ export class ChangeTextEditorEntry extends BaseEntry.define<[uri: vscode.Uri]>(1
 /**
  * A change of the active text editor mode.
  */
-export class ChangeTextEditorModeEntry extends BaseEntry.define<[mode: Mode]>(1) {
+export class ChangeTextEditorModeEntry extends BaseEntry.define<[mode: Mode]>(
+  1,
+) {
   public replay(context: Context.WithoutActiveEditor) {
     Context.assert(context);
 
@@ -1244,7 +1381,7 @@ export class ExecuteCommandEntry extends BaseEntry.define<
 >(2) {
   public async replay(context: Context.WithoutActiveEditor) {
     const descriptor = this.descriptor(),
-          argument = this.argument();
+      argument = this.argument();
 
     if ((descriptor.flags & CommandDescriptor.Flags.DoNotReplay) === 0) {
       await descriptor.replay(context, argument);
@@ -1314,7 +1451,10 @@ export const Entry = {
   /**
    * Returns the entry corresponding to the given entry identifier.
    */
-  instantiate(id: Entry.Identifier, ...args: ConstructorParameters<Entry.AnyClass>) {
+  instantiate(
+    id: Entry.Identifier,
+    ...args: ConstructorParameters<Entry.AnyClass>
+  ) {
     return new sortedEntries[id](...args);
   },
 
@@ -1326,7 +1466,9 @@ export const Entry = {
   },
 };
 
-const sortedEntries = Object.values(EntryClasses).slice().sort((a, b) => a.id - b.id);
+const sortedEntries = Object.values(EntryClasses)
+  .slice()
+  .sort((a, b) => a.id - b.id);
 
 export declare namespace Entry {
   export type Identifier = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;

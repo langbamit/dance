@@ -25,7 +25,13 @@ export function moveTo(
     origin = Positions.offsetOrEdge(origin, string.length, document);
   }
 
-  return search(direction, new RegExp(escapeForRegExp(string)), origin, undefined, document)?.[0];
+  return search(
+    direction,
+    new RegExp(escapeForRegExp(string)),
+    origin,
+    undefined,
+    document,
+  )?.[0];
 }
 
 /**

@@ -18,7 +18,9 @@ function categorize(
 ) {
   return isWord(charCode)
     ? WordCategory.Word
-    : charCode === 0 || isBlank(charCode) ? WordCategory.Blank : WordCategory.Punctuation;
+    : charCode === 0 || isBlank(charCode)
+    ? WordCategory.Blank
+    : WordCategory.Punctuation;
 }
 
 /**
@@ -33,25 +35,31 @@ export function wordBoundary(
   context = Context.current,
 ) {
   let anchor: vscode.Position | undefined = undefined,
-      active = origin;
+    active = origin;
 
   const document = context.document,
-        text = document.lineAt(active.line).text,
-        lineEndCol = context.selectionBehavior === SelectionBehavior.Caret
-          ? text.length
-          : text.length - 1;
+    text = document.lineAt(active.line).text,
+    lineEndCol =
+      context.selectionBehavior === SelectionBehavior.Caret
+        ? text.length
+        : text.length - 1;
 
   const isWord = getCharSetFunction(wordCharset, document),
-        isBlank = getCharSetFunction(CharSet.Blank, document),
-        isPunctuation = getCharSetFunction(CharSet.Punctuation, document);
+    isBlank = getCharSetFunction(CharSet.Blank, document),
+    isPunctuation = getCharSetFunction(CharSet.Punctuation, document);
 
   // Starting from active, try to seek to the word start.
-  const isAtLineBoundary = direction === Direction.Forward
-    ? (active.character >= lineEndCol)
-    : (active.character === 0 || active.character === 1);
+  const isAtLineBoundary =
+    direction === Direction.Forward
+      ? active.character >= lineEndCol
+      : active.character === 0 || active.character === 1;
 
   if (isAtLineBoundary) {
-    const afterEmptyLines = skipEmptyLines(direction, active.line + direction, document);
+    const afterEmptyLines = skipEmptyLines(
+      direction,
+      active.line + direction,
+      document,
+    );
 
     if (skipEmptyLinesReachedDocumentEdge()) {
       return undefined;
@@ -65,27 +73,36 @@ export function wordBoundary(
       // Skip current character if it is at boundary.
       // (e.g. "ab[c]  " =>`w`)
       const col = active.character - +(direction === Direction.Backward),
-            characterCategory = categorize(text.charCodeAt(col), isBlank, isWord),
-            nextCharacterCategory = categorize(text.charCodeAt(col + direction), isBlank, isWord);
+        characterCategory = categorize(text.charCodeAt(col), isBlank, isWord),
+        nextCharacterCategory = categorize(
+          text.charCodeAt(col + direction),
+          isBlank,
+          isWord,
+        );
 
       shouldSkip = characterCategory !== nextCharacterCategory;
 
-      if (shouldSkip && stopAtEnd === (direction === Direction.Forward)
-          && (characterCategory === WordCategory.Blank)) {
+      if (
+        shouldSkip &&
+        stopAtEnd === (direction === Direction.Forward) &&
+        characterCategory === WordCategory.Blank
+      ) {
         shouldSkip = false;
       }
     } else {
       shouldSkip = false;
     }
 
-    anchor = shouldSkip ? new vscode.Position(active.line, active.character + direction) : active;
+    anchor = shouldSkip
+      ? new vscode.Position(active.line, active.character + direction)
+      : active;
   }
 
   active = anchor;
 
   // Scan within the current line until the word ends.
   const curLineText = document.lineAt(active).text;
-  let nextCol = active.character;  // The next character to be tested.
+  let nextCol = active.character; // The next character to be tested.
 
   if (direction === Direction.Backward) {
     nextCol--;
@@ -93,26 +110,35 @@ export function wordBoundary(
 
   if (stopAtEnd === (direction === Direction.Forward)) {
     // Select the whitespace before word, if any.
-    while (nextCol >= 0 && nextCol < curLineText.length
-           && isBlank(curLineText.charCodeAt(nextCol))) {
+    while (
+      nextCol >= 0 &&
+      nextCol < curLineText.length &&
+      isBlank(curLineText.charCodeAt(nextCol))
+    ) {
       nextCol += direction;
     }
   }
 
   if (nextCol >= 0 && nextCol < curLineText.length) {
     const startCharCode = curLineText.charCodeAt(nextCol),
-          isSameCategory = isWord(startCharCode) ? isWord : isPunctuation;
+      isSameCategory = isWord(startCharCode) ? isWord : isPunctuation;
 
-    while (nextCol >= 0 && nextCol < curLineText.length
-           && isSameCategory(curLineText.charCodeAt(nextCol))) {
+    while (
+      nextCol >= 0 &&
+      nextCol < curLineText.length &&
+      isSameCategory(curLineText.charCodeAt(nextCol))
+    ) {
       nextCol += direction;
     }
   }
 
   if (stopAtEnd === (direction === Direction.Backward)) {
     // Select the whitespace after word, if any.
-    while (nextCol >= 0 && nextCol < curLineText.length
-           && isBlank(curLineText.charCodeAt(nextCol))) {
+    while (
+      nextCol >= 0 &&
+      nextCol < curLineText.length &&
+      isBlank(curLineText.charCodeAt(nextCol))
+    ) {
       nextCol += direction;
     }
   }

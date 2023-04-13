@@ -19,8 +19,10 @@ export class StatusBarSegment implements vscode.Disposable {
     public readonly priority: number,
     command: string | vscode.Command,
   ) {
-    this._statusBarItem =
-      vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, priority);
+    this._statusBarItem = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Left,
+      priority,
+    );
     this._statusBarItem.tooltip = name;
     this._statusBarItem.command = command;
   }
@@ -56,34 +58,51 @@ export class StatusBar implements vscode.Disposable {
   public readonly errorSegment: StatusBar.Segment;
 
   public constructor() {
-    this.activeModeSegment = this.addSegment("Dance - Set mode", "zap", "dance.modes.set");
-    this.recordingSegment =
-      this.addSegment("Dance - Stop recording", "record", "dance.history.recording.stop");
+    this.activeModeSegment = this.addSegment(
+      "Dance - Set mode",
+      "zap",
+      "dance.modes.set",
+    );
+    this.recordingSegment = this.addSegment(
+      "Dance - Stop recording",
+      "record",
+      "dance.history.recording.stop",
+    );
     this.countSegment = this.addSegment(
       "Dance - Reset count",
       "symbol-number",
       { command: "dance.updateCount", arguments: [{ count: "0" }], title: "" },
     );
-    this.registerSegment = this.addSegment(
-      "Dance - Unset register",
-      "clone",
-      { command: "dance.selectRegister", arguments: [{ register: "" }], title: "" },
-    );
+    this.registerSegment = this.addSegment("Dance - Unset register", "clone", {
+      command: "dance.selectRegister",
+      arguments: [{ register: "" }],
+      title: "",
+    });
     this.errorSegment = this.addSegment(
       "Dance - Copy and dismiss error",
       "error",
       "dance.dev.copyLastErrorMessage",
     );
-    this.errorSegment.statusBarItem.backgroundColor =
-      new vscode.ThemeColor("statusBarItem.errorBackground");
+    this.errorSegment.statusBarItem.backgroundColor = new vscode.ThemeColor(
+      "statusBarItem.errorBackground",
+    );
   }
 
   public dispose() {
     this._segments.splice(0).forEach((s) => s.dispose());
   }
 
-  private addSegment(tooltip: string, icon: string, command: string | vscode.Command) {
-    const segment = new StatusBar.Segment(tooltip, icon, 100 - this._segments.length, command);
+  private addSegment(
+    tooltip: string,
+    icon: string,
+    command: string | vscode.Command,
+  ) {
+    const segment = new StatusBar.Segment(
+      tooltip,
+      icon,
+      100 - this._segments.length,
+      command,
+    );
 
     this._segments.push(segment);
 

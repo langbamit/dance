@@ -14,89 +14,89 @@ export function canMatchLineFeed(re: RegExp) {
 }
 
 function groupCanMatchLineFeed(i: number, re: RegExp, inverse: boolean) {
-  for (const src = re.source; i !== -1 && i < src.length;) {
+  for (const src = re.source; i !== -1 && i < src.length; ) {
     switch (src.charCodeAt(i)) {
-    case 41:  // ')'
-      return i + 1;  // End of a group we're processing.
+      case 41: // ')'
+        return i + 1; // End of a group we're processing.
 
-    case 40:  // '('
-      if (src.charCodeAt(i + 1) === 63 /* ? */) {
-        const next = src.charCodeAt(i + 2);
+      case 40: // '('
+        if (src.charCodeAt(i + 1) === 63 /* ? */) {
+          const next = src.charCodeAt(i + 2);
 
-        if (next === 33 /* ! */) {
-          i = groupCanMatchLineFeed(i + 3, re, !inverse);
-          continue;
-        } else if (next === 61 /* = */ || next === 58 /* : */) {
-          i += 2;
-        } else if (next === 60 /* < */) {
-          i += 3;
-
-          if (src.charCodeAt(i) === 33 /* ! */) {
-            i = groupCanMatchLineFeed(i + 1, re, !inverse);
+          if (next === 33 /* ! */) {
+            i = groupCanMatchLineFeed(i + 3, re, !inverse);
             continue;
-          } else if (src.charCodeAt(i) === 61 /* = */) {
-            i++;
-          } else {
-            while (src.charCodeAt(i) !== 62 /* > */) {
+          } else if (next === 61 /* = */ || next === 58 /* : */) {
+            i += 2;
+          } else if (next === 60 /* < */) {
+            i += 3;
+
+            if (src.charCodeAt(i) === 33 /* ! */) {
+              i = groupCanMatchLineFeed(i + 1, re, !inverse);
+              continue;
+            } else if (src.charCodeAt(i) === 61 /* = */) {
               i++;
+            } else {
+              while (src.charCodeAt(i) !== 62 /* > */) {
+                i++;
+              }
             }
+          } else {
+            assert(false);
           }
-        } else {
-          assert(false);
         }
-      }
-      i = groupCanMatchLineFeed(i + 1, re, inverse);
-      break;
+        i = groupCanMatchLineFeed(i + 1, re, inverse);
+        break;
 
-    case 92:  // '\'
-      i = escapedCharacterCanMatchLineFeed(i + 1, re, inverse);
-      break;
+      case 92: // '\'
+        i = escapedCharacterCanMatchLineFeed(i + 1, re, inverse);
+        break;
 
-    case 91:  // '['
-      i = characterSetCanMatchLineFeed(i + 1, re, inverse);
-      break;
+      case 91: // '['
+        i = characterSetCanMatchLineFeed(i + 1, re, inverse);
+        break;
 
-    case 46:  // '.'
-      if (re.dotAll || inverse) {
-        return -1;
-      }
-      i++;
-      break;
-
-    case 43:  // '+'
-    case 42:  // '*'
-    case 63:  // '?'
-    case 124:  // '|'
-      i++;
-      break;
-
-    case 123:  // '{'
-      i++;
-      while (src.charCodeAt(i - 1) !== 125 /* } */) {
+      case 46: // '.'
+        if (re.dotAll || inverse) {
+          return -1;
+        }
         i++;
-      }
-      break;
+        break;
 
-    case 93:  // ']'
-    case 125:  // '}'
-      assert(false);
-      break;
+      case 43: // '+'
+      case 42: // '*'
+      case 63: // '?'
+      case 124: // '|'
+        i++;
+        break;
 
-    case 36:  // '$'
-    case 94:  // '^'
-    case 10:  // '\n'
-      if (!inverse) {
-        return -1;
-      }
-      i++;
-      break;
+      case 123: // '{'
+        i++;
+        while (src.charCodeAt(i - 1) !== 125 /* } */) {
+          i++;
+        }
+        break;
 
-    default:
-      if (inverse) {
-        return -1;
-      }
-      i++;
-      break;
+      case 93: // ']'
+      case 125: // '}'
+        assert(false);
+        break;
+
+      case 36: // '$'
+      case 94: // '^'
+      case 10: // '\n'
+        if (!inverse) {
+          return -1;
+        }
+        i++;
+        break;
+
+      default:
+        if (inverse) {
+          return -1;
+        }
+        i++;
+        break;
     }
   }
 
@@ -107,7 +107,13 @@ function isDigit(charCode: number) {
   return charCode >= 48 /* 0 */ && charCode <= 57 /* 9 */;
 }
 
-function isRange(src: string, i: number, n: number, startInclusive: number, endInclusive: number) {
+function isRange(
+  src: string,
+  i: number,
+  n: number,
+  startInclusive: number,
+  endInclusive: number,
+) {
   if (i + n >= src.length) {
     return false;
   }
@@ -142,135 +148,150 @@ function isHex(src: string, i: number, n: number) {
   return true;
 }
 
-function escapedCharacterCanMatchLineFeed(i: number, re: RegExp, inverse: boolean) {
+function escapedCharacterCanMatchLineFeed(
+  i: number,
+  re: RegExp,
+  inverse: boolean,
+) {
   const src = re.source,
-        chr = src.charCodeAt(i);
+    chr = src.charCodeAt(i);
 
   switch (chr) {
-  case 110:  // 'n'
-  case 115:  // 's'
-  case 66:  // 'B'
-  case 68:  // 'D'
-  case 87:  // 'W'
-    return inverse ? i + 1 : -1;
+    case 110: // 'n'
+    case 115: // 's'
+    case 66: // 'B'
+    case 68: // 'D'
+    case 87: // 'W'
+      return inverse ? i + 1 : -1;
 
-  case 48:  // '0'
-    if (!isRange(src, i + 1, 2, 48 /* 0 */, 55 /* 7 */)) {
-      return inverse ? -1 : i + 1;
-    }
-    if (src.charCodeAt(i + 1) === 49 /* 1 */ && src.charCodeAt(i + 2) === 50 /* 2 */) {
-      // 012 = 10 = '\n'
-      return inverse ? i + 3 : -1;
-    }
-    return inverse ? -1 : i + 3;
-
-  case 99:  // 'c'
-    const controlCharacter = src.charCodeAt(i + 1);
-
-    if (controlCharacter === 74 /* J */ || controlCharacter === 106 /* j */) {
-      return inverse ? i + 2 : -1;
-    }
-    return inverse ? -1 : i + 2;
-
-  case 120:  // 'x'
-    if (!isHex(src, i + 1, 2)) {
-      return inverse ? -1 : i + 1;
-    }
-    if (src.charCodeAt(i + 1) === 48 /* 0 */) {
-      const next = src.charCodeAt(i + 2);
-
-      if (next === 97 /* a */ || next === 65 /* A */) {
-        // 0x0A = 10 = \n
+    case 48: // '0'
+      if (!isRange(src, i + 1, 2, 48 /* 0 */, 55 /* 7 */)) {
+        return inverse ? -1 : i + 1;
+      }
+      if (
+        src.charCodeAt(i + 1) === 49 /* 1 */ &&
+        src.charCodeAt(i + 2) === 50 /* 2 */
+      ) {
+        // 012 = 10 = '\n'
         return inverse ? i + 3 : -1;
       }
-    }
-    return inverse ? -1 : i + 3;
+      return inverse ? -1 : i + 3;
 
-  case 117:  // 'u'
-    if (src.charCodeAt(i + 1) === 123 /* { */) {
-      i += 2;
+    case 99: {
+      // 'c'
+      const controlCharacter = src.charCodeAt(i + 1);
 
-      let x = 0;
-
-      for (let ch = src.charCodeAt(i); ch !== 125 /* } */; i++) {
-        const v = ch >= 48 /* 0 */ && ch <= 57 /* 9 */
-          ? ch - 48 /* 0 */
-          : ch >= 97 /* a */ && ch <= 102 /* f */
-            ? 10 + ch - 97 /* a */
-            : 10 + ch - 65 /* A */;
-
-        x = x * 16 + v;
+      if (controlCharacter === 74 /* J */ || controlCharacter === 106 /* j */) {
+        return inverse ? i + 2 : -1;
       }
-
-      if (x === 10 /* \n */) {
-        return inverse ? i + 1 : -1;
+      return inverse ? -1 : i + 2;
+    }
+    case 120: {
+      // 'x'
+      if (!isHex(src, i + 1, 2)) {
+        return inverse ? -1 : i + 1;
       }
-      return inverse ? -1 : i + 1;
-    }
-    if (!isHex(src, i + 1, 4)) {
-      return inverse ? -1 : i + 1;
-    }
-    if (src.charCodeAt(i + 1) === 48 /* 0 */
-        && src.charCodeAt(i + 2) === 48 /* 0 */
-        && src.charCodeAt(i + 3) === 48 /* 0 */) {
-      const next = src.charCodeAt(i + 4);
+      if (src.charCodeAt(i + 1) === 48 /* 0 */) {
+        const next = src.charCodeAt(i + 2);
 
-      if (next === 97 /* a */ || next === 65 /* A */) {
-        // 0x000A = 10 = \n
-        return inverse ? i + 5 : -1;
+        if (next === 97 /* a */ || next === 65 /* A */) {
+          // 0x0A = 10 = \n
+          return inverse ? i + 3 : -1;
+        }
       }
+      return inverse ? -1 : i + 3;
     }
-    return inverse ? -1 : i + 5;
+    case 117: {
+      // 'u'
+      if (src.charCodeAt(i + 1) === 123 /* { */) {
+        i += 2;
 
-  // @ts-ignore
-  case 80:  // 'P'
-    if (!re.unicode) {
-      return inverse ? -1 : i + 1;
+        let x = 0;
+
+        for (let ch = src.charCodeAt(i); ch !== 125 /* } */; i++) {
+          const v =
+            ch >= 48 /* 0 */ && ch <= 57 /* 9 */
+              ? ch - 48 /* 0 */
+              : ch >= 97 /* a */ && ch <= 102 /* f */
+              ? 10 + ch - 97 /* a */
+              : 10 + ch - 65; /* A */
+
+          x = x * 16 + v;
+        }
+
+        if (x === 10 /* \n */) {
+          return inverse ? i + 1 : -1;
+        }
+        return inverse ? -1 : i + 1;
+      }
+      if (!isHex(src, i + 1, 4)) {
+        return inverse ? -1 : i + 1;
+      }
+      if (
+        src.charCodeAt(i + 1) === 48 /* 0 */ &&
+        src.charCodeAt(i + 2) === 48 /* 0 */ &&
+        src.charCodeAt(i + 3) === 48 /* 0 */
+      ) {
+        const next = src.charCodeAt(i + 4);
+
+        if (next === 97 /* a */ || next === 65 /* A */) {
+          // 0x000A = 10 = \n
+          return inverse ? i + 5 : -1;
+        }
+      }
+      return inverse ? -1 : i + 5;
     }
-    inverse = !inverse;
+    case 80: {
+      // 'P'
+      if (!re.unicode) {
+        return inverse ? -1 : i + 1;
+      }
+      inverse = !inverse;
+    }
     // fallthrough
 
-  case 112:  // 'p'
-    if (!re.unicode) {
-      return inverse ? -1 : i + 1;
-    }
-    const start = i - 1;
+    case 112: {
+      // 'p'
+      if (!re.unicode) {
+        return inverse ? -1 : i + 1;
+      }
+      const start = i - 1;
 
-    i += 2;  // Skip over 'p{'.
+      i += 2; // Skip over 'p{'.
 
-    while (src.charCodeAt(i) !== 125 /* } */) {
-      i++;
-    }
-
-    i++;  // Skip over '}'.
-
-    const testRegExpString = src.slice(start, i),
-          testRegExp = new RegExp(testRegExpString, "u");
-
-    if (testRegExp.test("\n")) {
-      return inverse ? i : -1;
-    }
-    return inverse ? -1 : i;
-
-  default:
-    if (chr > 48 /* 0 */ && chr <= 57 /* 9 */) {
-      // Back-reference is treated by the rest of the processing.
-      i++;
-
-      while (isDigit(src.charCodeAt(i))) {
+      while (src.charCodeAt(i) !== 125 /* } */) {
         i++;
       }
 
-      return i;
-    }
+      i++; // Skip over '}'.
 
-    return inverse ? -1 : i + 1;
+      const testRegExpString = src.slice(start, i),
+        testRegExp = new RegExp(testRegExpString, "u");
+
+      if (testRegExp.test("\n")) {
+        return inverse ? i : -1;
+      }
+      return inverse ? -1 : i;
+    }
+    default:
+      if (chr > 48 /* 0 */ && chr <= 57 /* 9 */) {
+        // Back-reference is treated by the rest of the processing.
+        i++;
+
+        while (isDigit(src.charCodeAt(i))) {
+          i++;
+        }
+
+        return i;
+      }
+
+      return inverse ? -1 : i + 1;
   }
 }
 
 function characterSetCanMatchLineFeed(i: number, re: RegExp, inverse: boolean) {
   const src = re.source,
-        start = i - 1;
+    start = i - 1;
 
   if (src.charCodeAt(i) === 94 /* ^ */) {
     if (src.charCodeAt(i + 1) === 93 /* ] */) {
@@ -281,62 +302,64 @@ function characterSetCanMatchLineFeed(i: number, re: RegExp, inverse: boolean) {
     inverse = !inverse;
   }
 
-  for (let mayHaveRange = false;;) {
+  for (let mayHaveRange = false; ; ) {
     switch (src.charCodeAt(i)) {
-    case 93:  // ']'
-      if (mayHaveRange) {
-        // The test below handles inversions, so we must toggle `inverse` if we
-        // toggled it earlier.
-        if (src.charCodeAt(start + 2) === 94 /* ^ */) {
-          inverse = !inverse;
-        }
+      case 93: // ']'
+        if (mayHaveRange) {
+          // The test below handles inversions, so we must toggle `inverse` if we
+          // toggled it earlier.
+          if (src.charCodeAt(start + 2) === 94 /* ^ */) {
+            inverse = !inverse;
+          }
 
-        const testRegExpString = src.slice(start, i + 1),
-              testRegExp = new RegExp(testRegExpString, re.flags);
+          const testRegExpString = src.slice(start, i + 1),
+            testRegExp = new RegExp(testRegExpString, re.flags);
 
-        if (testRegExp.test("\n")) {
-          if (!inverse) {
+          if (testRegExp.test("\n")) {
+            if (!inverse) {
+              return -1;
+            }
+          } else if (inverse) {
             return -1;
           }
-        } else if (inverse) {
+        }
+        return i + 1;
+
+      case 92: // '\'
+        i = escapedCharacterCanMatchLineFeed(i + 1, re, inverse);
+        if (i === -1) {
           return -1;
         }
-      }
-      return i + 1;
+        break;
 
-    case 92:  // '\'
-      i = escapedCharacterCanMatchLineFeed(i + 1, re, inverse);
-      if (i === -1) {
-        return -1;
-      }
-      break;
+      case 10: // '\n'
+        if (!inverse) {
+          return -1;
+        }
+        i++;
+        break;
 
-    case 10:  // '\n'
-      if (!inverse) {
-        return -1;
-      }
-      i++;
-      break;
+      case 45: // '-'
+        mayHaveRange = true;
+        i++;
+        break;
 
-    case 45:  // '-'
-      mayHaveRange = true;
-      i++;
-      break;
-
-    default:
-      if (inverse) {
-        return -1;
-      }
-      i++;
-      break;
+      default:
+        if (inverse) {
+          return -1;
+        }
+        i++;
+        break;
     }
   }
 }
 
-const mustBeEscapedToBeStatic =
-        new Uint8Array([..."()[]{}*+?^$."].map((c) => c.charCodeAt(0))),
-      mustNotBeEscapedToBeStatic =
-        new Uint8Array([..."123456789wWdDsSpPbBu"].map((c) => c.charCodeAt(0)));
+const mustBeEscapedToBeStatic = new Uint8Array(
+    [..."()[]{}*+?^$."].map((c) => c.charCodeAt(0)),
+  ),
+  mustNotBeEscapedToBeStatic = new Uint8Array(
+    [..."123456789wWdDsSpPbBu"].map((c) => c.charCodeAt(0)),
+  );
 
 /**
  * Returns the set of strings that the specified `RegExp` may match. If
@@ -344,7 +367,7 @@ const mustBeEscapedToBeStatic =
  */
 export function matchesStaticStrings(re: RegExp) {
   const alternatives = [] as string[],
-        source = re.source;
+    source = re.source;
   let alt = "";
 
   for (let i = 0, len = source.length; i < len; i++) {
@@ -366,73 +389,74 @@ export function matchesStaticStrings(re: RegExp) {
       const next = source.charCodeAt(i);
 
       switch (next) {
-      case 110: // n
-        alt += "\n";
-        break;
-      case 114: // r
-        alt += "\r";
-        break;
-      case 116: // t
-        alt += "\t";
-        break;
-      case 102: // f
-        alt += "\f";
-        break;
-      case 118: // v
-        alt += "\v";
-        break;
+        case 110: // n
+          alt += "\n";
+          break;
+        case 114: // r
+          alt += "\r";
+          break;
+        case 116: // t
+          alt += "\t";
+          break;
+        case 102: // f
+          alt += "\f";
+          break;
+        case 118: // v
+          alt += "\v";
+          break;
 
-      case 99: // c
-        const controlCh = source.charCodeAt(i + 1),
-              isUpper = 65 <= controlCh && controlCh <= 90,
-              offset = (isUpper ? 65 /* A */ : 107 /* a */) - 1;
+        case 99: {
+          // c
+          const controlCh = source.charCodeAt(i + 1),
+            isUpper = 65 <= controlCh && controlCh <= 90,
+            offset = (isUpper ? 65 /* A */ : 107) /* a */ - 1;
 
-        alt += String.fromCharCode(controlCh - offset);
-        break;
-
-      case 48: // 0
-        if (isRange(source, i + 1, 2, 48 /* 0 */, 55 /* 7 */)) {
-          alt += String.fromCharCode(parseInt(source.substr(i + 1, 2), 8));
-          i += 2;
-        } else {
-          alt += "\0";
+          alt += String.fromCharCode(controlCh - offset);
+          break;
         }
-        break;
+        case 48: // 0
+          if (isRange(source, i + 1, 2, 48 /* 0 */, 55 /* 7 */)) {
+            alt += String.fromCharCode(parseInt(source.substr(i + 1, 2), 8));
+            i += 2;
+          } else {
+            alt += "\0";
+          }
+          break;
 
-      case 120: // x
-        if (isHex(source, i + 1, 2)) {
-          alt += String.fromCharCode(parseInt(source.substr(i + 1, 2), 16));
-          i += 2;
-        } else {
-          alt += "x";
-        }
-        break;
+        case 120: // x
+          if (isHex(source, i + 1, 2)) {
+            alt += String.fromCharCode(parseInt(source.substr(i + 1, 2), 16));
+            i += 2;
+          } else {
+            alt += "x";
+          }
+          break;
 
-      case 117: // u
-        if (source.charCodeAt(i + 1) === 123 /* { */) {
-          const end = source.indexOf("}", i + 2);
+        case 117: // u
+          if (source.charCodeAt(i + 1) === 123 /* { */) {
+            const end = source.indexOf("}", i + 2);
 
-          if (end === -1) {
+            if (end === -1) {
+              return;
+            }
+
+            alt += String.fromCharCode(parseInt(source.slice(i + 2, end), 16));
+            i = end + 1;
+          } else if (isHex(source, i + 1, 4)) {
+            alt += String.fromCharCode(parseInt(source.substr(i + 1, 4), 16));
+            i += 4;
+          } else {
+            alt += "u";
+          }
+          return;
+
+        default:
+          if (mustNotBeEscapedToBeStatic.indexOf(next) !== -1) {
             return;
           }
 
-          alt += String.fromCharCode(parseInt(source.slice(i + 2, end), 16));
-          i = end + 1;
-        } else if (isHex(source, i + 1, 4)) {
-          alt += String.fromCharCode(parseInt(source.substr(i + 1, 4), 16));
-          i += 4;
-        } else {
-          alt += "u";
-        }
-        return;
-
-      default:
-        if (mustNotBeEscapedToBeStatic.indexOf(next) !== -1) {
-          return;
-        }
-
-        alt += source[i];
-        break;
+          alt += source[i];
+          break;
       }
     } else {
       if (mustBeEscapedToBeStatic.indexOf(ch) !== -1) {
@@ -467,9 +491,7 @@ export declare namespace Node {
 }
 
 export class Sequence implements Node<Sequence> {
-  public constructor(
-    public readonly nodes: readonly Sequence.Node[],
-  ) {}
+  public constructor(public readonly nodes: readonly Sequence.Node[]) {}
 
   public toString() {
     return this.nodes.join("");
@@ -497,9 +519,7 @@ export declare namespace Sequence {
 }
 
 export abstract class Disjunction<To extends Node<To>> implements Node<To> {
-  public constructor(
-    public readonly alternatives: readonly Sequence[],
-  ) {}
+  public constructor(public readonly alternatives: readonly Sequence[]) {}
 
   protected prefix() {
     return "(";
@@ -547,8 +567,13 @@ export class Group extends Disjunction<Group | NumericEscape | Backreference> {
     return "(";
   }
 
-  public reverse(state: Node.ReverseState): Group | NumericEscape | Backreference {
-    if (this.index !== undefined && state.reversedGroups[this.index - 1] !== undefined) {
+  public reverse(
+    state: Node.ReverseState,
+  ): Group | NumericEscape | Backreference {
+    if (
+      this.index !== undefined &&
+      state.reversedGroups[this.index - 1] !== undefined
+    ) {
       return new NumericEscape(this.index);
     }
 
@@ -561,9 +586,7 @@ export class Group extends Disjunction<Group | NumericEscape | Backreference> {
 }
 
 export class Raw implements Node<Raw> {
-  public constructor(
-    public readonly string: string,
-  ) {}
+  public constructor(public readonly string: string) {}
 
   public toString() {
     return this.string.replace(/[()[\]{}*+?^$.]/g, "\\$&");
@@ -613,9 +636,9 @@ export class CharacterSet implements Node<CharacterSet> {
       return "\\S";
     }
 
-    const contents = this.alternatives.map(
-      (c) => Array.isArray(c) ? `${c[0]}-${c[1]}` : c.toString(),
-    ).join("");
+    const contents = this.alternatives
+      .map((c) => (Array.isArray(c) ? `${c[0]}-${c[1]}` : c.toString()))
+      .join("");
 
     return `[${this.isNegated ? "^" : ""}${contents}]`;
   }
@@ -630,7 +653,7 @@ export class CharacterSet implements Node<CharacterSet> {
     }
 
     const characterClasses = [] as CharacterClass[],
-          ranges = [0, hasUnicodeFlag ? 0x10FFFF : 0xFFFF];
+      ranges = [0, hasUnicodeFlag ? 0x10ffff : 0xffff];
 
     for (let alternative of this.alternatives) {
       if (!Array.isArray(alternative)) {
@@ -643,14 +666,14 @@ export class CharacterSet implements Node<CharacterSet> {
       }
 
       const [alt0, alt1] = alternative,
-            negStart = alt0 instanceof Raw ? alt0.string.charCodeAt(0) : alt0.value,  // S
-            negEnd = alt1 instanceof Raw ? alt1.string.charCodeAt(0) : alt1.value;  // E
+        negStart = alt0 instanceof Raw ? alt0.string.charCodeAt(0) : alt0.value, // S
+        negEnd = alt1 instanceof Raw ? alt1.string.charCodeAt(0) : alt1.value; // E
 
       for (let i = 0; i < ranges.length; i += 2) {
         // Let's consider that the range we need to erase is S -> E, and the
         // positive range we're erasing from is s -> e.
-        const posStart = ranges[i],  // s
-              posEnd = ranges[i + 1];  // e
+        const posStart = ranges[i], // s
+          posEnd = ranges[i + 1]; // e
 
         if (negEnd < posStart || negStart > posEnd) {
           // S E s e          or  s e S E
@@ -684,12 +707,15 @@ export class CharacterSet implements Node<CharacterSet> {
 
     for (let i = 0; i < ranges.length; i += 2) {
       const rangeStart = ranges[i],
-            rangeEnd = ranges[i + 1];
+        rangeEnd = ranges[i + 1];
 
       if (rangeStart === rangeEnd) {
         alternatives.push(Escaped.fromCharCode(rangeStart));
       } else {
-        alternatives.push(Escaped.fromCharCode(rangeStart), Escaped.fromCharCode(rangeEnd));
+        alternatives.push(
+          Escaped.fromCharCode(rangeStart),
+          Escaped.fromCharCode(rangeEnd),
+        );
       }
     }
 
@@ -723,20 +749,37 @@ export class CharacterSet implements Node<CharacterSet> {
 
   public static readonly digit = new CharacterSet([[Raw._0, Raw._9]], false);
   public static readonly word = new CharacterSet(
-    [[Raw._0, Raw._9], [Raw.a, Raw.z], [Raw.A, Raw.Z], Raw._], false);
+    [[Raw._0, Raw._9], [Raw.a, Raw.z], [Raw.A, Raw.Z], Raw._],
+    false,
+  );
   public static readonly whitespace = new CharacterSet(
-    [..."\t\n\v\f\r \u00a0\u2000\u2001\u2002\u2003\u2004\u2005",
-      ..."\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000"].map((c) => new Raw(c)), false);
+    [
+      ..."\t\n\v\f\r \u00a0\u2000\u2001\u2002\u2003\u2004\u2005",
+      ..."\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000",
+    ].map((c) => new Raw(c)),
+    false,
+  );
 
-  public static readonly notDigit = new CharacterSet(CharacterSet.digit.alternatives, true);
-  public static readonly notWord = new CharacterSet(CharacterSet.word.alternatives, true);
+  public static readonly notDigit = new CharacterSet(
+    CharacterSet.digit.alternatives,
+    true,
+  );
+  public static readonly notWord = new CharacterSet(
+    CharacterSet.word.alternatives,
+    true,
+  );
   public static readonly notWhitespace = new CharacterSet(
-    CharacterSet.whitespace.alternatives, true);
+    CharacterSet.whitespace.alternatives,
+    true,
+  );
 }
 
 export declare namespace CharacterSet {
   export type AlternativeAtom = Raw | Escaped;
-  export type Alternative = AlternativeAtom | CharacterClass | [AlternativeAtom, AlternativeAtom];
+  export type Alternative =
+    | AlternativeAtom
+    | CharacterClass
+    | [AlternativeAtom, AlternativeAtom];
 }
 
 export class Escaped implements Node<Escaped> {
@@ -747,16 +790,17 @@ export class Escaped implements Node<Escaped> {
 
   public toString() {
     const type = this.type,
-          value = this.value,
-          str = type === "0"
-            ? value.toString(8).padStart(2, "0")
-            : type === "c"
-              ? String.fromCharCode(65 + value)
-              : type === "x"
-                ? value.toString(16).padStart(2, "0")
-                : value <= 0xFFFF
-                  ? value.toString(16).padStart(4, "0")
-                  : "{" + value.toString(16) + "}";
+      value = this.value,
+      str =
+        type === "0"
+          ? value.toString(8).padStart(2, "0")
+          : type === "c"
+          ? String.fromCharCode(65 + value)
+          : type === "x"
+          ? value.toString(16).padStart(2, "0")
+          : value <= 0xffff
+          ? value.toString(16).padStart(4, "0")
+          : "{" + value.toString(16) + "}";
 
     return "\\" + type + str;
   }
@@ -773,7 +817,7 @@ export class Escaped implements Node<Escaped> {
     if (charCode >= 32 && charCode <= 126) {
       return new Raw(String.fromCharCode(charCode));
     }
-    if (charCode < 0xFF) {
+    if (charCode < 0xff) {
       return new Escaped("x", charCode);
     }
     return new Escaped("u", charCode);
@@ -781,9 +825,7 @@ export class Escaped implements Node<Escaped> {
 }
 
 export class Dot implements Node<Dot> {
-  private constructor(
-    public readonly includesNewLine: boolean,
-  ) {}
+  private constructor(public readonly includesNewLine: boolean) {}
 
   public toString() {
     return ".";
@@ -852,7 +894,10 @@ export class Anchor implements Node<Anchor> {
   public static readonly start = new Anchor(AnchorKind.Start, "^");
   public static readonly end = new Anchor(AnchorKind.End, "$");
   public static readonly boundary = new Anchor(AnchorKind.Boundary, "\\b");
-  public static readonly notBoundary = new Anchor(AnchorKind.NotBoundary, "\\B");
+  public static readonly notBoundary = new Anchor(
+    AnchorKind.NotBoundary,
+    "\\B",
+  );
 }
 
 export class Lookaround extends Disjunction<Lookaround> {
@@ -865,7 +910,9 @@ export class Lookaround extends Disjunction<Lookaround> {
   }
 
   protected override prefix() {
-    return "(?" + (this.isLookbehind ? "<" : "") + (this.isNegative ? "!" : "=");
+    return (
+      "(?" + (this.isLookbehind ? "<" : "") + (this.isNegative ? "!" : "=")
+    );
   }
 
   public reverse(state: Node.ReverseState) {
@@ -881,7 +928,9 @@ export declare namespace Anchor {
   export type Kind = AnchorKind;
 }
 
-export class Repeat<T extends Repeat.Node = Repeat.Node> implements Node<Repeat> {
+export class Repeat<T extends Repeat.Node = Repeat.Node>
+  implements Node<Repeat>
+{
   public constructor(
     public readonly node: T,
     public readonly min?: number,
@@ -907,7 +956,7 @@ export class Repeat<T extends Repeat.Node = Repeat.Node> implements Node<Repeat>
 
   public toString() {
     const node = this.node.toString(),
-          lazy = this.lazy ? "?" : "";
+      lazy = this.lazy ? "?" : "";
 
     if (this.isOptional) {
       return node + "?" + lazy;
@@ -940,14 +989,22 @@ export class Repeat<T extends Repeat.Node = Repeat.Node> implements Node<Repeat>
 }
 
 export declare namespace Repeat {
-  export type Node = Group | Lookaround | CharacterSet | Raw | Escaped | CharacterClass | Dot
-                   | NumericEscape | Backreference;
+  export type Node =
+    | Group
+    | Lookaround
+    | CharacterSet
+    | Raw
+    | Escaped
+    | CharacterClass
+    | Dot
+    | NumericEscape
+    | Backreference;
 }
 
-export class NumericEscape implements Node<Group | NumericEscape | Backreference> {
-  public constructor(
-    public n: number,
-  ) {
+export class NumericEscape
+  implements Node<Group | NumericEscape | Backreference>
+{
+  public constructor(public n: number) {
     assert(n > 0);
   }
 
@@ -958,17 +1015,20 @@ export class NumericEscape implements Node<Group | NumericEscape | Backreference
   public reverse(state: Node.ReverseState) {
     const i = this.n - 1;
 
-    if (i >= state.reversedGroups.length || state.reversedGroups[i] !== undefined) {
+    if (
+      i >= state.reversedGroups.length ||
+      state.reversedGroups[i] !== undefined
+    ) {
       return this;
     }
 
     const group = state.expression.groups[i];
 
-    return state.reversedGroups[i] = new Group(
+    return (state.reversedGroups[i] = new Group(
       group.alternatives.map((a) => a.reverse(state)),
       group.index,
       group.name,
-    );
+    ));
   }
 
   public firstCharacter() {
@@ -976,10 +1036,10 @@ export class NumericEscape implements Node<Group | NumericEscape | Backreference
   }
 }
 
-export class Backreference implements Node<Group | NumericEscape | Backreference> {
-  public constructor(
-    public readonly name: string,
-  ) {}
+export class Backreference
+  implements Node<Group | NumericEscape | Backreference>
+{
+  public constructor(public readonly name: string) {}
 
   public toString() {
     return "\\k<" + this.name + ">";
@@ -996,11 +1056,11 @@ export class Backreference implements Node<Group | NumericEscape | Backreference
 
     const group = state.expression.groups[n];
 
-    return state.reversedGroups[n] = new Group(
+    return (state.reversedGroups[n] = new Group(
       group.alternatives.map((a) => a.reverse(state)),
       group.index,
       group.name,
-    );
+    ));
   }
 
   public firstCharacter() {
@@ -1034,7 +1094,7 @@ export class Expression extends Disjunction<Expression> {
     }
 
     const alternatives = this.alternatives.map((a) => a.reverse(state!)),
-          re = new RegExp(alternatives.join(""), this.re.flags);
+      re = new RegExp(alternatives.join(""), this.re.flags);
 
     assert(state.reversedGroups.indexOf(undefined) === -1);
 
@@ -1073,125 +1133,141 @@ export const enum CharCodes {
 function parseEscaped<InCharSet extends boolean>(
   src: string,
   inCharSet: InCharSet,
-): readonly [number, Raw | CharacterSet | Escaped | CharacterClass
-   | (InCharSet extends true ? never : NumericEscape | Backreference)] {
+): readonly [
+  number,
+  (
+    | Raw
+    | CharacterSet
+    | Escaped
+    | CharacterClass
+    | (InCharSet extends true ? never : NumericEscape | Backreference)
+  ),
+] {
   assert(src.length > 0);
 
   let i = 0;
 
   switch (src.charCodeAt(i++)) {
-  case 110: // n
-    return [i, new Raw("\n")];
-  case 114: // r
-    return [i, new Raw("\r")];
-  case 116: // t
-    return [i, new Raw("\t")];
-  case 102: // f
-    return [i, new Raw("\f")];
-  case 118: // v
-    return [i, new Raw("\n")];
+    case 110: // n
+      return [i, new Raw("\n")];
+    case 114: // r
+      return [i, new Raw("\r")];
+    case 116: // t
+      return [i, new Raw("\t")];
+    case 102: // f
+      return [i, new Raw("\f")];
+    case 118: // v
+      return [i, new Raw("\n")];
 
-  case 119: // w
-    return [i, CharacterSet.word];
-  case 87: // W
-    return [i, CharacterSet.notWord];
+    case 119: // w
+      return [i, CharacterSet.word];
+    case 87: // W
+      return [i, CharacterSet.notWord];
 
-  case 100: // d
-    return [i, CharacterSet.digit];
-  case 68: // D
-    return [i, CharacterSet.notDigit];
+    case 100: // d
+      return [i, CharacterSet.digit];
+    case 68: // D
+      return [i, CharacterSet.notDigit];
 
-  case 115: // s
-    return [i, CharacterSet.whitespace];
-  case 83: // S
-    return [i, CharacterSet.notWhitespace];
+    case 115: // s
+      return [i, CharacterSet.whitespace];
+    case 83: // S
+      return [i, CharacterSet.notWhitespace];
 
-  case 99: // c
-    const controlCh = src.charCodeAt(i),
-          isUpper = 65 <= controlCh && controlCh <= 90,
-          offset = (isUpper ? 65 /* A */ : 107 /* a */) - 1,
-          value = controlCh - offset;
+    case 99: {
+      // c
+      const controlCh = src.charCodeAt(i),
+        isUpper = 65 <= controlCh && controlCh <= 90,
+        offset = (isUpper ? 65 /* A */ : 107) /* a */ - 1,
+        value = controlCh - offset;
 
-    i++;
-    return [i, new Escaped("c", value)];
-
-  case 48: // 0
-    if (isRange(src, i, 2, 48 /* 0 */, 55 /* 7 */)) {
-      const value = parseInt(src.substr(i, 2), 8);
-
-      i += 2;
-      return [i, new Escaped("0", value)];
-    } else {
-      return [i, new Raw("\0")];
+      i++;
+      return [i, new Escaped("c", value)];
     }
+    case 48: // 0
+      if (isRange(src, i, 2, 48 /* 0 */, 55 /* 7 */)) {
+        const value = parseInt(src.substr(i, 2), 8);
 
-  case 120: // x
-    if (isHex(src, i, 2)) {
-      const value = parseInt(src.substr(i, 2), 16);
-
-      i += 2;
-      return [i, new Escaped("x", value)];
-    } else {
-      return [i, new Raw("x")];
-    }
-
-  case 117: // u
-    if (src.charCodeAt(i) === CharCodes.LCurly) {
-      const end = src.indexOf("}", i + 1);
-
-      assert(end !== -1);
-
-      const value = parseInt(src.slice(i + 1, end), 16);
-
-      i = end + 1;
-      return [i, new Escaped("u", value)];
-    } else if (isHex(src, i, 4)) {
-      const value = parseInt(src.substr(i, 4), 16);
-
-      i += 4;
-      return [i, new Escaped("u", value)];
-    } else {
-      return [i, new Raw("u")];
-    }
-
-  case 112: // p
-  case 80: // P
-    assert(src.charCodeAt(i) === CharCodes.LCurly);
-
-    const start = i + 1,
-          end = src.indexOf("}", start);
-
-    assert(end > start);
-
-    i = end + 1;
-    return [i, new CharacterClass(src.slice(start, end), src.charCodeAt(start - 2) === 80)];
-
-  default:
-    if (!inCharSet && isDigit(src.charCodeAt(i - 1))) {
-      // Escaped integer, corresponding to a group reference by index.
-      const start = i - 1;
-
-      while (isDigit(src.charCodeAt(i))) {
-        i++;
+        i += 2;
+        return [i, new Escaped("0", value)];
+      } else {
+        return [i, new Raw("\0")];
       }
 
-      return [i, new NumericEscape(+src.slice(start, i)) as any];
-    }
+    case 120: // x
+      if (isHex(src, i, 2)) {
+        const value = parseInt(src.substr(i, 2), 16);
 
-    if (!inCharSet && src.charCodeAt(i - 1) === 107 /* k */) {
-      assert(src.charCodeAt(i) === CharCodes.LAngle);
+        i += 2;
+        return [i, new Escaped("x", value)];
+      } else {
+        return [i, new Raw("x")];
+      }
 
-      // Group reference by name.
+    case 117: // u
+      if (src.charCodeAt(i) === CharCodes.LCurly) {
+        const end = src.indexOf("}", i + 1);
+
+        assert(end !== -1);
+
+        const value = parseInt(src.slice(i + 1, end), 16);
+
+        i = end + 1;
+        return [i, new Escaped("u", value)];
+      } else if (isHex(src, i, 4)) {
+        const value = parseInt(src.substr(i, 4), 16);
+
+        i += 4;
+        return [i, new Escaped("u", value)];
+      } else {
+        return [i, new Raw("u")];
+      }
+
+    case 112: // p
+    case 80: {
+      // P
+      assert(src.charCodeAt(i) === CharCodes.LCurly);
+
       const start = i + 1,
-            end = src.indexOf(">", start);
+        end = src.indexOf("}", start);
 
       assert(end > start);
 
       i = end + 1;
-      return [i, new Backreference(src.slice(start, end)) as any];
+      return [
+        i,
+        new CharacterClass(
+          src.slice(start, end),
+          src.charCodeAt(start - 2) === 80,
+        ),
+      ];
     }
+    default:
+      if (!inCharSet && isDigit(src.charCodeAt(i - 1))) {
+        // Escaped integer, corresponding to a group reference by index.
+        const start = i - 1;
 
-    return [i, new Raw(src[i - 1])];
+        while (isDigit(src.charCodeAt(i))) {
+          i++;
+        }
+
+        return [i, new NumericEscape(+src.slice(start, i)) as any];
+      }
+
+      if (!inCharSet && src.charCodeAt(i - 1) === 107 /* k */) {
+        assert(src.charCodeAt(i) === CharCodes.LAngle);
+
+        // Group reference by name.
+        const start = i + 1,
+          end = src.indexOf(">", start);
+
+        assert(end > start);
+
+        i = end + 1;
+        return [i, new Backreference(src.slice(start, end)) as any];
+      }
+
+      return [i, new Raw(src[i - 1])];
   }
 }
 
@@ -1202,13 +1278,12 @@ export function parse(re: RegExp) {
   const dummyGroup = new Group([], undefined);
 
   const src = re.source,
-        groups = [] as Group[];
+    groups = [] as Group[];
   let i = 0;
 
   function repeat<T extends Repeat.Node>(node: T) {
     const ch = src.charCodeAt(i);
-    let min: number | undefined,
-        max: number | undefined;
+    let min: number | undefined, max: number | undefined;
 
     if (ch === CharCodes.Star) {
       i++;
@@ -1282,8 +1357,12 @@ export function parse(re: RegExp) {
 
   function escapedCharacter<InCharSet extends boolean>(
     inCharSet: InCharSet,
-  ): Raw | CharacterSet | Escaped | CharacterClass
-   | (InCharSet extends true ? never : NumericEscape | Backreference) {
+  ):
+    | Raw
+    | CharacterSet
+    | Escaped
+    | CharacterClass
+    | (InCharSet extends true ? never : NumericEscape | Backreference) {
     const [offset, result] = parseEscaped(src, inCharSet);
 
     i += offset;
@@ -1293,7 +1372,7 @@ export function parse(re: RegExp) {
 
   function characterSet() {
     const alternatives: CharacterSet.Alternative[] = [],
-          isNegated = src.charCodeAt(i) === CharCodes.Caret;
+      isNegated = src.charCodeAt(i) === CharCodes.Caret;
 
     if (isNegated) {
       i++;
@@ -1301,60 +1380,62 @@ export function parse(re: RegExp) {
 
     while (i < src.length) {
       switch (src.charCodeAt(i++)) {
-      case CharCodes.RBracket:
-        return new CharacterSet(alternatives, isNegated);
-
-      case CharCodes.Backslash:
-        const escaped = escapedCharacter(/* inCharSet= */ true);
-
-        if (escaped instanceof CharacterSet) {
-          assert(!escaped.isNegated);
-
-          alternatives.push(...escaped.alternatives);
-        } else {
-          alternatives.push(escaped);
-        }
-        break;
-
-      case CharCodes.Minus:
-        if (alternatives.length === 0) {
-          alternatives.push(new Raw("-"));
-          continue;
-        }
-
-        const start = alternatives[alternatives.length - 1];
-
-        if (Array.isArray(start) || start instanceof CharacterClass) {
-          alternatives.push(new Raw("-"));
-          continue;
-        }
-
-        switch (src.charCodeAt(i++)) {
         case CharCodes.RBracket:
-          alternatives.push(new Raw("-"));
           return new CharacterSet(alternatives, isNegated);
 
-        default:
-          const end = src.charCodeAt(i - 1) === CharCodes.Backslash
-            ? escapedCharacter(/* inCharSet= */ true)
-            : new Raw(src[i - 1]);
+        case CharCodes.Backslash: {
+          const escaped = escapedCharacter(/* inCharSet= */ true);
 
-          if (end instanceof CharacterSet) {
-            assert(!end.isNegated);
+          if (escaped instanceof CharacterSet) {
+            assert(!escaped.isNegated);
 
-            alternatives.push(new Raw("-"), ...end.alternatives);
-          } else if (end instanceof CharacterClass) {
-            alternatives.push(new Raw("-"), end);
+            alternatives.push(...escaped.alternatives);
           } else {
-            alternatives.push([start, end]);
+            alternatives.push(escaped);
           }
           break;
         }
-        break;
+        case CharCodes.Minus: {
+          if (alternatives.length === 0) {
+            alternatives.push(new Raw("-"));
+            continue;
+          }
 
-      default:
-        alternatives.push(new Raw(src[i - 1]));
-        break;
+          const start = alternatives[alternatives.length - 1];
+
+          if (Array.isArray(start) || start instanceof CharacterClass) {
+            alternatives.push(new Raw("-"));
+            continue;
+          }
+
+          switch (src.charCodeAt(i++)) {
+            case CharCodes.RBracket:
+              alternatives.push(new Raw("-"));
+              return new CharacterSet(alternatives, isNegated);
+
+            default: {
+              const end =
+                src.charCodeAt(i - 1) === CharCodes.Backslash
+                  ? escapedCharacter(/* inCharSet= */ true)
+                  : new Raw(src[i - 1]);
+
+              if (end instanceof CharacterSet) {
+                assert(!end.isNegated);
+
+                alternatives.push(new Raw("-"), ...end.alternatives);
+              } else if (end instanceof CharacterClass) {
+                alternatives.push(new Raw("-"), end);
+              } else {
+                alternatives.push([start, end]);
+              }
+              break;
+            }
+          }
+          break;
+        }
+        default:
+          alternatives.push(new Raw(src[i - 1]));
+          break;
       }
     }
 
@@ -1363,98 +1444,117 @@ export function parse(re: RegExp) {
 
   function group(): readonly Sequence[] {
     const alternatives: Sequence[] = [],
-          sequence: Sequence.Node[] = [];
+      sequence: Sequence.Node[] = [];
 
     while (i < src.length) {
       switch (src.charCodeAt(i)) {
-      case CharCodes.RParen:
-        i++;
-        return alternatives;
+        case CharCodes.RParen:
+          i++;
+          return alternatives;
 
-      case CharCodes.Pipe:
-        i++;
-        alternatives.push(new Sequence(sequence.splice(0)));
-        break;
+        case CharCodes.Pipe:
+          i++;
+          alternatives.push(new Sequence(sequence.splice(0)));
+          break;
 
-      case CharCodes.LParen:
-        if (src.charCodeAt(i + 1) === CharCodes.Question) {
-          const next = src.charCodeAt(i + 2);
+        case CharCodes.LParen:
+          if (src.charCodeAt(i + 1) === CharCodes.Question) {
+            const next = src.charCodeAt(i + 2);
 
-          if (next === CharCodes.Colon) {
-            i += 3;
-            sequence.push(repeat(new Group(group())));
-          } else if (next === CharCodes.Eq) {
-            i += 3;
-            sequence.push(repeat(new Lookaround(group(), false, false)));
-          } else if (next === CharCodes.Bang) {
-            i += 3;
-            sequence.push(repeat(new Lookaround(group(), true, false)));
-          } else if (next === CharCodes.LAngle) {
-            if (src.charCodeAt(i) === CharCodes.Eq) {
-              i += 4;
-              sequence.push(repeat(new Lookaround(group(), false, true)));
-            } else if (src.charCodeAt(i + 3) === CharCodes.Bang) {
-              i += 4;
-              sequence.push(repeat(new Lookaround(group(), true, true)));
-            } else {
+            if (next === CharCodes.Colon) {
               i += 3;
+              sequence.push(repeat(new Group(group())));
+            } else if (next === CharCodes.Eq) {
+              i += 3;
+              sequence.push(repeat(new Lookaround(group(), false, false)));
+            } else if (next === CharCodes.Bang) {
+              i += 3;
+              sequence.push(repeat(new Lookaround(group(), true, false)));
+            } else if (next === CharCodes.LAngle) {
+              if (src.charCodeAt(i) === CharCodes.Eq) {
+                i += 4;
+                sequence.push(repeat(new Lookaround(group(), false, true)));
+              } else if (src.charCodeAt(i + 3) === CharCodes.Bang) {
+                i += 4;
+                sequence.push(repeat(new Lookaround(group(), true, true)));
+              } else {
+                i += 3;
 
-              const start = i,
-                    n = groups.push(dummyGroup);
+                const start = i,
+                  n = groups.push(dummyGroup);
 
-              while (src.charCodeAt(i) !== CharCodes.RAngle) {
+                while (src.charCodeAt(i) !== CharCodes.RAngle) {
+                  i++;
+                }
+
                 i++;
+                sequence.push(
+                  repeat(
+                    (groups[n - 1] = new Group(
+                      group(),
+                      n,
+                      src.slice(start, i - 2),
+                    )),
+                  ),
+                );
               }
-
-              i++;
-              sequence.push(repeat(groups[n - 1] = new Group(group(), n, src.slice(start, i - 2))));
+            } else {
+              assert(false);
             }
           } else {
-            assert(false);
+            const n = groups.push(dummyGroup);
+
+            sequence.push(
+              repeat(
+                (groups[n - 1] = new Group(group(), n) as any),
+              ) as Repeat<Group>,
+            );
           }
-        } else {
-          const n = groups.push(dummyGroup);
+          break;
 
-          sequence.push(repeat(groups[n - 1] = new Group(group(), n) as any) as Repeat<Group>);
-        }
-        break;
+        case CharCodes.Backslash:
+          i++;
+          sequence.push(repeat(escapedCharacter(/* inCharSet= */ false)));
+          break;
 
-      case CharCodes.Backslash:
-        i++;
-        sequence.push(repeat(escapedCharacter(/* inCharSet= */ false)));
-        break;
+        case CharCodes.LBracket:
+          i++;
+          sequence.push(repeat(characterSet()));
+          break;
 
-      case CharCodes.LBracket:
-        i++;
-        sequence.push(repeat(characterSet()));
-        break;
+        case CharCodes.Dot:
+          i++;
+          sequence.push(
+            repeat(re.dotAll ? Dot.includingNewLine : Dot.excludingNewLine),
+          );
+          break;
 
-      case CharCodes.Dot:
-        i++;
-        sequence.push(repeat(re.dotAll ? Dot.includingNewLine : Dot.excludingNewLine));
-        break;
+        case CharCodes.Caret:
+          i++;
+          sequence.push(Anchor.start);
+          break;
 
-      case CharCodes.Caret:
-        i++;
-        sequence.push(Anchor.start);
-        break;
+        case CharCodes.Dollar:
+          i++;
+          sequence.push(Anchor.end);
+          break;
 
-      case CharCodes.Dollar:
-        i++;
-        sequence.push(Anchor.end);
-        break;
+        default:
+          if (
+            sequence.length > 0 &&
+            (sequence[sequence.length - 1] as Repeat<Raw>).node instanceof
+              Raw &&
+            (sequence[sequence.length - 1] as Repeat<Raw>).isNonRepeated
+          ) {
+            const prev = (sequence[sequence.length - 1] as Repeat<Raw>).node;
 
-      default:
-        if (sequence.length > 0
-            && (sequence[sequence.length - 1] as Repeat<Raw>).node instanceof Raw
-            && (sequence[sequence.length - 1] as Repeat<Raw>).isNonRepeated) {
-          const prev = (sequence[sequence.length - 1] as Repeat<Raw>).node;
-
-          sequence[sequence.length - 1] = repeat(new Raw(prev.string + src[i]));
-        } else {
-          sequence.push(repeat(new Raw(src[i])));
-        }
-        break;
+            sequence[sequence.length - 1] = repeat(
+              new Raw(prev.string + src[i]),
+            );
+          } else {
+            sequence.push(repeat(new Raw(src[i])));
+          }
+          break;
       }
     }
 
@@ -1473,7 +1573,7 @@ export function execLast(re: RegExp, text: string) {
   if (text.length > 10_000) {
     // Execute reversed text on reversed regular expression.
     const reverseRe = parse(re).reverse().re,
-          match = reverseRe.exec([...text].reverse().join(""));
+      match = reverseRe.exec([...text].reverse().join(""));
 
     if (match === null) {
       return null;
@@ -1500,7 +1600,7 @@ export function execLast(re: RegExp, text: string) {
   }
 
   let lastMatch: RegExpExecArray | undefined,
-      lastMatchIndex = 0;
+    lastMatchIndex = 0;
 
   for (;;) {
     const match = re.exec(text);
@@ -1536,8 +1636,8 @@ export function parseRegExpWithReplacement(regexp: string) {
   }
 
   let pattern = "",
-      replacement: string | undefined = undefined,
-      flags: string | undefined = undefined;
+    replacement: string | undefined = undefined,
+    flags: string | undefined = undefined;
 
   for (let i = 1; i < regexp.length; i++) {
     const ch = regexp[i];
@@ -1558,7 +1658,10 @@ export function parseRegExpWithReplacement(regexp: string) {
           throw new Error("unexpected end of RegExp");
         }
 
-        const [offset, result] = parseEscaped(regexp.slice(i + 1), /* inCharSet= */ false);
+        const [offset, result] = parseEscaped(
+          regexp.slice(i + 1),
+          /* inCharSet= */ false,
+        );
 
         if (result instanceof Raw) {
           i += offset;
@@ -1589,7 +1692,10 @@ export function parseRegExpWithReplacement(regexp: string) {
     }
   }
 
-  if ((flags === undefined || flags === "") && /^[miguys]+$/.test(replacement ?? "")) {
+  if (
+    (flags === undefined || flags === "") &&
+    /^[miguys]+$/.test(replacement ?? "")
+  ) {
     flags = replacement;
     replacement = undefined;
   }
@@ -1616,8 +1722,8 @@ export function escapeForRegExp(text: string) {
  */
 export function anyRegExp(a: RegExp, b: RegExp) {
   const flags = [...new Set([...a.flags, ...b.flags])].join(""),
-        aGroups = new RegExp("|" + a.source, a.flags).exec("")!.length - 1,
-        bGroups = new RegExp("|" + b.source, b.flags).exec("")!.length - 1;
+    aGroups = new RegExp("|" + a.source, a.flags).exec("")!.length - 1,
+    bGroups = new RegExp("|" + b.source, b.flags).exec("")!.length - 1;
 
   // Update backreferences in `b` to ensure they point to the right indices.
   const bSource = replaceUnlessEscaped(b.source, /\\(\d+)/g, (text, n) => {
@@ -1628,16 +1734,23 @@ export function anyRegExp(a: RegExp, b: RegExp) {
     return "\\" + (+n + aGroups);
   });
 
-  return [new RegExp(`(?:${a.source})|(?:${bSource})()`, flags), aGroups + bGroups + 1] as const;
+  return [
+    new RegExp(`(?:${a.source})|(?:${bSource})()`, flags),
+    aGroups + bGroups + 1,
+  ] as const;
 }
 
 /**
  * Same as `text.replace(...args)`, but does not replaced escaped characters.
  */
-export function replaceUnlessEscaped(text: string, re: RegExp, replace: (...args: any) => string) {
+export function replaceUnlessEscaped(
+  text: string,
+  re: RegExp,
+  replace: (...args: any) => string,
+) {
   return text.replace(re, (...args) => {
     const offset = args[args.length - 2],
-          text = args[args.length - 1];
+      text = args[args.length - 1];
 
     if (isEscaped(text, offset)) {
       return args[0];
@@ -1687,7 +1800,7 @@ function isEscaped(text: string, offset: number) {
 export function splitRange(text: string, re: RegExp) {
   const sections: [start: number, end: number][] = [];
 
-  for (let start = 0;;) {
+  for (let start = 0; ; ) {
     re.lastIndex = 0;
 
     const match = re.exec(text);
@@ -1720,9 +1833,13 @@ export function execRange(text: string, re: RegExp) {
   const sections: [start: number, end: number, match: RegExpExecArray][] = [];
   let diff = 0;
 
-  for (let match = re.exec(text); match !== null && text.length > 0; match = re.exec(text)) {
+  for (
+    let match = re.exec(text);
+    match !== null && text.length > 0;
+    match = re.exec(text)
+  ) {
     const start = match.index,
-          end = start + match[0].length;
+      end = start + match[0].length;
 
     sections.push([diff + start, diff + end, match]);
 
@@ -1751,7 +1868,7 @@ export function newRegExp(pattern: string | RegExp, flags: string = "") {
   const originalSource = pattern;
   let m;
 
-  while (m = /^\(\?([gimsuy]+)\)/.exec(pattern)) {
+  while ((m = /^\(\?([gimsuy]+)\)/.exec(pattern))) {
     for (const ch of m[1]) {
       if (!flags.includes(ch)) {
         flags += ch;
